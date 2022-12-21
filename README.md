@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <img src="./assets/logo2.png" width = "320" height = "110" alt="logo" />
 
 <div align="center"><img src="./assets/nm.gif" width = "100" height = "100" alt="nm" /><img src="./assets/bg.gif" width = "100" height = "100" alt="bg" /><img src="./assets/cl.gif" width = "100" height = "100" alt="cl" /></div>
@@ -60,3 +61,6 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
 
 **Note:**
 This code is only used for **academic purposes**, people cannot use this code for anything that might be considered commercial use.
+=======
+
+>>>>>>> ef73915f77fd9c9fd8fc5e9d2faa585299e165ff
