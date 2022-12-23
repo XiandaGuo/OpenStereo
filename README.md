@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-<img src="./assets/logo2.png" width = "320" height = "110" alt="logo" />
-
-<div align="center"><img src="./assets/nm.gif" width = "100" height = "100" alt="nm" /><img src="./assets/bg.gif" width = "100" height = "100" alt="bg" /><img src="./assets/cl.gif" width = "100" height = "100" alt="cl" /></div>
-
-------------------------------------------
 
 
 ## Getting Started
