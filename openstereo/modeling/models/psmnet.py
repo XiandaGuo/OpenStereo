@@ -18,6 +18,7 @@ from abc import abstractmethod
 from utils import Odict, mkdir, ddp_all_gather
 
 from utils import NoOp
+from utils.preprocess import get_transform
 
 
 class hourglass(nn.Module):
@@ -67,10 +68,12 @@ class hourglass(nn.Module):
         return out, pre, post
 
 
-class PSMNet(nn.Module):
-    def __init__(self, maxdisp):
-        super(PSMNet, self).__init__()
-        self.maxdisp = maxdisp
+class PSMNet(BaseModel):
+    def __init__(self, *args, **kargs):
+        super(PSMNet, self).__init__(*args, **kargs)
+
+    def build_network(self,model_cfg):
+        self.maxdisp = model_cfg['maxdisp']
 
         self.feature_extraction = feature_extraction()
 
@@ -101,6 +104,22 @@ class PSMNet(nn.Module):
                                       nn.ReLU(inplace=True),
                                       nn.Conv3d(32, 1, kernel_size=3, padding=1, stride=1, bias=False))
 
+        # for m in self.modules():
+        #     if isinstance(m, nn.Conv2d):
+        #         n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+        #         m.weight.data.normal_(0, math.sqrt(2. / n))
+        #     elif isinstance(m, nn.Conv3d):
+        #         n = m.kernel_size[0] * m.kernel_size[1] * m.kernel_size[2] * m.out_channels
+        #         m.weight.data.normal_(0, math.sqrt(2. / n))
+        #     elif isinstance(m, nn.BatchNorm2d):
+        #         m.weight.data.fill_(1)
+        #         m.bias.data.zero_()
+        #     elif isinstance(m, nn.BatchNorm3d):
+        #         m.weight.data.fill_(1)
+        #         m.bias.data.zero_()
+        #     elif isinstance(m, nn.Linear):
+        #         m.bias.data.zero_()
+    def init_parameters(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
@@ -116,6 +135,7 @@ class PSMNet(nn.Module):
                 m.bias.data.zero_()
             elif isinstance(m, nn.Linear):
                 m.bias.data.zero_()
+
 
     def forward(self, left, right):
 
@@ -180,48 +200,49 @@ class PSMNet(nn.Module):
 
     @staticmethod
     def run_train(model):
+        while(model.iteration < model.engine_cfg['total_iter']):
+            for inputs in model.train_loader:
+                imgL, imgR, disp_L = model.inputs_pretreament(inputs)
+                mask = (disp_L > 0)
+                mask.detach_()
+                with autocast(enabled=model.engine_cfg['enable_float16']):
+                    output1, output2, output3  = model(imgL,imgR)
+                    output1 = torch.squeeze(output1, 1)
+                    output2 = torch.squeeze(output2, 1)
+                    output3 = torch.squeeze(output3, 1)
+                    # training_feat, visual_summary = retval['training_feat'], retval['visual_summary']
+                    # del retval
 
-        for inputs in model.train_loader:
-            imgL, imgR, disp_L = model.inputs_pretreament(inputs)
-            mask = (disp_L > 0)
-            mask.detach_()
-            with autocast(enabled=model.engine_cfg['enable_float16']):
-                output1, output2, output3  = model(imgL,imgR)
-                output1 = torch.squeeze(output1, 1)
-                output2 = torch.squeeze(output2, 1)
-                output3 = torch.squeeze(output3, 1)
-                # training_feat, visual_summary = retval['training_feat'], retval['visual_summary']
-                # del retval
+                #loss_sum, loss_info = model.loss_aggregator(training_feat)
+                loss_sum=0.5*F.smooth_l1_loss(output1[mask], disp_L[mask], size_average=True) \
+                         + 0.7*F.smooth_l1_loss(output2[mask], disp_L[mask], size_average=True) \
+                         + F.smooth_l1_loss(output3[mask], disp_L[mask], size_average=True)
+                print("per-iter training loss  = %.3f",loss_sum)
+                ok = model.train_step(loss_sum)
+                if not ok:
+                    continue
+                #
+                # visual_summary.update(loss_info)
+                # visual_summary['scalar/learning_rate'] = model.optimizer.param_groups[0]['lr']
 
-            #loss_sum, loss_info = model.loss_aggregator(training_feat)
-            loss_sum=0.5*F.smooth_l1_loss(output1[mask], disp_L[mask], size_average=True) \
-                     + 0.7*F.smooth_l1_loss(output2[mask], disp_L[mask], size_average=True) \
-                     + F.smooth_l1_loss(output3[mask], disp_L[mask], size_average=True)
-            ok = model.train_step(loss_sum)
-            if not ok:
-                continue
-            #
-            # visual_summary.update(loss_info)
-            # visual_summary['scalar/learning_rate'] = model.optimizer.param_groups[0]['lr']
+                #model.msg_mgr.train_step(loss_info, visual_summary)
+                #model.train_step(loss_sum)
+                if model.iteration % model.engine_cfg['save_iter'] == 0:
+                    # save the checkpoint
+                    model.save_ckpt(model.iteration)
 
-            #model.msg_mgr.train_step(loss_info, visual_summary)
-            model.train_step(loss_sum)
-            if model.iteration % model.engine_cfg['save_iter'] == 0:
-                # save the checkpoint
-                model.save_ckpt(model.iteration)
-
-                # run test if with_test = true
-                if model.engine_cfg['with_test']:
-                    model.msg_mgr.log_info("Running test...")
-                    model.eval()
-                    result_dict = model.run_test(model)
-                    model.train()
-                    if model.cfgs['trainer_cfg']['fix_BN']:
-                        model.fix_BN()
-                    model.msg_mgr.write_to_tensorboard(result_dict)
-                    model.msg_mgr.reset_time()
-            if model.iteration >= model.engine_cfg['total_iter']:
-                break
+                    # run test if with_test = true
+                    if model.engine_cfg['with_test']:
+                        model.msg_mgr.log_info("Running test...")
+                        model.eval()
+                        result_dict = model.run_test(model)
+                        model.train()
+                        if model.cfgs['trainer_cfg']['fix_BN']:
+                            model.fix_BN()
+                        model.msg_mgr.write_to_tensorboard(result_dict)
+                        model.msg_mgr.reset_time()
+                if model.iteration >= model.engine_cfg['total_iter']:
+                    break
 
     @staticmethod
     def run_test(model):
@@ -268,7 +289,9 @@ class PSMNet(nn.Module):
 
     def get_loader(self, data_cfg, train=True):
 
-        all_left_img, all_right_img, all_left_disp, test_left_img, test_right_img, test_left_disp = KITTI2015.Imageloader(data_cfg['data_root'])
+        all_left_img, all_right_img, all_left_disp, test_left_img, test_right_img, test_left_disp = KITTI2015.Imageloader(data_cfg['dataset_root'])
+        print("len_all_left_img",len(all_left_img))
+
 
         if train:
 
@@ -283,7 +306,11 @@ class PSMNet(nn.Module):
         return loader
     @staticmethod
     def inputs_pretreament(inputs):
+        #processed=get_transform(augment=False)
         imgL, imgR, disp_L = inputs
+        # imgL=processed(imgL)
+        # imgR=processed(imgR)
+
         return imgL.cuda(), imgR.cuda(), disp_L.cuda()
 
 

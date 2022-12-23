@@ -6,7 +6,8 @@ import torchvision.transforms as transforms
 import random
 from PIL import Image, ImageOps
 import numpy as np
-import preprocess
+#import preprocess
+from utils.preprocess import get_transform
 
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
@@ -58,7 +59,7 @@ class KITTI2015(data.Dataset):
             dataL = np.ascontiguousarray(dataL, dtype=np.float32) / 256
             dataL = dataL[y1:y1 + th, x1:x1 + tw]
 
-            processed = preprocess.get_transform(augment=False)
+            processed = get_transform(augment=False)
             left_img = processed(left_img)
             right_img = processed(right_img)
 
@@ -73,7 +74,7 @@ class KITTI2015(data.Dataset):
             dataL = dataL.crop((w - 1232, h - 368, w, h))
             dataL = np.ascontiguousarray(dataL, dtype=np.float32) / 256
 
-            processed = preprocess.get_transform(augment=False)
+            processed = get_transform(augment=False)
             left_img = processed(left_img)
             right_img = processed(right_img)
 

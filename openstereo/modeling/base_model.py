@@ -159,7 +159,7 @@ class BaseModel(MetaModel, nn.Module):
             "cuda", self.device))
 
         if training:
-            self.loss_aggregator = LossAggregator(cfgs['loss_cfg'])
+            #self.loss_aggregator = LossAggregator(cfgs['loss_cfg'])
             self.optimizer = self.get_optimizer(self.cfgs['optimizer_cfg'])
             self.scheduler = self.get_scheduler(cfgs['scheduler_cfg'])
         self.train(training)
@@ -396,6 +396,7 @@ class BaseModel(MetaModel, nn.Module):
             v = np.concatenate(v)[:total_size]
             info_dict[k] = v
         return info_dict
+
 
     @ staticmethod
     def run_train(model):
