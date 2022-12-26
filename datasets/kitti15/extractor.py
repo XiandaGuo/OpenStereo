@@ -31,9 +31,9 @@ def extractall(base_path: Path, output_path: Path, passwords) -> None:
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='OUMVLP extractor')
+    parser = argparse.ArgumentParser(description='kitti15 extractor')
     parser.add_argument('-b', '--input_path', type=str,
-                        required=True, help='Base path to OUMVLP .7z files')
+                        required=True, help='Base path to kitti15 .7z files')
     parser.add_argument('-o', '--output_path', type=str,
                         required=True, help='Output path for extracted files')
     parser.add_argument('-p', '--password', type=str,

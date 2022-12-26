@@ -35,7 +35,7 @@ def rearrange(input_path: Path, output_path: Path) -> None:
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='OUMVLP rearrange tool')
+    parser = argparse.ArgumentParser(description='kitti15 rearrange tool')
     parser.add_argument('-i', '--input_path', required=True, type=str,
                         help='Root path of raw dataset.')
     parser.add_argument('-o', '--output_path', default='OUMVLP_rearranged', type=str,

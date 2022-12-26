@@ -21,4 +21,4 @@ The specific preprocessing steps are described inside each dataset folder.
 ## Split dataset
 For each dataset, we split the dataset into training and testing sets. The training set is used to train the model, and the testing set is used to evaluate the model.
 
-You can use the partition file in [dataset folder](CASIA-B/CASIA-B.json) directly, or you can create yours. Remember to set your path to the partition file in [config/*.yaml](../config/).
+You can use the partition file in [dataset folder](sceneflow/CASIA-B.json) directly, or you can create yours. Remember to set your path to the partition file in [config/*.yaml](../config/).

@@ -20,11 +20,11 @@ def cross_view_gallery_evaluation(feature, label, seq_type, view, dataset, metri
     '''More details can be found: More details can be found in 
         [A Comprehensive Study on the Evaluation of Silhouette-based Gait Recognition](https://ieeexplore.ieee.org/document/9928336).
     '''
-    probe_seq_dict = {'CASIA-B': {'NM': ['nm-01'], 'BG': ['bg-01'], 'CL': ['cl-01']},
-                      'OUMVLP': {'NM': ['00']}}
+    probe_seq_dict = {'sceneflow': {'NM': ['nm-01'], 'BG': ['bg-01'], 'CL': ['cl-01']},
+                      'kitti15': {'NM': ['00']}}
 
-    gallery_seq_dict = {'CASIA-B': ['nm-02', 'bg-02', 'cl-02'],
-                        'OUMVLP': ['01']}
+    gallery_seq_dict = {'sceneflow': ['nm-02', 'bg-02', 'cl-02'],
+                        'kitti15': ['01']}
 
     msg_mgr = get_msg_mgr()
     acc = {}
@@ -69,10 +69,10 @@ def cross_view_gallery_evaluation(feature, label, seq_type, view, dataset, metri
 
 
 def single_view_gallery_evaluation(feature, label, seq_type, view, dataset, metric):
-    probe_seq_dict = {'CASIA-B': {'NM': ['nm-05', 'nm-06'], 'BG': ['bg-01', 'bg-02'], 'CL': ['cl-01', 'cl-02']},
-                      'OUMVLP': {'NM': ['00']}}
-    gallery_seq_dict = {'CASIA-B': ['nm-01', 'nm-02', 'nm-03', 'nm-04'],
-                        'OUMVLP': ['01']}
+    probe_seq_dict = {'sceneflow': {'NM': ['nm-05', 'nm-06'], 'BG': ['bg-01', 'bg-02'], 'CL': ['cl-01', 'cl-02']},
+                      'kitti15': {'NM': ['00']}}
+    gallery_seq_dict = {'sceneflow': ['nm-01', 'nm-02', 'nm-03', 'nm-04'],
+                        'kitti15': ['01']}
     msg_mgr = get_msg_mgr()
     acc = {}
     view_list = sorted(np.unique(view))
@@ -113,7 +113,7 @@ def evaluate_indoor_dataset(data, dataset, metric='euc', cross_view_gallery=Fals
     label = np.array(label)
     view = np.array(view)
 
-    if dataset not in ('CASIA-B', 'OUMVLP'):
+    if dataset not in ('sceneflow', 'kitti15'):
         raise KeyError("DataSet %s hasn't been supported !" % dataset)
     if cross_view_gallery:
         return cross_view_gallery_evaluation(

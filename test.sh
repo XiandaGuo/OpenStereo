@@ -1,4 +1,4 @@
-# # **************** For CASIA-B ****************
+# # **************** For sceneflow ****************
 # # Baseline
 CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 opengait/main.py --cfgs ./configs/baseline/baseline.yaml --phase test
 
@@ -18,7 +18,7 @@ CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 o
 # CUDA_VISIBLE_DEVICES=2,5 python -m torch.distributed.launch --nproc_per_node=2 opengait/main.py --cfgs ./configs/gln/gln_phase2.yaml --phase test
 
 
-# # **************** For OUMVLP ****************
+# # **************** For kitti15 ****************
 # # Baseline
 # CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python -m torch.distributed.launch --nproc_per_node=8 opengait/main.py --cfgs ./configs/psmnet/baseline_OUMVLP.yaml --phase test
 
