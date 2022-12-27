@@ -1,67 +1,44 @@
-# OUMVLP
-Step1: Download URL: http://www.am.sanken.osaka-u.ac.jp/BiometricDB/GaitMVLP.html
+# Prepare KITTI 2015 dataset
 
-Step2: Unzip the dataset, you will get a structure directory like:
-```
-python datasets/OUMVLP/extractor.py --input_path Path_of_OUMVLP-base --output_path Path_of_OUMVLP-raw --password Given_Password
-```  
+KITTI stereo dataset is available at the KITTI [official website](https://www.cvlibs.net/datasets/kitti/eval_scene_flow.php?benchmark=stereo).
+Please download the dataset and place it in the `datasets/kitti15` directory.
+The directory structure should be as follows:
 
-- Original
-    ```
-    OUMVLP-raw
-        Silhouette_000-00 (view-sequence)
-            00001 (subject)
-                0001.png (frame)
-                0002.png (frame)
-                ......
-            00002
-                0001.png (frame)
-                0002.png (frame)
-                ......
-            ......
-        Silhouette_000-01
-            00001
-                0001.png (frame)
-                0002.png (frame)
-                ......
-            00002
-                0001.png (frame)
-                0002.png (frame)
-                ......
-            ......
-        Silhouette_015-00
-            ......
-        Silhouette_015-01
-            ......
-        ......
-    ```
-Step3 : To rearrange directory of OUMVLP dataset, turning to id-type-view structure, Run 
-```
-python datasets/OUMVLP/rearrange_OUMVLP.py --input_path Path_of_OUMVLP-raw --output_path Path_of_OUMVLP-rearranged
-```  
-
-Step4: Transforming images to pickle file, run 
-```
-python datasets/pretreatment.py --input_path Path_of_OUMVLP-rearranged --output_path Path_of_OUMVLP-pkl
+```text
+datasets
+|   kitti15
+|   |   ├── training
+|   |   |   ├── colmap
+|   |   |   |   ├── 000000
+|   |   |   |   |   ├── 000000.png
+|   |   |   |   |   ├── 000001.png
+|   |   |   |   |   ├── 000002.png
+...
+|   |   ├── testing
+|   |   |   ├── colmap
+|   |   |   |   ├── 000000
+|   |   |   |   |   ├── 000000.png
+|   |   |   |   |   ├── 000001.png
+|   |   |   |   |   ├── 000002.png
+...
+|   |   ├── train.txt
+|   |   ├── val.txt
 ```
 
-- Processed
-    ```
-    OUMVLP-pkl
-        00001 (subject)
-            00 (sequence)
-                000 (view)
-                    000.pkl (contains all frames)
-                015 (view)
-                    015.pkl (contains all frames)
-                ...
-            01 (sequence)
-                000 (view)
-                    000.pkl (contains all frames)
-                015 (view)
-                    015.pkl (contains all frames)
-                ......
-        00002 (subject)
-            ......
-        ......
-    ```
+### Reference
+
+```bibtex
+@ARTICLE{Menze2018JPRS,
+  author = {Moritz Menze and Christian Heipke and Andreas Geiger},
+  title = {Object Scene Flow},
+  journal = {ISPRS Journal of Photogrammetry and Remote Sensing (JPRS)},
+  year = {2018}
+}
+
+@INPROCEEDINGS{Menze2015ISA,
+  author = {Moritz Menze and Christian Heipke and Andreas Geiger},
+  title = {Joint 3D Estimation of Vehicles and Scene Flow},
+  booktitle = {ISPRS Workshop on Image Sequence Analysis (ISA)},
+  year = {2015}
+}
+```
