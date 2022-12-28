@@ -26,8 +26,9 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
 - [Xianda Guo (国显达)](https://scholar.google.com.hk/citations?hl=zh-CN&user=jPvOqgYAAAAJ), xianda_guo@163.com
 - ？？？
 - ？？？
-- [Yiqi Wang (王仪琦)](),邮箱
-- [Juntao Lu(陆俊陶)](),邮箱
+- [Yiqi Wang (王仪琦)](), 邮箱
+- [Juntao Lu (陆俊陶)](), juntao.lu@student.unimelb.edu.au
+
 
 ## Acknowledgement
-- PSMNet(code链接)
+- [PSMNet](https://github.com/JiaRenChang/PSMNet)
