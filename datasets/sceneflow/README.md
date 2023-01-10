@@ -7,7 +7,7 @@ Please download the following parts of FlyingThings3D dataset and place it in th
 
 The directory structure should be as follows:
 ```text
-datasets
+data
 |   sceneflow
 |   |   ├── frames_finalpass
 |   |   |   ├── TRAIN

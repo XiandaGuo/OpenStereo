@@ -22,7 +22,7 @@ opt = parser.parse_args()
 def initialization(cfgs, training):
     msg_mgr = get_msg_mgr()
     engine_cfg = cfgs['trainer_cfg'] if training else cfgs['evaluator_cfg']
-    output_path = os.path.join('output/', cfgs['data_cfg']['dataset_name'],
+    output_path = os.path.join('output/', cfgs['data_cfg']['name'],
                                cfgs['model_cfg']['model'], engine_cfg['save_name'])
     if training:
         msg_mgr.init_manager(output_path, opt.log_to_file, engine_cfg['log_iter'],
@@ -68,4 +68,7 @@ if __name__ == '__main__':
 
     training = (opt.phase == 'train')
     initialization(cfgs, training)
+    print("Initialization Finished!")
+    print(cfgs)
+    print("Start Running Model!")
     run_model(cfgs, training)

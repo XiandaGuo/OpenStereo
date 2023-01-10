@@ -14,20 +14,19 @@ import numpy as np
 import os.path as osp
 import torch.nn as nn
 import torch.optim as optim
-import torch.utils.data as tordata
-
 from tqdm import tqdm
-from torch.cuda.amp import autocast
-from torch.cuda.amp import GradScaler
 from abc import ABCMeta
 from abc import abstractmethod
+from torch.utils.data import DataLoader
+from torch.cuda.amp import autocast
+from torch.cuda.amp import GradScaler
 
 from . import backbones
 from .loss_aggregator import LossAggregator
 from data.transform import get_transform
 from data.collate_fn import CollateFn
 from data.dataset import DataSet
-import data.sampler as Samplers
+from data import sampler as Samplers
 from utils import Odict, mkdir, ddp_all_gather
 from utils import get_valid_args, is_list, is_dict, np2var, ts2np, list2var, get_attr_from
 from evaluation import evaluator as eval_functions
@@ -42,6 +41,7 @@ class MetaModel(metaclass=ABCMeta):
 
     This class defines the necessary functions for the base model, in the base model, we have implemented them.
     """
+
     @abstractmethod
     def get_loader(self, data_cfg):
         """Based on the given data_cfg, we get the data loader."""
@@ -133,13 +133,17 @@ class BaseModel(MetaModel, nn.Module):
         self.msg_mgr = get_msg_mgr()
         self.cfgs = cfgs
         self.iteration = 0
+        print("#" * 20)
+        print(cfgs)
+        print("#" * 20)
+
         self.engine_cfg = cfgs['trainer_cfg'] if training else cfgs['evaluator_cfg']
         if self.engine_cfg is None:
             raise Exception("Initialize a model without -Engine-Cfgs-")
 
         if training and self.engine_cfg['enable_float16']:
             self.Scaler = GradScaler()
-        self.save_path = osp.join('output/', cfgs['data_cfg']['dataset_name'],
+        self.save_path = osp.join('output/', cfgs['data_cfg']['name'],
                                   cfgs['model_cfg']['model'], self.engine_cfg['save_name'])
 
         self.build_network(cfgs['model_cfg'])
@@ -159,7 +163,7 @@ class BaseModel(MetaModel, nn.Module):
             "cuda", self.device))
 
         if training:
-            #self.loss_aggregator = LossAggregator(cfgs['loss_cfg'])
+            # self.loss_aggregator = LossAggregator(cfgs['loss_cfg'])
             self.optimizer = self.get_optimizer(self.cfgs['optimizer_cfg'])
             self.scheduler = self.get_scheduler(cfgs['scheduler_cfg'])
         self.train(training)
@@ -207,11 +211,12 @@ class BaseModel(MetaModel, nn.Module):
         vaild_args = get_valid_args(Sampler, sampler_cfg, free_keys=[
             'sample_type', 'type'])
         sampler = Sampler(dataset, **vaild_args)
+        collate_fn = CollateFn(dataset.label_set, sampler_cfg)
 
-        loader = tordata.DataLoader(
+        loader = DataLoader(
             dataset=dataset,
-            batch_sampler=sampler,
-            collate_fn=CollateFn(dataset.label_set, sampler_cfg),
+            # batch_sampler=sampler,
+            # collate_fn=collate_fn,
             num_workers=data_cfg['num_workers'])
         return loader
 
@@ -219,8 +224,9 @@ class BaseModel(MetaModel, nn.Module):
         self.msg_mgr.log_info(optimizer_cfg)
         optimizer = get_attr_from([optim], optimizer_cfg['solver'])
         valid_arg = get_valid_args(optimizer, optimizer_cfg, ['solver'])
-        optimizer = optimizer(
-            filter(lambda p: p.requires_grad, self.parameters()), **valid_arg)
+        # optimizer = optimizer(
+        #     filter(lambda p: p.requires_grad, self.parameters()), **valid_arg)
+        optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()))
         return optimizer
 
     def get_scheduler(self, scheduler_cfg):
@@ -296,34 +302,36 @@ class BaseModel(MetaModel, nn.Module):
         Args:
             inputs: the input data.
         Returns:
-            tuple: training data including inputs, labels, and some meta data.
+            dict: training data including left image, right image, disp image,
+                  and some meta data.
         """
-        seqs_batch, labs_batch, typs_batch, vies_batch, seqL_batch = inputs
-        trf_cfgs = self.engine_cfg['transform']
-        seq_trfs = get_transform(trf_cfgs)
-        if len(seqs_batch) != len(seq_trfs):
-            raise ValueError(
-                "The number of types of input data and transform should be same. But got {} and {}".format(len(seqs_batch), len(seq_trfs)))
-        requires_grad = bool(self.training)
-        seqs = [np2var(np.asarray([trf(fra) for fra in seq]), requires_grad=requires_grad).float()
-                for trf, seq in zip(seq_trfs, seqs_batch)]
-
-        typs = typs_batch
-        vies = vies_batch
-
-        labs = list2var(labs_batch).long()
-
-        if seqL_batch is not None:
-            seqL_batch = np2var(seqL_batch).int()
-        seqL = seqL_batch
-
-        if seqL is not None:
-            seqL_sum = int(seqL.sum().data.cpu().numpy())
-            ipts = [_[:, :seqL_sum] for _ in seqs]
-        else:
-            ipts = seqs
-        del seqs
-        return ipts, labs, typs, vies, seqL
+        # seqs_batch, labs_batch, typs_batch, vies_batch, seqL_batch = inputs
+        # trf_cfgs = self.engine_cfg['transform']
+        # seq_trfs = get_transform(trf_cfgs)
+        # if len(seqs_batch) != len(seq_trfs):
+        #     raise ValueError(
+        #         "The number of types of input data and transform should be same. But got {} and {}".format(len(seqs_batch), len(seq_trfs)))
+        # requires_grad = bool(self.training)
+        # seqs = [np2var(np.asarray([trf(fra) for fra in seq]), requires_grad=requires_grad).float()
+        #         for trf, seq in zip(seq_trfs, seqs_batch)]
+        #
+        # typs = typs_batch
+        # vies = vies_batch
+        #
+        # labs = list2var(labs_batch).long()
+        #
+        # if seqL_batch is not None:
+        #     seqL_batch = np2var(seqL_batch).int()
+        # seqL = seqL_batch
+        #
+        # if seqL is not None:
+        #     seqL_sum = int(seqL.sum().data.cpu().numpy())
+        #     ipts = [_[:, :seqL_sum] for _ in seqs]
+        # else:
+        #     ipts = seqs
+        # del seqs
+        # return ipts, labs, typs, vies, seqL
+        return inputs
 
     def train_step(self, loss_sum) -> bool:
         """Conduct loss_sum.backward(), self.optimizer.step() and self.scheduler.step().
@@ -347,8 +355,9 @@ class BaseModel(MetaModel, nn.Module):
             # Warning caused by optimizer skip when NaN
             # https://discuss.pytorch.org/t/optimizer-step-before-lr-scheduler-step-error-using-gradscaler/92930/5
             if scale != self.Scaler.get_scale():
-                self.msg_mgr.log_debug("Training step skip. Expected the former scale equals to the present, got {} and {}".format(
-                    scale, self.Scaler.get_scale()))
+                self.msg_mgr.log_debug(
+                    "Training step skip. Expected the former scale equals to the present, got {} and {}".format(
+                        scale, self.Scaler.get_scale()))
                 return False
         else:
             loss_sum.backward()
@@ -397,13 +406,13 @@ class BaseModel(MetaModel, nn.Module):
             info_dict[k] = v
         return info_dict
 
-
-    @ staticmethod
+    @staticmethod
     def run_train(model):
         """Accept the instance object(model) here, and then run the train loop."""
         for inputs in model.train_loader:
             ipts = model.inputs_pretreament(inputs)
             with autocast(enabled=model.engine_cfg['enable_float16']):
+
                 retval = model(ipts)
                 training_feat, visual_summary = retval['training_feat'], retval['visual_summary']
                 del retval
@@ -433,7 +442,7 @@ class BaseModel(MetaModel, nn.Module):
             if model.iteration >= model.engine_cfg['total_iter']:
                 break
 
-    @ staticmethod
+    @staticmethod
     def run_test(model):
         """Accept the instance object(model) here, and then run the test loop."""
 
