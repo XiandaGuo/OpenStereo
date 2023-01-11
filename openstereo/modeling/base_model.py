@@ -163,7 +163,7 @@ class BaseModel(MetaModel, nn.Module):
             "cuda", self.device))
 
         if training:
-            # self.loss_aggregator = LossAggregator(cfgs['loss_cfg'])
+            self.loss_aggregator = LossAggregator(cfgs['loss_cfg'])
             self.optimizer = self.get_optimizer(self.cfgs['optimizer_cfg'])
             self.scheduler = self.get_scheduler(cfgs['scheduler_cfg'])
         self.train(training)
@@ -305,32 +305,18 @@ class BaseModel(MetaModel, nn.Module):
             dict: training data including left image, right image, disp image,
                   and some meta data.
         """
-        # seqs_batch, labs_batch, typs_batch, vies_batch, seqL_batch = inputs
-        # trf_cfgs = self.engine_cfg['transform']
-        # seq_trfs = get_transform(trf_cfgs)
-        # if len(seqs_batch) != len(seq_trfs):
-        #     raise ValueError(
-        #         "The number of types of input data and transform should be same. But got {} and {}".format(len(seqs_batch), len(seq_trfs)))
-        # requires_grad = bool(self.training)
-        # seqs = [np2var(np.asarray([trf(fra) for fra in seq]), requires_grad=requires_grad).float()
-        #         for trf, seq in zip(seq_trfs, seqs_batch)]
-        #
-        # typs = typs_batch
-        # vies = vies_batch
-        #
-        # labs = list2var(labs_batch).long()
-        #
-        # if seqL_batch is not None:
-        #     seqL_batch = np2var(seqL_batch).int()
-        # seqL = seqL_batch
-        #
-        # if seqL is not None:
-        #     seqL_sum = int(seqL.sum().data.cpu().numpy())
-        #     ipts = [_[:, :seqL_sum] for _ in seqs]
-        # else:
-        #     ipts = seqs
-        # del seqs
-        # return ipts, labs, typs, vies, seqL
+        disp_gt = inputs['disp']
+        max_disp = self.cfgs['model_cfg']['max_disp']
+
+        # asure the disp_gt has the shape of [B, H, W]
+        if len(disp_gt.shape) == 4:
+            disp_gt = disp_gt.squeeze(1)
+            inputs.update({'disp': disp_gt})
+
+        # compute the mask of valid disp_gt
+        mask = (disp_gt < max_disp) & (disp_gt > 0)
+        inputs.update({'mask': mask})
+
         return inputs
 
     def train_step(self, loss_sum) -> bool:
@@ -413,14 +399,14 @@ class BaseModel(MetaModel, nn.Module):
             ipts = model.inputs_pretreament(inputs)
             with autocast(enabled=model.engine_cfg['enable_float16']):
 
-                retval = model(ipts)
-                training_feat, visual_summary = retval['training_feat'], retval['visual_summary']
-                del retval
-            loss_sum, loss_info = model.loss_aggregator(training_feat)
+                output = model(ipts)
+                # disp, middle = output['disp'], output['middle']
+                # del output
+            loss_sum, loss_info = model.loss_aggregator(output)
             ok = model.train_step(loss_sum)
             if not ok:
                 continue
-
+            visual_summary = {}
             visual_summary.update(loss_info)
             visual_summary['scalar/learning_rate'] = model.optimizer.param_groups[0]['lr']
 

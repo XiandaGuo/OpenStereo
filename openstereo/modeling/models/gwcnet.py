@@ -188,131 +188,131 @@ class hourglass(nn.Module):
         return conv6
 
 
-class GNet(nn.Module):
-    def __init__(self, maxdisp, use_concat_volume=False):
-        super().__init__()
-        self.maxdisp = maxdisp
-        self.use_concat_volume = use_concat_volume
-
-        self.num_groups = 40
-
-        if self.use_concat_volume:
-            self.concat_channels = 12
-            self.feature_extraction = feature_extraction(concat_feature=True,
-                                                         concat_feature_channel=self.concat_channels)
-        else:
-            self.concat_channels = 0
-            self.feature_extraction = feature_extraction(concat_feature=False)
-
-        self.dres0 = nn.Sequential(convbn_3d(self.num_groups + self.concat_channels * 2, 32, 3, 1, 1),
-                                   nn.ReLU(inplace=True),
-                                   convbn_3d(32, 32, 3, 1, 1),
-                                   nn.ReLU(inplace=True))
-
-        self.dres1 = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
-                                   nn.ReLU(inplace=True),
-                                   convbn_3d(32, 32, 3, 1, 1))
-
-        self.dres2 = hourglass(32)
-
-        self.dres3 = hourglass(32)
-
-        self.dres4 = hourglass(32)
-
-        self.classif0 = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
-                                      nn.ReLU(inplace=True),
-                                      nn.Conv3d(32, 1, kernel_size=3, padding=1, stride=1, bias=False))
-
-        self.classif1 = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
-                                      nn.ReLU(inplace=True),
-                                      nn.Conv3d(32, 1, kernel_size=3, padding=1, stride=1, bias=False))
-
-        self.classif2 = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
-                                      nn.ReLU(inplace=True),
-                                      nn.Conv3d(32, 1, kernel_size=3, padding=1, stride=1, bias=False))
-
-        self.classif3 = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
-                                      nn.ReLU(inplace=True),
-                                      nn.Conv3d(32, 1, kernel_size=3, padding=1, stride=1, bias=False))
-
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
-            elif isinstance(m, nn.Conv3d):
-                n = m.kernel_size[0] * m.kernel_size[1] * m.kernel_size[2] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
-            elif isinstance(m, nn.BatchNorm3d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
-            elif isinstance(m, nn.Linear):
-                m.bias.data.zero_()
-
-    def forward(self, left, right):
-        features_left = self.feature_extraction(left)
-        features_right = self.feature_extraction(right)
-
-        gwc_volume = build_gwc_volume(features_left["gwc_feature"], features_right["gwc_feature"], self.maxdisp // 4,
-                                      self.num_groups)
-        if self.use_concat_volume:
-            concat_volume = build_concat_volume(features_left["concat_feature"], features_right["concat_feature"],
-                                                self.maxdisp // 4)
-            volume = torch.cat((gwc_volume, concat_volume), 1)
-        else:
-            volume = gwc_volume
-
-        cost0 = self.dres0(volume)
-        cost0 = self.dres1(cost0) + cost0
-
-        out1 = self.dres2(cost0)
-        out2 = self.dres3(out1)
-        out3 = self.dres4(out2)
-
-        if self.training:
-            cost0 = self.classif0(cost0)
-            cost1 = self.classif1(out1)
-            cost2 = self.classif2(out2)
-            cost3 = self.classif3(out3)
-
-            cost0 = F.interpolate(cost0, [self.maxdisp, left.size()[2], left.size()[3]], mode='trilinear')
-            cost0 = torch.squeeze(cost0, 1)
-            pred0 = F.softmax(cost0, dim=1)
-            pred0 = disparity_regression(pred0, self.maxdisp)
-
-            cost1 = F.interpolate(cost1, [self.maxdisp, left.size()[2], left.size()[3]], mode='trilinear')
-            cost1 = torch.squeeze(cost1, 1)
-            pred1 = F.softmax(cost1, dim=1)
-            pred1 = disparity_regression(pred1, self.maxdisp)
-
-            cost2 = F.interpolate(cost2, [self.maxdisp, left.size()[2], left.size()[3]], mode='trilinear')
-            cost2 = torch.squeeze(cost2, 1)
-            pred2 = F.softmax(cost2, dim=1)
-            pred2 = disparity_regression(pred2, self.maxdisp)
-
-            cost3 = F.interpolate(cost3, [self.maxdisp, left.size()[2], left.size()[3]], mode='trilinear')
-            cost3 = torch.squeeze(cost3, 1)
-            pred3 = F.softmax(cost3, dim=1)
-            pred3 = disparity_regression(pred3, self.maxdisp)
-            return [pred0, pred1, pred2, pred3]
-
-        else:
-            cost3 = self.classif3(out3)
-            cost3 = F.interpolate(cost3, [self.maxdisp, left.size()[2], left.size()[3]], mode='trilinear')
-            cost3 = torch.squeeze(cost3, 1)
-            pred3 = F.softmax(cost3, dim=1)
-            pred3 = disparity_regression(pred3, self.maxdisp)
-            return [pred3]
-
-
-def GwcNet_G(d):
-    return GwcNet(d, use_concat_volume=False)
-
-
-def GwcNet_GC(d):
-    return GwcNet(d, use_concat_volume=True)
+# class GNet(nn.Module):
+#     def __init__(self, maxdisp, use_concat_volume=False):
+#         super().__init__()
+#         self.maxdisp = maxdisp
+#         self.use_concat_volume = use_concat_volume
+#
+#         self.num_groups = 40
+#
+#         if self.use_concat_volume:
+#             self.concat_channels = 12
+#             self.feature_extraction = feature_extraction(concat_feature=True,
+#                                                          concat_feature_channel=self.concat_channels)
+#         else:
+#             self.concat_channels = 0
+#             self.feature_extraction = feature_extraction(concat_feature=False)
+#
+#         self.dres0 = nn.Sequential(convbn_3d(self.num_groups + self.concat_channels * 2, 32, 3, 1, 1),
+#                                    nn.ReLU(inplace=True),
+#                                    convbn_3d(32, 32, 3, 1, 1),
+#                                    nn.ReLU(inplace=True))
+#
+#         self.dres1 = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
+#                                    nn.ReLU(inplace=True),
+#                                    convbn_3d(32, 32, 3, 1, 1))
+#
+#         self.dres2 = hourglass(32)
+#
+#         self.dres3 = hourglass(32)
+#
+#         self.dres4 = hourglass(32)
+#
+#         self.classif0 = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
+#                                       nn.ReLU(inplace=True),
+#                                       nn.Conv3d(32, 1, kernel_size=3, padding=1, stride=1, bias=False))
+#
+#         self.classif1 = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
+#                                       nn.ReLU(inplace=True),
+#                                       nn.Conv3d(32, 1, kernel_size=3, padding=1, stride=1, bias=False))
+#
+#         self.classif2 = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
+#                                       nn.ReLU(inplace=True),
+#                                       nn.Conv3d(32, 1, kernel_size=3, padding=1, stride=1, bias=False))
+#
+#         self.classif3 = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
+#                                       nn.ReLU(inplace=True),
+#                                       nn.Conv3d(32, 1, kernel_size=3, padding=1, stride=1, bias=False))
+#
+#         for m in self.modules():
+#             if isinstance(m, nn.Conv2d):
+#                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+#                 m.weight.data.normal_(0, math.sqrt(2. / n))
+#             elif isinstance(m, nn.Conv3d):
+#                 n = m.kernel_size[0] * m.kernel_size[1] * m.kernel_size[2] * m.out_channels
+#                 m.weight.data.normal_(0, math.sqrt(2. / n))
+#             elif isinstance(m, nn.BatchNorm2d):
+#                 m.weight.data.fill_(1)
+#                 m.bias.data.zero_()
+#             elif isinstance(m, nn.BatchNorm3d):
+#                 m.weight.data.fill_(1)
+#                 m.bias.data.zero_()
+#             elif isinstance(m, nn.Linear):
+#                 m.bias.data.zero_()
+#
+#     def forward(self, left, right):
+#         features_left = self.feature_extraction(left)
+#         features_right = self.feature_extraction(right)
+#
+#         gwc_volume = build_gwc_volume(features_left["gwc_feature"], features_right["gwc_feature"], self.maxdisp // 4,
+#                                       self.num_groups)
+#         if self.use_concat_volume:
+#             concat_volume = build_concat_volume(features_left["concat_feature"], features_right["concat_feature"],
+#                                                 self.maxdisp // 4)
+#             volume = torch.cat((gwc_volume, concat_volume), 1)
+#         else:
+#             volume = gwc_volume
+#
+#         cost0 = self.dres0(volume)
+#         cost0 = self.dres1(cost0) + cost0
+#
+#         out1 = self.dres2(cost0)
+#         out2 = self.dres3(out1)
+#         out3 = self.dres4(out2)
+#
+#         if self.training:
+#             cost0 = self.classif0(cost0)
+#             cost1 = self.classif1(out1)
+#             cost2 = self.classif2(out2)
+#             cost3 = self.classif3(out3)
+#
+#             cost0 = F.interpolate(cost0, [self.maxdisp, left.size()[2], left.size()[3]], mode='trilinear')
+#             cost0 = torch.squeeze(cost0, 1)
+#             pred0 = F.softmax(cost0, dim=1)
+#             pred0 = disparity_regression(pred0, self.maxdisp)
+#
+#             cost1 = F.interpolate(cost1, [self.maxdisp, left.size()[2], left.size()[3]], mode='trilinear')
+#             cost1 = torch.squeeze(cost1, 1)
+#             pred1 = F.softmax(cost1, dim=1)
+#             pred1 = disparity_regression(pred1, self.maxdisp)
+#
+#             cost2 = F.interpolate(cost2, [self.maxdisp, left.size()[2], left.size()[3]], mode='trilinear')
+#             cost2 = torch.squeeze(cost2, 1)
+#             pred2 = F.softmax(cost2, dim=1)
+#             pred2 = disparity_regression(pred2, self.maxdisp)
+#
+#             cost3 = F.interpolate(cost3, [self.maxdisp, left.size()[2], left.size()[3]], mode='trilinear')
+#             cost3 = torch.squeeze(cost3, 1)
+#             pred3 = F.softmax(cost3, dim=1)
+#             pred3 = disparity_regression(pred3, self.maxdisp)
+#             return [pred0, pred1, pred2, pred3]
+#
+#         else:
+#             cost3 = self.classif3(out3)
+#             cost3 = F.interpolate(cost3, [self.maxdisp, left.size()[2], left.size()[3]], mode='trilinear')
+#             cost3 = torch.squeeze(cost3, 1)
+#             pred3 = F.softmax(cost3, dim=1)
+#             pred3 = disparity_regression(pred3, self.maxdisp)
+#             return [pred3]
+#
+#
+# def GwcNet_G(d):
+#     return GwcNet(d, use_concat_volume=False)
+#
+#
+# def GwcNet_GC(d):
+#     return GwcNet(d, use_concat_volume=True)
 
 
 class GwcNet(BaseModel):
@@ -383,7 +383,7 @@ class GwcNet(BaseModel):
         print("GwcNet built.")
 
     def forward(self, data):
-        left, right = data['left'], data['right']
+        left, right, mask = data['left'], data['right'], data['mask']
         features_left = self.feature_extraction(left)
         features_right = self.feature_extraction(right)
 
@@ -428,7 +428,21 @@ class GwcNet(BaseModel):
             cost3 = torch.squeeze(cost3, 1)
             pred3 = F.softmax(cost3, dim=1)
             pred3 = disparity_regression(pred3, self.maxdisp)
-            return [pred0, pred1, pred2, pred3]
+            output = {
+                "training_disp": {
+                    "disp": pred3,
+                    "middle_disp": [pred0, pred1, pred2],
+                    "mask": mask,
+                    "gt_disp": data['disp']
+                },
+                "inference_disp": {
+                    "disp": pred3,
+                },
+                "visual_summary": {
+
+                }
+            }
+            return output
 
         else:
             cost3 = self.classif3(out3)
@@ -436,5 +450,15 @@ class GwcNet(BaseModel):
             cost3 = torch.squeeze(cost3, 1)
             pred3 = F.softmax(cost3, dim=1)
             pred3 = disparity_regression(pred3, self.maxdisp)
-            return [pred3]
+            output = {
+                "training_disp": {
+                    None
+                },
+                "inference_disp": {
+                    "disp": pred3,
+                },
+                "visual_summary": {
 
+                }
+            }
+            return output

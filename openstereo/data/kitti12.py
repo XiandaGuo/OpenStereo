@@ -31,14 +31,14 @@ class Kitti12(StereoBase):
         if self.train:
             img_transform = transforms.Compose([
                 transforms.Resize((384, 1248)),
-                transforms.RandomCrop((384, 1248)),
+                transforms.RandomCrop((256, 512)),
                 transforms.RandomHorizontalFlip(),
                 # transforms.ToTensor(),
             ])
 
             disp_transform = transforms.Compose([
                 transforms.Resize((384, 1248)),
-                transforms.RandomCrop((384, 1248)),
+                transforms.RandomCrop((256, 512)),
                 transforms.RandomHorizontalFlip(),
                 # transforms.ToTensor(),
             ])
@@ -52,12 +52,12 @@ class Kitti12(StereoBase):
             return transform
         else:
             img_transform = transforms.Compose([
-                transforms.Resize((384, 1248)),
+                transforms.Resize((256, 512)),
                 # transforms.ToTensor(),
             ])
 
             disp_transform = transforms.Compose([
-                transforms.Resize((384, 1248)),
+                transforms.Resize((256, 512)),
                 # transforms.ToTensor(),
             ])
 
