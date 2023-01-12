@@ -21,14 +21,13 @@ model_cfg:
   concat_volume: True
 
 optimizer_cfg:
-  lr: 1e-3
-  momentum: 0.9
-  solver: SGD
+  solver: Adam
+  lr: 0.001
   weight_decay: 0.0005
 
 
 loss_cfg:
-    type: Weighted_Smooth_l1_Loss
+  type: Weighted_Smooth_l1_Loss
 
 scheduler_cfg:
   gamma: 0.1
@@ -39,20 +38,49 @@ scheduler_cfg:
 
 
 trainer_cfg:
-  enable_float16: False # half_percesion float for memory reduction and speedup
+  enable_float16: False
   fix_BN: false
-  log_iter: 100
+  log_iter: 10
   with_test: true
   restore_ckpt_strict: true
   restore_hint: 0
   save_iter: 10000
-  save_name: Baseline
+  save_name: GwcNet_kitti12
   sync_BN: true
   total_iter: 60000
 
+  sampler:
+    type: BasicStereoSampler
+    batch_shuffle: false
+    batch_size: 2
+#    frames_num_fixed: 30
+#    frames_num_max: 50
+#    frames_num_min: 25
+#    sample_type: fixed_unordered
+
+  transform:
+    - img_w: 64
+      type: BaseSilCuttingTransform
+
+
 evaluator_cfg:
-  enable_float16: False # half_percesion float for memory reduction and speedup
+  enable_float16: False
   fix_BN: false
   restore_ckpt_strict: true
   restore_hint: 0
   sync_BN: true
+
+  sampler:
+    type: BasicStereoSampler
+    batch_shuffle: false
+    batch_size: 2
+#      - 8
+#      - 16
+#    frames_num_fixed: 30
+#    frames_num_max: 50
+#    frames_num_min: 25
+#    sample_type: fixed_unordered
+
+  transform:
+    - img_w: 64
+      type: BaseSilCuttingTransform

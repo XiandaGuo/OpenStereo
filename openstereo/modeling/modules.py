@@ -1,5 +1,5 @@
-import torch
 import numpy as np
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.ops import RoIAlign
@@ -163,14 +163,15 @@ class FocalConv2d(nn.Module):
             z = self.conv(x)
         else:
             h = x.size(2)
-            split_size = int(h // 2**self.halving)
+            split_size = int(h // 2 ** self.halving)
             z = x.split(split_size, 2)
             z = torch.cat([self.conv(_) for _ in z], 2)
         return z
 
 
 class BasicConv3d(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1), bias=False, **kwargs):
+    def __init__(self, in_channels, out_channels, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1),
+                 bias=False, **kwargs):
         super(BasicConv3d, self).__init__()
         self.conv3d = nn.Conv3d(in_channels, out_channels, kernel_size=kernel_size,
                                 stride=stride, padding=padding, bias=bias, **kwargs)
@@ -205,7 +206,7 @@ class GaitAlign(nn.Module):
         _ = (h_sum >= self.eps).float().cumsum(axis=-1)  # [n, c, h]
         h_top = (_ == 0).float().sum(-1)  # [n, c]
         h_bot = (_ != torch.max(_, dim=-1, keepdim=True)
-                 [0]).float().sum(-1) + 1.  # [n, c]
+        [0]).float().sum(-1) + 1.  # [n, c]
 
         w_sum = binary_mask.sum(-2)  # [n, c, w]
         w_cumsum = w_sum.cumsum(axis=-1)  # [n, c, w]
@@ -228,8 +229,8 @@ class GaitAlign(nn.Module):
         w_left = w_center - width / 2 - p2  # [n, c]
         w_right = w_center + width / 2 + p2  # [n, c]
 
-        w_left = torch.clamp(w_left, min=0., max=w+2*width_p)
-        w_right = torch.clamp(w_right, min=0., max=w+2*width_p)
+        w_left = torch.clamp(w_left, min=0., max=w + 2 * width_p)
+        w_right = torch.clamp(w_right, min=0., max=w + 2 * width_p)
 
         boxes = torch.cat([w_left, h_top, w_right, h_bot], dim=-1)
         # index of bbox in batch

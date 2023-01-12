@@ -1,6 +1,7 @@
 import torch
-from .base import BaseLoss
+
 from evaluation import mean_iou
+from .base import BaseLoss
 
 
 class BinaryCrossEntropyLoss(BaseLoss):

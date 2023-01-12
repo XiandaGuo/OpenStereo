@@ -1,8 +1,9 @@
 import os
 from time import strftime, localtime
-import numpy as np
-from utils import get_msg_mgr, mkdir
 
+import numpy as np
+
+from utils import get_msg_mgr, mkdir
 from .metric import mean_iou, cuda_dist, compute_ACC_mAP, evaluate_rank
 from .re_rank import re_ranking
 
@@ -65,6 +66,7 @@ def cross_view_gallery_evaluation(feature, label, seq_type, view, dataset, metri
     msg_mgr.log_info(f'{out_map_str}')
     return result_dict
 
+
 # Modified From https://github.com/AbnerHqC/GaitSet/blob/master/model/utils/evaluator.py
 
 
@@ -93,8 +95,9 @@ def single_view_gallery_evaluation(feature, label, seq_type, view, dataset, metr
                 gallery_x = feature[gseq_mask, :]
                 dist = cuda_dist(probe_x, gallery_x, metric)
                 idx = dist.cpu().sort(1)[1].numpy()
-                acc[type_][v1, v2] = np.round(np.sum(np.cumsum(np.reshape(probe_y, [-1, 1]) == gallery_y[idx[:, 0:num_rank]], 1) > 0,
-                                                     0) * 100 / dist.shape[0], 2)
+                acc[type_][v1, v2] = np.round(
+                    np.sum(np.cumsum(np.reshape(probe_y, [-1, 1]) == gallery_y[idx[:, 0:num_rank]], 1) > 0,
+                           0) * 100 / dist.shape[0], 2)
 
     result_dict = {}
     msg_mgr.log_info('===Rank-1 (Exclude identical-view cases)===')
@@ -177,13 +180,14 @@ def GREW_submission(data, dataset, metric='euc'):
     idx = dist.cpu().sort(1)[1].numpy()
 
     save_path = os.path.join(
-        "GREW_result/"+strftime('%Y-%m%d-%H%M%S', localtime())+".csv")
+        "GREW_result/" + strftime('%Y-%m%d-%H%M%S', localtime()) + ".csv")
     mkdir("GREW_result")
     with open(save_path, "w") as f:
-        f.write("videoId,rank1,rank2,rank3,rank4,rank5,rank6,rank7,rank8,rank9,rank10,rank11,rank12,rank13,rank14,rank15,rank16,rank17,rank18,rank19,rank20\n")
+        f.write(
+            "videoId,rank1,rank2,rank3,rank4,rank5,rank6,rank7,rank8,rank9,rank10,rank11,rank12,rank13,rank14,rank15,rank16,rank17,rank18,rank19,rank20\n")
         for i in range(len(idx)):
             r_format = [int(idx) for idx in gallery_y[idx[i, 0:20]]]
-            output_row = '{}'+',{}'*20+'\n'
+            output_row = '{}' + ',{}' * 20 + '\n'
             f.write(output_row.format(probe_y[i], *r_format))
         print("GREW result saved to {}/{}".format(os.getcwd(), save_path))
     return
@@ -209,7 +213,7 @@ def HID_submission(data, dataset, metric='euc'):
     idx = np.argsort(re_rank, axis=1)
 
     save_path = os.path.join(
-        "HID_result/"+strftime('%Y-%m%d-%H%M%S', localtime())+".csv")
+        "HID_result/" + strftime('%Y-%m%d-%H%M%S', localtime()) + ".csv")
     mkdir("HID_result")
     with open(save_path, "w") as f:
         f.write("videoID,label\n")
@@ -225,6 +229,7 @@ def evaluate_segmentation(data, dataset):
     miou = mean_iou(pred, labels)
     get_msg_mgr().log_info('mIOU: %.3f' % (miou.mean()))
     return {"scalar/test_accuracy/mIOU": miou}
+
 
 def evaluate_Gait3D(data, conf, metric='euc'):
     msg_mgr = get_msg_mgr()

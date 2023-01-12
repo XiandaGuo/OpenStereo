@@ -1,6 +1,8 @@
 import math
 import random
+
 import numpy as np
+
 from utils import get_msg_mgr
 
 
@@ -59,7 +61,7 @@ class CollateFn(object):
                     frames_num = self.frames_num_fixed
                 else:
                     frames_num = random.choice(
-                        list(range(self.frames_num_min, self.frames_num_max+1)))
+                        list(range(self.frames_num_min, self.frames_num_max + 1)))
 
                 if self.ordered:
                     fs_n = frames_num + self.frames_skip_num
@@ -80,14 +82,16 @@ class CollateFn(object):
 
                     if seq_len == 0:
                         get_msg_mgr().log_debug('Find no frames in the sequence %s-%s-%s.'
-                                                % (str(labs_batch[count]), str(typs_batch[count]), str(vies_batch[count])))
+                                                % (
+                                                str(labs_batch[count]), str(typs_batch[count]), str(vies_batch[count])))
 
                     count += 1
                     indices = np.random.choice(
                         indices, frames_num, replace=replace)
 
             for i in range(feature_num):
-                for j in indices[:self.frames_all_limit] if self.frames_all_limit > -1 and len(indices) > self.frames_all_limit else indices:
+                for j in indices[:self.frames_all_limit] if self.frames_all_limit > -1 and len(
+                        indices) > self.frames_all_limit else indices:
                     sampled_fras[i].append(seqs[i][j])
             return sampled_fras
 
@@ -105,8 +109,10 @@ class CollateFn(object):
             seqL_batch = [[len(fras_batch[i][0])
                            for i in range(batch_size)]]  # [1, p]
 
-            def my_cat(k): return np.concatenate(
-                [fras_batch[i][k] for i in range(batch_size)], 0)
+            def my_cat(k):
+                return np.concatenate(
+                    [fras_batch[i][k] for i in range(batch_size)], 0)
+
             fras_batch = [[my_cat(k)] for k in range(feature_num)]  # [f, g]
 
             batch[-1] = np.asarray(seqL_batch)

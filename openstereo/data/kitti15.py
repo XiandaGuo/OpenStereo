@@ -1,12 +1,11 @@
 import os
-import torch
-import torch.utils.data as data
-import torch
-import torchvision.transforms as transforms
 import random
-from PIL import Image, ImageOps
+
 import numpy as np
-#import preprocess
+import torch.utils.data as data
+from PIL import Image
+
+# import preprocess
 from utils.preprocess import get_transform
 
 IMG_EXTENSIONS = [
@@ -82,7 +81,6 @@ class KITTI2015(data.Dataset):
 
     def __len__(self):
         return len(self.left)
-
 
     @staticmethod
     def Imageloader(filepath):

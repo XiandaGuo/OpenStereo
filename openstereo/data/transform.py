@@ -1,5 +1,4 @@
 import numpy as np
-from torchvision.ops import RoIAlign
 
 from data import transform as base_transform
 from utils import is_list, is_dict, get_valid_args
@@ -41,9 +40,9 @@ class BaseSilCuttingTransform():
 class BaseRgbTransform():
     def __init__(self, mean=None, std=None):
         if mean is None:
-            mean = [0.485*255, 0.456*255, 0.406*255]
+            mean = [0.485 * 255, 0.456 * 255, 0.406 * 255]
         if std is None:
-            std = [0.229*255, 0.224*255, 0.225*255]
+            std = [0.229 * 255, 0.224 * 255, 0.225 * 255]
         self.mean = np.array(mean).reshape((1, 3, 1, 1))
         self.std = np.array(std).reshape((1, 3, 1, 1))
 

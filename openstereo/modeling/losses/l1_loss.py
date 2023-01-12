@@ -1,4 +1,3 @@
-import torch
 import torch.nn.functional as F
 
 from .base import BaseLoss
@@ -20,13 +19,11 @@ class Weighted_Smooth_l1_Loss(BaseLoss):
         self.reduction = reduction
 
     def forward(self, disp_ests, disp_gt, mask=None):
-
         weights = [0.5, 0.5, 0.7, 1.0]
         all_losses = []
         for disp_est, weight in zip(disp_ests, weights):
             all_losses.append(weight * F.smooth_l1_loss(disp_est[mask], disp_gt[mask], reduction=self.reduction))
         return sum(all_losses)
-
 
         # all_losses = []
         # if mask is None:

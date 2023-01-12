@@ -1,10 +1,11 @@
 from __future__ import print_function
+
 import math
+
 import torch
 import torch.nn as nn
-import torch.utils.data
-from torch.autograd import Variable
 import torch.nn.functional as F
+import torch.utils.data
 
 from modeling.base_model import BaseModel
 

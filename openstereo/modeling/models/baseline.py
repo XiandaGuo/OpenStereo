@@ -40,7 +40,7 @@ class Baseline(BaseModel):
                 'softmax': {'logits': logits, 'labels': labs}
             },
             'visual_summary': {
-                'image/sils': sils.view(n*s, 1, h, w)
+                'image/sils': sils.view(n * s, 1, h, w)
             },
             'inference_feat': {
                 'embeddings': embed

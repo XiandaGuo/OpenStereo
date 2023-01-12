@@ -4,6 +4,7 @@
 """
 
 import torch.nn as nn
+
 from ..modules import BasicConv2d, FocalConv2d
 
 
@@ -39,6 +40,7 @@ class Plain(nn.Module):
         """
         Reference: torchvision/models/vgg.py
         """
+
         def get_layer(cfg, in_c, kernel_size, stride, padding):
             cfg = cfg.split('-')
             typ = cfg[0]
@@ -48,7 +50,8 @@ class Plain(nn.Module):
 
             if typ == 'BC':
                 return BasicConv2d(in_c, out_c, kernel_size=kernel_size, stride=stride, padding=padding)
-            return FocalConv2d(in_c, out_c, kernel_size=kernel_size, stride=stride, padding=padding, halving=int(cfg[2]))
+            return FocalConv2d(in_c, out_c, kernel_size=kernel_size, stride=stride, padding=padding,
+                               halving=int(cfg[2]))
 
         Layers = [get_layer(self.layers_cfg[0], self.in_channels,
                             5, 1, 2), nn.LeakyReLU(inplace=True)]

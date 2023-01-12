@@ -1,14 +1,14 @@
-import time
-import torch
-
-import numpy as np
-import torchvision.utils as vutils
+import logging
 import os.path as osp
+import time
 from time import strftime, localtime
 
+import torch
+import numpy as np
+import torchvision.utils as vutils
 from torch.utils.tensorboard import SummaryWriter
+
 from .common import is_list, is_tensor, ts2np, mkdir, Odict, NoOp
-import logging
 
 
 class MessageManager:
@@ -35,7 +35,7 @@ class MessageManager:
         if log_to_file:
             mkdir(osp.join(save_path, "logs/"))
             vlog = logging.FileHandler(
-                osp.join(save_path, "logs/", strftime('%Y-%m-%d-%H-%M-%S', localtime())+'.txt'))
+                osp.join(save_path, "logs/", strftime('%Y-%m-%d-%H-%M-%S', localtime()) + '.txt'))
             vlog.setLevel(logging.INFO)
             vlog.setFormatter(formatter)
             self.logger.addHandler(vlog)
@@ -84,7 +84,7 @@ class MessageManager:
             if 'scalar' not in k:
                 continue
             k = k.replace('scalar/', '').replace('/', '_')
-            end = "\n" if i == len(self.info_dict)-1 else ""
+            end = "\n" if i == len(self.info_dict) - 1 else ""
             string += ", {0}={1:.4f}".format(k, np.mean(v), end=end)
         self.log_info(string)
         self.reset_time()

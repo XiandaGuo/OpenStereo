@@ -9,29 +9,27 @@ Typical usage:
 BaseModel.run_train(model)
 BaseModel.run_test(model)
 """
-import torch
-import numpy as np
 import os.path as osp
-import torch.nn as nn
-import torch.optim as optim
-from tqdm import tqdm
 from abc import ABCMeta
 from abc import abstractmethod
-from torch.utils.data import DataLoader
-from torch.cuda.amp import autocast
-from torch.cuda.amp import GradScaler
 
-from . import backbones
-from .loss_aggregator import LossAggregator
-from data.transform import get_transform
-from data.collate_fn import CollateFn
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.cuda.amp import GradScaler
+from torch.cuda.amp import autocast
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+
 from data.dataset import DataSet
-from data import sampler as Samplers
-from utils import Odict, mkdir, ddp_all_gather
-from utils import get_valid_args, is_list, is_dict, np2var, ts2np, list2var, get_attr_from
 from evaluation import evaluator as eval_functions
 from utils import NoOp
+from utils import Odict, mkdir, ddp_all_gather
 from utils import get_msg_mgr
+from utils import get_valid_args, is_list, is_dict, ts2np, get_attr_from
+from . import backbones
+from .loss_aggregator import LossAggregator
 
 __all__ = ['BaseModel']
 
@@ -88,17 +86,19 @@ class MetaModel(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def inference(self):
+    def inference(self, *args, **kwargs):
         """Do inference (calculate features.)."""
         raise NotImplementedError
 
+    @staticmethod
     @abstractmethod
-    def run_train(model):
+    def run_train(model, *args, **kwargs):
         """Run a whole train schedule."""
         raise NotImplementedError
 
+    @staticmethod
     @abstractmethod
-    def run_test(model):
+    def run_test(model, *args, **kwargs):
         """Run a whole test schedule."""
         raise NotImplementedError
 
@@ -133,9 +133,7 @@ class BaseModel(MetaModel, nn.Module):
         self.msg_mgr = get_msg_mgr()
         self.cfgs = cfgs
         self.iteration = 0
-        print("#" * 20)
-        print(cfgs)
-        print("#" * 20)
+        self.epoch = 0
 
         self.engine_cfg = cfgs['trainer_cfg'] if training else cfgs['evaluator_cfg']
         if self.engine_cfg is None:
@@ -152,15 +150,14 @@ class BaseModel(MetaModel, nn.Module):
         self.msg_mgr.log_info(cfgs['data_cfg'])
         if training:
             self.train_loader = self.get_loader(
-                cfgs['data_cfg'], train=True)
+                cfgs['data_cfg'], is_train=True)
         if not training or self.engine_cfg['with_test']:
             self.test_loader = self.get_loader(
-                cfgs['data_cfg'], train=False)
+                cfgs['data_cfg'], is_train=False)
 
-        self.device = torch.distributed.get_rank()
-        torch.cuda.set_device(self.device)
-        self.to(device=torch.device(
-            "cuda", self.device))
+        self.device_rank = torch.distributed.get_rank()
+        torch.cuda.set_device(self.device_rank)
+        self.to(device=torch.device("cuda", self.device_rank))
 
         if training:
             self.loss_aggregator = LossAggregator(cfgs['loss_cfg'])
@@ -178,11 +175,9 @@ class BaseModel(MetaModel, nn.Module):
             valid_args = get_valid_args(Backbone, backbone_cfg, ['type'])
             return Backbone(**valid_args)
         if is_list(backbone_cfg):
-            Backbone = nn.ModuleList([self.get_backbone(cfg)
-                                      for cfg in backbone_cfg])
+            Backbone = nn.ModuleList([self.get_backbone(cfg) for cfg in backbone_cfg])
             return Backbone
-        raise ValueError(
-            "Error type for -Backbone-Cfg-, supported: (A list of) dict.")
+        raise ValueError("Error type for -Backbone-Cfg-, supported: (A list of) dict.")
 
     def build_network(self, model_cfg):
         if 'backbone_cfg' in model_cfg.keys():
@@ -203,41 +198,43 @@ class BaseModel(MetaModel, nn.Module):
                     nn.init.normal_(m.weight.data, 1.0, 0.02)
                     nn.init.constant_(m.bias.data, 0.0)
 
-    def get_loader(self, data_cfg, train=True):
-        sampler_cfg = self.cfgs['trainer_cfg']['sampler'] if train else self.cfgs['evaluator_cfg']['sampler']
-        dataset = DataSet(data_cfg, train)
+    def get_loader(self, data_cfg, is_train=True):
+        dataset = DataSet(data_cfg, is_train)
+        sampler_cfg = self.cfgs['trainer_cfg']['sampler'] if is_train else self.cfgs['evaluator_cfg']['sampler']
 
-        Sampler = get_attr_from([Samplers], sampler_cfg['type'])
-        vaild_args = get_valid_args(Sampler, sampler_cfg, free_keys=[
-            'sample_type', 'type'])
-        sampler = Sampler(dataset, **vaild_args)
-        collate_fn = CollateFn(dataset.label_set, sampler_cfg)
+        # Sampler = get_attr_from([Samplers], sampler_cfg['type'])
+        # vaild_args = get_valid_args(Sampler, sampler_cfg, free_keys=[
+        #     'sample_type', 'type'])
+        # print(vaild_args)
+        # sampler = Sampler(dataset)
+        # print(sampler)
+        # collate_fn = CollateFn(dataset.label_set, sampler_cfg)
 
         loader = DataLoader(
             dataset=dataset,
+            batch_size=sampler_cfg['batch_size'],
+            shuffle=sampler_cfg['batch_shuffle'],
+            num_workers=data_cfg['num_workers']
             # batch_sampler=sampler,
             # collate_fn=collate_fn,
-            num_workers=data_cfg['num_workers'])
+        )
         return loader
 
     def get_optimizer(self, optimizer_cfg):
         self.msg_mgr.log_info(optimizer_cfg)
         optimizer = get_attr_from([optim], optimizer_cfg['solver'])
         valid_arg = get_valid_args(optimizer, optimizer_cfg, ['solver'])
-        # optimizer = optimizer(
-        #     filter(lambda p: p.requires_grad, self.parameters()), **valid_arg)
-        optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()))
+        optimizer = optimizer(params=filter(lambda p: p.requires_grad, self.parameters()), **valid_arg)
         return optimizer
 
     def get_scheduler(self, scheduler_cfg):
         self.msg_mgr.log_info(scheduler_cfg)
-        Scheduler = get_attr_from(
-            [optim.lr_scheduler], scheduler_cfg['scheduler'])
+        Scheduler = get_attr_from([optim.lr_scheduler], scheduler_cfg['scheduler'])
         valid_arg = get_valid_args(Scheduler, scheduler_cfg, ['scheduler'])
         scheduler = Scheduler(self.optimizer, **valid_arg)
         return scheduler
 
-    def save_ckpt(self, iteration):
+    def save_ckpt(self, iteration=None, epoch=None):
         if torch.distributed.get_rank() == 0:
             mkdir(osp.join(self.save_path, "checkpoints/"))
             save_name = self.engine_cfg['save_name']
@@ -245,15 +242,16 @@ class BaseModel(MetaModel, nn.Module):
                 'model': self.state_dict(),
                 'optimizer': self.optimizer.state_dict(),
                 'scheduler': self.scheduler.state_dict(),
-                'iteration': iteration}
+                'iteration': self.iteration if iteration is None else iteration,
+                'epoch': self.epoch if epoch is None else epoch,
+            }
             torch.save(checkpoint,
-                       osp.join(self.save_path, 'checkpoints/{}-{:0>5}.pt'.format(save_name, iteration)))
+                       osp.join(self.save_path, 'checkpoints/{}-{:0>5}.pt'.format(save_name, self.iteration)))
 
     def _load_ckpt(self, save_name):
         load_ckpt_strict = self.engine_cfg['restore_ckpt_strict']
 
-        checkpoint = torch.load(save_name, map_location=torch.device(
-            "cuda", self.device))
+        checkpoint = torch.load(save_name, map_location=torch.device("cuda", self.device_rank))
         model_state_dict = checkpoint['model']
 
         if not load_ckpt_strict:
@@ -320,8 +318,11 @@ class BaseModel(MetaModel, nn.Module):
         return inputs
 
     def train_step(self, loss_sum) -> bool:
-        """Conduct loss_sum.backward(), self.optimizer.step() and self.scheduler.step().
-
+        """
+        Conduct:
+            loss_sum.backward()
+            self.optimizer.step()
+            self.scheduler.step()
         Args:
             loss_sum:The loss of the current batch.
         Returns:
@@ -353,16 +354,16 @@ class BaseModel(MetaModel, nn.Module):
         self.scheduler.step()
         return True
 
-    def inference(self, rank):
-        """Inference all the test data.
-
+    def inference(self):
+        """
+        Inference all the test data.
         Args:
-            rank: the rank of the current process.Transform
+            rank: the rank of the current process.
         Returns:
             Odict: contains the inference results.
         """
         total_size = len(self.test_loader)
-        if rank == 0:
+        if self.device_rank == 0:
             pbar = tqdm(total=total_size, desc='Transforming')
         else:
             pbar = NoOp()
@@ -373,13 +374,13 @@ class BaseModel(MetaModel, nn.Module):
             ipts = self.inputs_pretreament(inputs)
             with autocast(enabled=self.engine_cfg['enable_float16']):
                 retval = self.forward(ipts)
-                inference_feat = retval['inference_feat']
-                for k, v in inference_feat.items():
-                    inference_feat[k] = ddp_all_gather(v, requires_grad=False)
+                inference_disp = retval['inference_disp']
+                for k, v in inference_disp.items():
+                    inference_disp[k] = ddp_all_gather(v, requires_grad=False)
                 del retval
-            for k, v in inference_feat.items():
-                inference_feat[k] = ts2np(v)
-            info_dict.append(inference_feat)
+            for k, v in inference_disp.items():
+                inference_disp[k] = ts2np(v)
+            info_dict.append(inference_disp)
             rest_size -= batch_size
             if rest_size >= 0:
                 update_size = batch_size
@@ -395,54 +396,58 @@ class BaseModel(MetaModel, nn.Module):
     @staticmethod
     def run_train(model):
         """Accept the instance object(model) here, and then run the train loop."""
-        for inputs in model.train_loader:
-            ipts = model.inputs_pretreament(inputs)
-            with autocast(enabled=model.engine_cfg['enable_float16']):
+        model.train()
+        while True:
+            model.epoch += 1
+            for inputs in model.train_loader:
+                ipts = model.inputs_pretreament(inputs)
+                with autocast(enabled=model.engine_cfg['enable_float16']):
+                    output = model(ipts)
+                    # disp, middle = output['disp'], output['middle']
+                    # del output
+                loss_sum, loss_info = model.loss_aggregator(output)
+                ok = model.train_step(loss_sum)
+                if not ok:
+                    continue
+                visual_summary = {}
+                visual_summary.update(loss_info)
+                visual_summary['scalar/learning_rate'] = model.optimizer.param_groups[0]['lr']
 
-                output = model(ipts)
-                # disp, middle = output['disp'], output['middle']
-                # del output
-            loss_sum, loss_info = model.loss_aggregator(output)
-            ok = model.train_step(loss_sum)
-            if not ok:
-                continue
-            visual_summary = {}
-            visual_summary.update(loss_info)
-            visual_summary['scalar/learning_rate'] = model.optimizer.param_groups[0]['lr']
+                model.msg_mgr.train_step(loss_info, visual_summary)
+                if model.iteration % model.engine_cfg['save_iter'] == 0:
+                    # save the checkpoint
+                    model.save_ckpt()
 
-            model.msg_mgr.train_step(loss_info, visual_summary)
-            if model.iteration % model.engine_cfg['save_iter'] == 0:
-                # save the checkpoint
-                model.save_ckpt(model.iteration)
+                    # run test if with_test = true
+                    if model.engine_cfg['with_test']:
+                        model.msg_mgr.log_info("Running test...")
+                        model.eval()
+                        result_dict = BaseModel.run_test(model)
+                        model.train()
+                        # if model.cfgs['trainer_cfg']['fix_BN']:
+                        #     model.fix_BN()
+                        model.msg_mgr.write_to_tensorboard(result_dict)
+                        model.msg_mgr.reset_time()
 
-                # run test if with_test = true
-                if model.engine_cfg['with_test']:
-                    model.msg_mgr.log_info("Running test...")
-                    model.eval()
-                    result_dict = BaseModel.run_test(model)
-                    model.train()
-                    if model.cfgs['trainer_cfg']['fix_BN']:
-                        model.fix_BN()
-                    model.msg_mgr.write_to_tensorboard(result_dict)
-                    model.msg_mgr.reset_time()
-            if model.iteration >= model.engine_cfg['total_iter']:
-                break
+                if model.iteration >= model.engine_cfg['total_iter']:
+                    break
 
     @staticmethod
     def run_test(model):
         """Accept the instance object(model) here, and then run the test loop."""
 
-        rank = torch.distributed.get_rank()
+        rank = model.device_rank
         with torch.no_grad():
-            info_dict = model.inference(rank)
+            info_dict = model.inference()
         if rank == 0:
             loader = model.test_loader
             label_list = loader.dataset.label_list
-            types_list = loader.dataset.types_list
-            views_list = loader.dataset.views_list
+            # types_list = loader.dataset.types_list
+            # views_list = loader.dataset.views_list
 
             info_dict.update({
-                'labels': label_list, 'types': types_list, 'views': views_list})
+                'labels': label_list
+            })
 
             if 'eval_func' in model.cfgs["evaluator_cfg"].keys():
                 eval_func = model.cfgs['evaluator_cfg']["eval_func"]

@@ -1,10 +1,8 @@
 """The loss aggregator."""
 
-import torch
-from . import losses
-from utils import is_dict, get_attr_from, get_valid_args, is_tensor, get_ddp_module
 from utils import Odict
-from utils import get_msg_mgr
+from utils import get_ddp_module
+from . import losses
 
 
 # class LossAggregator():

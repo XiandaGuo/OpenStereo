@@ -1,10 +1,9 @@
 import os
-import torch
-import numpy as np
-from PIL import Image
-from imageio.v3 import imread
 
+import numpy as np
+import torch
 import torchvision.transforms as transforms
+from imageio.v3 import imread
 
 from data.stereo_base import StereoBase
 
