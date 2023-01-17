@@ -1,22 +1,47 @@
 from torch.utils.data import Dataset
 
+from . import stereo_trans as T
+
 
 class DataSet(Dataset):
-    def __init__(self, data_cfg, training):
+    def __init__(self, data_cfg, is_train):
         self.data_cfg = data_cfg
-        self.training = training
+        self.is_train = is_train
         self.dataset = None
-        self.__dataset_parser()
+        self.transform = None
+        self.build_dataset()
 
-    def __dataset_parser(self):
+    def build_dataset(self):
         if self.data_cfg['name'] == 'KITTI2012':
             from data.kitti12 import Kitti12
-            self.dataset = Kitti12(self.data_cfg['root'], self.data_cfg['train_list'], "train" if self.training else "test")
+            self.dataset = Kitti12(self.data_cfg['root'], self.data_cfg['train_list'])
+
         else:
             raise NotImplementedError
 
+        self.build_transform()
+
+    def build_transform(self):
+        trans_config = self.data_cfg['transform']
+        size, mean, std =trans_config['size'], trans_config['mean'], trans_config['std']
+        if self.is_train:
+            transform = T.Compose([
+                T.ToTensor(),
+                T.RandomCrop(size),
+                T.Normalize(mean, std)
+            ])
+        else:
+            transform = T.Compose([
+                T.ToTensor(),
+                T.StereoPad(size),
+                T.Normalize(mean, std)
+            ])
+
+        self.transform = transform
+
     def __getitem__(self, index):
-        return self.dataset[index]
+        sample = self.dataset[index]
+        return self.transform(sample)
 
     def __len__(self):
         return len(self.dataset)

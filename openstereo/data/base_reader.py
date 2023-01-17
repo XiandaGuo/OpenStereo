@@ -1,13 +1,11 @@
 from torch.utils.data import Dataset
 
 
-class StereoBase(Dataset):
-    def __init__(self, root, list_file, train=True):
+class BaseReader(Dataset):
+    def __init__(self, root, list_file):
         self.root = root
         self.list_file = list_file
-        self.train = train
         self.data_list = self.load_anno()
-        self.transform = self.get_transform()
 
     def load_anno(self):
         data_list = []
@@ -29,22 +27,9 @@ class StereoBase(Dataset):
         """
         raise NotImplementedError
 
-    def get_transform(self):
-        """
-        Get the transform function for data augmentation.
-        Returns:
-            transform: function, the transform function for data augmentation.
-            Return None if you don't need data augmentation.
-        """
-        return None
-
     def __getitem__(self, idx):
         item = self.data_list[idx]
         sample = self.item_loader(item)
-
-        if self.transform is not None:
-            sample = self.transform(sample)
-
         return sample
 
     def __len__(self):

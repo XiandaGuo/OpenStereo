@@ -5,14 +5,16 @@ data_cfg:
   test_list: data/kitti12/test.txt
   num_workers: 4
 
-#  transform:
+  transform:
+    size: [ 256, 512 ]
+    mean: [ 0.485, 0.456, 0.406 ]
+    std: [ 0.229, 0.224, 0.225 ]
 #    - type: RandomCrop
-#      size: [384, 1248]
+#      size: [ 256, 512 ]
 #    - type: RandomHorizontalFlip
 #    - type: ToTensor
 #    - type: Normalize
-#      mean: [0.485, 0.456, 0.406]
-#      std: [0.229, 0.224, 0.225]
+
 
 
 model_cfg:
@@ -70,14 +72,6 @@ trainer_cfg:
     type: BasicStereoSampler
     batch_shuffle: false
     batch_size: 2
-  #    frames_num_fixed: 30
-  #    frames_num_max: 50
-  #    frames_num_min: 25
-  #    sample_type: fixed_unordered
-
-  transform:
-    - img_w: 64
-      type: BaseSilCuttingTransform
 
 
 evaluator_cfg:
