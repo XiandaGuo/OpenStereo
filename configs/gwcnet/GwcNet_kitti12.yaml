@@ -17,8 +17,25 @@ data_cfg:
 
 model_cfg:
   model: GwcNet
-  max_disp: 80
-  concat_volume: True
+
+  base_config:
+    max_disp: 80
+    downsample: 4
+    num_groups: 40
+    use_concat_volume: True
+    concat_channels: 12
+
+  # Backbone
+  backbone_cfg:
+    type: GwcNet
+
+  # VolumeCostProcessor
+  cost_processor_cfg:
+    type: GwcVolumeCostProcessor
+
+  # DispProcessor
+  disp_processor_cfg:
+    type: GwcDispProcessor
 
 optimizer_cfg:
   solver: Adam
@@ -53,10 +70,10 @@ trainer_cfg:
     type: BasicStereoSampler
     batch_shuffle: false
     batch_size: 2
-#    frames_num_fixed: 30
-#    frames_num_max: 50
-#    frames_num_min: 25
-#    sample_type: fixed_unordered
+  #    frames_num_fixed: 30
+  #    frames_num_max: 50
+  #    frames_num_min: 25
+  #    sample_type: fixed_unordered
 
   transform:
     - img_w: 64
@@ -74,12 +91,12 @@ evaluator_cfg:
     type: BasicStereoSampler
     batch_shuffle: false
     batch_size: 2
-#      - 8
-#      - 16
-#    frames_num_fixed: 30
-#    frames_num_max: 50
-#    frames_num_min: 25
-#    sample_type: fixed_unordered
+  #      - 8
+  #      - 16
+  #    frames_num_fixed: 30
+  #    frames_num_max: 50
+  #    frames_num_min: 25
+  #    sample_type: fixed_unordered
 
   transform:
     - img_w: 64

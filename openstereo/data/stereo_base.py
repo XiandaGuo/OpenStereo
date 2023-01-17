@@ -5,7 +5,7 @@ class StereoBase(Dataset):
     def __init__(self, root, list_file, train=True):
         self.root = root
         self.list_file = list_file
-        self.train = train  # train, test or val
+        self.train = train
         self.data_list = self.load_anno()
         self.transform = self.get_transform()
 

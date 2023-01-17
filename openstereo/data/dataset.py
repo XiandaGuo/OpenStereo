@@ -6,16 +6,12 @@ class DataSet(Dataset):
         self.data_cfg = data_cfg
         self.training = training
         self.dataset = None
-        self.label_set = None
         self.__dataset_parser()
 
     def __dataset_parser(self):
         if self.data_cfg['name'] == 'KITTI2012':
             from data.kitti12 import Kitti12
-            self.dataset = Kitti12(self.data_cfg['root'], self.data_cfg['train_list'],
-                                   "train" if self.training else "test")
-            self.label_set = None
-
+            self.dataset = Kitti12(self.data_cfg['root'], self.data_cfg['train_list'], "train" if self.training else "test")
         else:
             raise NotImplementedError
 

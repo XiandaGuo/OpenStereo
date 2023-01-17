@@ -15,3 +15,5 @@ for (_, module_name, _) in iter_modules([str(package_dir)]):
         if isclass(attribute):
             # Add the class to this package's variables
             globals()[attribute_name] = attribute
+
+from .gwcnet import GwcDispProcessor

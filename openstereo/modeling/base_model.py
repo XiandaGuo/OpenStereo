@@ -28,7 +28,9 @@ from utils import NoOp
 from utils import Odict, mkdir, ddp_all_gather
 from utils import get_msg_mgr
 from utils import get_valid_args, is_list, is_dict, ts2np, get_attr_from
-from . import backbones
+from . import backbone
+from . import cost_processor
+from . import disp_processor
 from .loss_aggregator import LossAggregator
 
 __all__ = ['BaseModel']
@@ -171,7 +173,7 @@ class BaseModel(MetaModel, nn.Module):
     def get_backbone(self, backbone_cfg):
         """Get the backbone of the model."""
         if is_dict(backbone_cfg):
-            Backbone = get_attr_from([backbones], backbone_cfg['type'])
+            Backbone = get_attr_from([backbone], backbone_cfg['type'])
             valid_args = get_valid_args(Backbone, backbone_cfg, ['type'])
             return Backbone(**valid_args)
         if is_list(backbone_cfg):
@@ -179,9 +181,58 @@ class BaseModel(MetaModel, nn.Module):
             return Backbone
         raise ValueError("Error type for -Backbone-Cfg-, supported: (A list of) dict.")
 
+    def get_cost_processor(self, cost_processor_cfg):
+        """Get the backbone of the model."""
+        if is_dict(cost_processor_cfg):
+            CostProcessor = get_attr_from([cost_processor], cost_processor_cfg['type'])
+            valid_args = get_valid_args(CostProcessor, cost_processor_cfg, ['type'])
+            return CostProcessor(**valid_args)
+        if is_list(cost_processor_cfg):
+            CostProcessor = nn.ModuleList([self.get_cost_processor(cfg) for cfg in cost_processor_cfg])
+            return CostProcessor
+        raise ValueError("Error type for -Backbone-Cfg-, supported: (A list of) dict.")
+
+    def get_disp_processor(self, disp_processor_cfg):
+        """Get the backbone of the model."""
+        if is_dict(disp_processor_cfg):
+            DispProcessor = get_attr_from([disp_processor], disp_processor_cfg['type'])
+            valid_args = get_valid_args(DispProcessor, disp_processor_cfg, ['type'])
+            return DispProcessor(**valid_args)
+        if is_list(disp_processor_cfg):
+            DispProcessor = nn.ModuleList([self.get_cost_processor(cfg) for cfg in disp_processor_cfg])
+            return DispProcessor
+        raise ValueError("Error type for -Backbone-Cfg-, supported: (A list of) dict.")
+
     def build_network(self, model_cfg):
         if 'backbone_cfg' in model_cfg.keys():
-            self.Backbone = self.get_backbone(model_cfg['backbone_cfg'])
+            base_config = model_cfg['base_config']
+            cfg = base_config.copy()
+            cfg.update(model_cfg['backbone_cfg'])
+            self.Backbone = self.get_backbone(cfg)
+        if 'cost_processor_cfg' in model_cfg.keys():
+            base_config = model_cfg['base_config']
+            cfg = base_config.copy()
+            cfg.update(model_cfg['cost_processor_cfg'])
+            self.CostProcessor = self.get_cost_processor(cfg)
+        if 'disp_processor_cfg' in model_cfg.keys():
+            base_config = model_cfg['base_config']
+            cfg = base_config.copy()
+            cfg.update(model_cfg['disp_processor_cfg'])
+            self.DispProcessor = self.get_disp_processor(cfg)
+
+    def forward(self, inputs):
+        """Forward the network."""
+        outputs = {}
+        outputs['backbone'] = self.Backbone(inputs)
+
+        cost_input = outputs['backbone']
+        outputs['cost_processor'] = self.CostProcessor(cost_input)
+
+        disp_input = outputs['cost_processor']
+        disp_input.update({'disp_shape': inputs['ref_img'].shape[-2:]})
+        outputs['disp_processor'] = self.DispProcessor(disp_input)
+
+        return outputs['disp_processor']
 
     def init_parameters(self):
         for m in self.modules():
@@ -213,7 +264,7 @@ class BaseModel(MetaModel, nn.Module):
         loader = DataLoader(
             dataset=dataset,
             batch_size=sampler_cfg['batch_size'],
-            shuffle=sampler_cfg['batch_shuffle'],
+            shuffle=sampler_cfg['batch_shuffle'] if is_train else False,
             num_workers=data_cfg['num_workers']
             # batch_sampler=sampler,
             # collate_fn=collate_fn,
@@ -303,19 +354,24 @@ class BaseModel(MetaModel, nn.Module):
             dict: training data including left image, right image, disp image,
                   and some meta data.
         """
+        organized_inputs = {}
+
+        organized_inputs['ref_img'] = inputs['left']
+        organized_inputs['tgt_img'] = inputs['right']
+
         disp_gt = inputs['disp']
-        max_disp = self.cfgs['model_cfg']['max_disp']
+        max_disp = self.cfgs['model_cfg']['base_config']['max_disp']
 
         # asure the disp_gt has the shape of [B, H, W]
         if len(disp_gt.shape) == 4:
             disp_gt = disp_gt.squeeze(1)
-            inputs.update({'disp': disp_gt})
+            organized_inputs['disp'] = disp_gt
 
-        # compute the mask of valid disp_gt
+        # # compute the mask of valid disp_gt
         mask = (disp_gt < max_disp) & (disp_gt > 0)
-        inputs.update({'mask': mask})
+        organized_inputs['mask'] = mask
 
-        return inputs
+        return organized_inputs
 
     def train_step(self, loss_sum) -> bool:
         """
@@ -354,30 +410,30 @@ class BaseModel(MetaModel, nn.Module):
         self.scheduler.step()
         return True
 
-    def inference(self):
+    def inference(self, model):
         """
         Inference all the test data.
         Args:
-            rank: the rank of the current process.
+            model: the model to be tested.
         Returns:
             Odict: contains the inference results.
         """
-        total_size = len(self.test_loader)
-        if self.device_rank == 0:
+        total_size = len(model.test_loader)
+        if model.device_rank == 0:
             pbar = tqdm(total=total_size, desc='Transforming')
         else:
             pbar = NoOp()
-        batch_size = self.test_loader.batch_sampler.batch_size
+        batch_size = model.test_loader.batch_sampler.batch_size
         rest_size = total_size
         info_dict = Odict()
-        for inputs in self.test_loader:
-            ipts = self.inputs_pretreament(inputs)
-            with autocast(enabled=self.engine_cfg['enable_float16']):
-                retval = self.forward(ipts)
-                inference_disp = retval['inference_disp']
+        for inputs in model.test_loader:
+            ipts = model.inputs_pretreament(inputs)
+            with autocast(enabled=model.engine_cfg['enable_float16']):
+                output = model(ipts)
+                inference_disp = output['inference_disp']
                 for k, v in inference_disp.items():
                     inference_disp[k] = ddp_all_gather(v, requires_grad=False)
-                del retval
+                del output
             for k, v in inference_disp.items():
                 inference_disp[k] = ts2np(v)
             info_dict.append(inference_disp)
@@ -391,6 +447,9 @@ class BaseModel(MetaModel, nn.Module):
         for k, v in info_dict.items():
             v = np.concatenate(v)[:total_size]
             info_dict[k] = v
+        print(info_dict['disp_est'].shape)
+        print(info_dict['disp_est'])
+        # the final output is a dict {'disp_est': np.array}
         return info_dict
 
     @staticmethod
@@ -405,7 +464,7 @@ class BaseModel(MetaModel, nn.Module):
                     output = model(ipts)
                     # disp, middle = output['disp'], output['middle']
                     # del output
-                loss_sum, loss_info = model.loss_aggregator(output)
+                loss_sum, loss_info = model.loss_aggregator(output, ipts['disp'].to(model.device), ipts['mask'].to(model.device))
                 ok = model.train_step(loss_sum)
                 if not ok:
                     continue
@@ -438,7 +497,7 @@ class BaseModel(MetaModel, nn.Module):
 
         rank = model.device_rank
         with torch.no_grad():
-            info_dict = model.inference()
+            info_dict = model.inference(model)
         if rank == 0:
             loader = model.test_loader
             label_list = loader.dataset.label_list

@@ -114,7 +114,7 @@ class LossAggregator():
         # loss = get_ddp_module(Loss(**valid_loss_arg).cuda())
         return loss
 
-    def __call__(self, training_output):
+    def __call__(self, training_output, disp_gt, mask):
         """Compute the sum of all losses.
 
         The input is a dict of features. The key is the name of loss and the value is the feature and label. If the key not in
@@ -128,13 +128,11 @@ class LossAggregator():
         loss_info = Odict()
 
         pred_disp = training_disp['disp']
-        gt_disp = training_disp['gt_disp']
-        mask = training_disp['mask']
         middle = training_disp['middle_disp']
         # print(middle + [pred_disp])
         # print(gt_disp.shape)
         # print(mask.shape)
-        loss = self.losses["Weighted_Smooth_l1_Loss"](middle + [pred_disp], gt_disp, mask)
+        loss = self.losses["Weighted_Smooth_l1_Loss"](middle + [pred_disp], disp_gt, mask)
         loss_info['scalar/Weighted_Smooth_l1_Loss'] = loss
 
         # for k, v in training_feats.items():
