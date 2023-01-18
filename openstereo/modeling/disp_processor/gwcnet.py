@@ -132,7 +132,7 @@ class GwcDispProcessor(nn.Module):
 
         else:
             cost3 = self.classif3(out3)
-            cost3 = F.interpolate(cost3, [self.maxdisp, self.h, self.w], mode='trilinear')
+            cost3 = F.interpolate(cost3, [self.maxdisp,h, w], mode='trilinear')
             cost3 = torch.squeeze(cost3, 1)
             pred3 = F.softmax(cost3, dim=1)
             pred3 = disparity_regression(pred3, self.maxdisp)

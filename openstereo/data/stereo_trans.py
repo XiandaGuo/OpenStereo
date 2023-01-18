@@ -3,8 +3,8 @@ import random
 
 import numpy as np
 import torch
-import torchvision.transforms.functional as F
-from torch.nn.functional import pad
+import torch.nn.functional as F
+import torchvision.transforms.functional as TF
 
 
 class Compose(object):
@@ -99,12 +99,8 @@ class Normalize(object):
         self.std = std
 
     def __call__(self, sample):
-        sample['left'] = F.normalize(
-            sample['left'], mean=self.mean, std=self.std
-        )
-        sample['right'] = F.normalize(
-            sample['right'], mean=self.mean, std=self.std
-        )
+        sample['left'] = TF.normalize(sample['left'], mean=self.mean, std=self.std)
+        sample['right'] = TF.normalize(sample['right'], mean=self.mean, std=self.std)
         return sample
 
 
@@ -120,19 +116,13 @@ class StereoPad(object):
         th, tw = self.size
         if w == tw and h == th:
             return sample
-
         pad_left = 0
         pad_right = tw - w
         pad_top = th - h
         pad_bottom = 0
 
-        sample['left'] = pad(
-            sample['left'], [pad_left, pad_right, pad_top, pad_bottom],
-            mode='constant', value=0
-        )
-        sample['right'] = pad(
-            sample['right'], [pad_left, pad_right, pad_top, pad_bottom],
-            mode='constant', value=0
-        )
-
+        # apply pad for left, right, disp image
+        for k in sample.keys():
+            if sample[k] is not None and isinstance(sample[k], (np.ndarray, torch.Tensor)):
+                sample[k] = F.pad(sample[k], (pad_left, pad_right, pad_top, pad_bottom), mode='constant', value=0)
         return sample

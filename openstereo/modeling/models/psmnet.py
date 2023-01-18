@@ -228,7 +228,7 @@ class PSMNet(BaseModel):
                     if model.engine_cfg['with_test']:
                         model.msg_mgr.log_info("Running test...")
                         model.eval()
-                        result_dict = model.run_test(model)
+                        result_dict = model.run_val(model)
                         model.train()
                         if model.cfgs['trainer_cfg']['fix_BN']:
                             model.fix_BN()
@@ -238,7 +238,7 @@ class PSMNet(BaseModel):
                     break
 
     @staticmethod
-    def run_test(model):
+    def run_val(model):
         total_size = len(model.test_loader)
         # rank = torch.distributed.get_rank()
         # if rank == 0:

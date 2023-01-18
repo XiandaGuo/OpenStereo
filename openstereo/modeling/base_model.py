@@ -100,6 +100,12 @@ class MetaModel(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
+    def run_val(model, *args, **kwargs):
+        """Run a whole test schedule."""
+        raise NotImplementedError
+
+    @staticmethod
+    @abstractmethod
     def run_test(model, *args, **kwargs):
         """Run a whole test schedule."""
         raise NotImplementedError
@@ -119,7 +125,7 @@ class BaseModel(MetaModel, nn.Module):
 
     """
 
-    def __init__(self, cfgs, training):
+    def __init__(self, cfgs, scope='train'):
         """Initialize the base model.
 
         Complete the model initialization, including the data loader, the network, the optimizer, the scheduler, the loss.
@@ -136,12 +142,15 @@ class BaseModel(MetaModel, nn.Module):
         self.cfgs = cfgs
         self.iteration = 0
         self.epoch = 0
+        self.scope = scope
 
-        self.engine_cfg = cfgs['trainer_cfg'] if training else cfgs['evaluator_cfg']
+        is_train = scope == 'train'
+
+        self.engine_cfg = cfgs['trainer_cfg'] if is_train else cfgs['evaluator_cfg']
         if self.engine_cfg is None:
             raise Exception("Initialize a model without -Engine-Cfgs-")
 
-        if training and self.engine_cfg['enable_float16']:
+        if is_train and self.engine_cfg['enable_float16']:
             self.Scaler = GradScaler()
         self.save_path = osp.join('output/', cfgs['data_cfg']['name'],
                                   cfgs['model_cfg']['model'], self.engine_cfg['save_name'])
@@ -150,22 +159,26 @@ class BaseModel(MetaModel, nn.Module):
         self.init_parameters()
 
         self.msg_mgr.log_info(cfgs['data_cfg'])
-        if training:
-            self.train_loader = self.get_loader(
-                cfgs['data_cfg'], is_train=True)
-        if not training or self.engine_cfg['with_test']:
-            self.test_loader = self.get_loader(
-                cfgs['data_cfg'], is_train=False)
+
+        if scope == 'train':
+            self.train_loader = self.get_loader(cfgs['data_cfg'], scope)
+            if self.engine_cfg['with_test']:
+                self.test_loader = self.get_loader(cfgs['data_cfg'], scope)
+        elif scope == 'val':
+            self.val_loader = self.get_loader(cfgs['data_cfg'], scope)
+        else:
+            self.test_loader = self.get_loader(cfgs['data_cfg'], scope)
 
         self.device_rank = torch.distributed.get_rank()
         torch.cuda.set_device(self.device_rank)
         self.to(device=torch.device("cuda", self.device_rank))
 
-        if training:
+        if is_train:
             self.loss_aggregator = LossAggregator(cfgs['loss_cfg'])
             self.optimizer = self.get_optimizer(self.cfgs['optimizer_cfg'])
             self.scheduler = self.get_scheduler(cfgs['scheduler_cfg'])
-        self.train(training)
+
+        self.train(is_train)
         restore_hint = self.engine_cfg['restore_hint']
         if restore_hint != 0:
             self.resume_ckpt(restore_hint)
@@ -249,8 +262,9 @@ class BaseModel(MetaModel, nn.Module):
                     nn.init.normal_(m.weight.data, 1.0, 0.02)
                     nn.init.constant_(m.bias.data, 0.0)
 
-    def get_loader(self, data_cfg, is_train=True):
-        dataset = DataSet(data_cfg, is_train)
+    def get_loader(self, data_cfg, scope):
+        is_train = scope == 'train'
+        dataset = DataSet(data_cfg, scope)
         sampler_cfg = self.cfgs['trainer_cfg']['sampler'] if is_train else self.cfgs['evaluator_cfg']['sampler']
 
         # Sampler = get_attr_from([Samplers], sampler_cfg['type'])
@@ -370,7 +384,6 @@ class BaseModel(MetaModel, nn.Module):
         # # compute the mask of valid disp_gt
         mask = (disp_gt < max_disp) & (disp_gt > 0)
         organized_inputs['mask'] = mask
-
         return organized_inputs
 
     def train_step(self, loss_sum) -> bool:
@@ -410,7 +423,7 @@ class BaseModel(MetaModel, nn.Module):
         self.scheduler.step()
         return True
 
-    def inference(self, model):
+    def inference(self, model, loader):
         """
         Inference all the test data.
         Args:
@@ -418,15 +431,15 @@ class BaseModel(MetaModel, nn.Module):
         Returns:
             Odict: contains the inference results.
         """
-        total_size = len(model.test_loader)
+        total_size = len(loader)
         if model.device_rank == 0:
             pbar = tqdm(total=total_size, desc='Transforming')
         else:
             pbar = NoOp()
-        batch_size = model.test_loader.batch_sampler.batch_size
+        batch_size = loader.batch_sampler.batch_size
         rest_size = total_size
         info_dict = Odict()
-        for inputs in model.test_loader:
+        for inputs in loader:
             ipts = model.inputs_pretreament(inputs)
             with autocast(enabled=model.engine_cfg['enable_float16']):
                 output = model(ipts)
@@ -434,6 +447,7 @@ class BaseModel(MetaModel, nn.Module):
                 for k, v in inference_disp.items():
                     inference_disp[k] = ddp_all_gather(v, requires_grad=False)
                 del output
+            inference_disp.update(ipts)
             for k, v in inference_disp.items():
                 inference_disp[k] = ts2np(v)
             info_dict.append(inference_disp)
@@ -447,8 +461,7 @@ class BaseModel(MetaModel, nn.Module):
         for k, v in info_dict.items():
             v = np.concatenate(v)[:total_size]
             info_dict[k] = v
-        print(info_dict['disp_est'].shape)
-        print(info_dict['disp_est'])
+        # print(info_dict.keys())
         # the final output is a dict {'disp_est': np.array}
         return info_dict
 
@@ -462,9 +475,10 @@ class BaseModel(MetaModel, nn.Module):
                 ipts = model.inputs_pretreament(inputs)
                 with autocast(enabled=model.engine_cfg['enable_float16']):
                     output = model(ipts)
-                    # disp, middle = output['disp'], output['middle']
-                    # del output
-                loss_sum, loss_info = model.loss_aggregator(output, ipts['disp'].to(model.device), ipts['mask'].to(model.device))
+                loss_sum, loss_info = model.loss_aggregator(
+                    output, ipts['disp'].to(model.device),
+                    ipts['mask'].to(model.device)
+                )
                 ok = model.train_step(loss_sum)
                 if not ok:
                     continue
@@ -481,7 +495,7 @@ class BaseModel(MetaModel, nn.Module):
                     if model.engine_cfg['with_test']:
                         model.msg_mgr.log_info("Running test...")
                         model.eval()
-                        result_dict = BaseModel.run_test(model)
+                        result_dict = BaseModel.run_val(model)
                         model.train()
                         # if model.cfgs['trainer_cfg']['fix_BN']:
                         #     model.fix_BN()
@@ -492,31 +506,33 @@ class BaseModel(MetaModel, nn.Module):
                     break
 
     @staticmethod
-    def run_test(model):
+    def run_val(model):
         """Accept the instance object(model) here, and then run the test loop."""
+        try:
+            model.resume_ckpt(model.cfgs['evaluator_cfg']['checkpoint'])
+        except Exception as e:
+            model.msg_mgr.log_warning("Failed to resume the checkpoint, got {}".format(e))
 
         rank = model.device_rank
         with torch.no_grad():
-            info_dict = model.inference(model)
+            loader = model.val_loader
+            info_dict = model.inference(model, loader)
         if rank == 0:
-            loader = model.test_loader
-            label_list = loader.dataset.label_list
-            # types_list = loader.dataset.types_list
-            # views_list = loader.dataset.views_list
-
-            info_dict.update({
-                'labels': label_list
-            })
-
             if 'eval_func' in model.cfgs["evaluator_cfg"].keys():
                 eval_func = model.cfgs['evaluator_cfg']["eval_func"]
             else:
                 eval_func = 'identification'
             eval_func = getattr(eval_functions, eval_func)
-            valid_args = get_valid_args(
-                eval_func, model.cfgs["evaluator_cfg"], ['metric'])
-            try:
-                dataset_name = model.cfgs['data_cfg']['test_dataset_name']
-            except:
-                dataset_name = model.cfgs['data_cfg']['dataset_name']
-            return eval_func(info_dict, dataset_name, **valid_args)
+            # valid_args = get_valid_args(eval_func, model.cfgs["evaluator_cfg"], ['metric'])
+            # dataset_name = model.cfgs['data_cfg']['name']
+            return eval_func(info_dict)
+    @staticmethod
+    def run_test(model, *args, **kwargs):
+        try:
+            model.resume_ckpt(model.cfgs['evaluator_cfg']['checkpoint'])
+        except Exception as e:
+            model.msg_mgr.log_warning("Failed to resume the checkpoint, got {}".format(e))
+        with torch.no_grad():
+            loader = model.test_loader
+            info_dict = model.inference(model, loader)
+        return  info_dict

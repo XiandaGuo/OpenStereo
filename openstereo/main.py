@@ -13,7 +13,7 @@ parser.add_argument('--local_rank', type=int, default=0,
 parser.add_argument('--cfgs', type=str,
                     default='config/default.yaml', help="path of config file")
 parser.add_argument('--phase', default='train',
-                    choices=['train', 'test'], help="choose train or test phase")
+                    choices=['train', 'test', 'val'], help="choose train or test phase")
 parser.add_argument('--log_to_file', action='store_true',
                     help="log to file, default path is: output/<dataset>/<model>/<save_name>/<logs>/<Datetime>.txt")
 parser.add_argument('--iter', default=0, help="iter to restore")
@@ -37,24 +37,28 @@ def initialization(cfgs, training):
     init_seeds(seed)
 
 
-def run_model(cfgs, training):
+def run_model(cfgs, scope):
+    is_train = scope == 'train'
     msg_mgr = get_msg_mgr()
     model_cfg = cfgs['model_cfg']
     msg_mgr.log_info(model_cfg)
     Model = getattr(models, model_cfg['model'])
-    model = Model(cfgs, training)
-    if training and cfgs['trainer_cfg']['sync_BN']:
+    model = Model(cfgs, scope)
+    if is_train and cfgs['trainer_cfg']['sync_BN']:
         model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
     if cfgs['trainer_cfg']['fix_BN']:
         model.fix_BN()
     model = get_ddp_module(model)
     msg_mgr.log_info(params_count(model))
     msg_mgr.log_info("Model Initialization Finished!")
-
-    if training:
+    if scope == 'train':
         Model.run_train(model)
+    elif scope == 'val':
+        Model.run_val(model)
+    elif scope == 'test':
+        Model.run_val(model)
     else:
-        Model.run_test(model)
+        raise ValueError("Scope should be one of ['train', 'val', 'test'].")
 
 
 if __name__ == '__main__':
@@ -67,9 +71,11 @@ if __name__ == '__main__':
         cfgs['evaluator_cfg']['restore_hint'] = int(opt.iter)
         cfgs['trainer_cfg']['restore_hint'] = int(opt.iter)
 
-    training = (opt.phase == 'train')
-    initialization(cfgs, training)
+    assert opt.phase.lower() in ['train', 'test', 'val']
+    is_train = (opt.phase == 'train')
+
+    initialization(cfgs, is_train)
     print("Initialization Finished!")
     print(cfgs)
     print("Start Running Model!")
-    run_model(cfgs, training)
+    run_model(cfgs, opt.phase.lower())
