@@ -51,33 +51,33 @@ loss_cfg:
 scheduler_cfg:
   gamma: 0.1
   milestones: # Learning Rate Reduction at each milestones
-    - 20000
-    - 40000
+    - 5000
+    - 15000
   scheduler: MultiStepLR
 
 
 trainer_cfg:
   enable_float16: False
   fix_BN: false
-  log_iter: 10
+  log_iter: 20
   with_test: true
   restore_ckpt_strict: true
   restore_hint: 0
   save_iter: 100
   save_name: GwcNet_kitti12
   sync_BN: true
-  total_iter: 60000
+  total_iter: 20000
 
   sampler:
     type: BasicStereoSampler
     batch_shuffle: false
-    batch_size: 2
+    batch_size: 4
 
 
 evaluator_cfg:
   eval_func: OpenStereoEvaluator
   save_name: GwcNet_kitti12
-  checkpoint: 100
+  checkpoint: 10000
   metric:
     - d1_all
     - epe
@@ -90,4 +90,4 @@ evaluator_cfg:
   sampler:
     type: BasicStereoSampler
     batch_shuffle: false
-    batch_size: 2
+    batch_size: 1

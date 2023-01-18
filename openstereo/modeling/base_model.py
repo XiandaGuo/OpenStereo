@@ -163,7 +163,7 @@ class BaseModel(MetaModel, nn.Module):
         if scope == 'train':
             self.train_loader = self.get_loader(cfgs['data_cfg'], scope)
             if self.engine_cfg['with_test']:
-                self.test_loader = self.get_loader(cfgs['data_cfg'], scope)
+                self.val_loader = self.get_loader(cfgs['data_cfg'], scope)
         elif scope == 'val':
             self.val_loader = self.get_loader(cfgs['data_cfg'], scope)
         else:
