@@ -527,6 +527,7 @@ class BaseModel(MetaModel, nn.Module):
             # valid_args = get_valid_args(eval_func, model.cfgs["evaluator_cfg"], ['metric'])
             # dataset_name = model.cfgs['data_cfg']['name']
             return eval_func(info_dict)
+    
     @staticmethod
     def run_test(model, *args, **kwargs):
         try:

@@ -1,10 +1,10 @@
 data_cfg:
   name: KITTI2012
-  root: data/kitti12
-  train_list: data/kitti12/train.txt
-  val_list: data/kitti12/val.txt
-  test_list: data/kitti12/test.txt
-  num_workers: 4
+  root: data/kitti/kitti12
+  train_list: data/kitti/kitti12/train.txt
+  val_list: data/kitti/kitti12/train.txt
+  test_list: data/kitti/kitti12/test.txt
+  num_workers: 8
 
   transform:
     train:
@@ -71,13 +71,13 @@ trainer_cfg:
   sampler:
     type: BasicStereoSampler
     batch_shuffle: false
-    batch_size: 4
+    batch_size: 16
 
 
 evaluator_cfg:
   eval_func: OpenStereoEvaluator
   save_name: GwcNet_kitti12
-  checkpoint: 10000
+  checkpoint: 1000
   metric:
     - d1_all
     - epe

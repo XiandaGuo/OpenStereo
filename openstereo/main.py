@@ -54,7 +54,7 @@ def run_model(cfgs, scope):
     if scope == 'train':
         Model.run_train(model)
     elif scope == 'val':
-        Model.run_val(model)
+        Model.run_val(model, load_ckpt=True)
     elif scope == 'test':
         Model.run_val(model)
     else:
