@@ -100,7 +100,7 @@ class MetaModel(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def run_val(model, *args, **kwargs):
+    def run_val(model, load_ckpt, *args, **kwargs):
         """Run a whole test schedule."""
         raise NotImplementedError
 
@@ -506,12 +506,13 @@ class BaseModel(MetaModel, nn.Module):
                     break
 
     @staticmethod
-    def run_val(model):
+    def run_val(model, load_ckpt=False):
         """Accept the instance object(model) here, and then run the test loop."""
-        try:
-            model.resume_ckpt(model.cfgs['evaluator_cfg']['checkpoint'])
-        except Exception as e:
-            model.msg_mgr.log_warning("Failed to resume the checkpoint, got {}".format(e))
+        if load_ckpt:
+            try:
+                model.resume_ckpt(model.cfgs['evaluator_cfg']['checkpoint'])
+            except Exception as e:
+                model.msg_mgr.log_warning("Failed to resume the checkpoint, got {}".format(e))
 
         rank = model.device_rank
         with torch.no_grad():
