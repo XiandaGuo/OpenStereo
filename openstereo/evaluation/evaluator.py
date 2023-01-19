@@ -149,6 +149,6 @@ def OpenStereoEvaluator(data, metric=None):
             raise ValueError("Unknown metric: {}".format(m))
         else:
             metric_func = METRICS[m]
-            res[m] = metric_func(disp_est, disp_gt, disp_gt > 0)
+            res[f"scalar/val/{m}"] = metric_func(disp_est, disp_gt, disp_gt > 0)
     print(res)
     return res
