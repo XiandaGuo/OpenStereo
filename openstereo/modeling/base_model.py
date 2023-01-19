@@ -422,8 +422,8 @@ class BaseModel(MetaModel, nn.Module):
         self.iteration += 1
         self.scheduler.step()
         return True
-
-    def inference(self, model, loader):
+    @staticmethod
+    def inference(model, loader):
         """
         Inference all the test data.
         Args:
@@ -469,8 +469,7 @@ class BaseModel(MetaModel, nn.Module):
     def run_train(model):
         """Accept the instance object(model) here, and then run the train loop."""
         model.train()
-
-        while model.epoch < model.engine_cfg['total_epoch'] or model.engine_cfg['max_epoch'] is None:
+        while True:
             model.epoch += 1
             for inputs in model.train_loader:
                 ipts = model.inputs_pretreament(inputs)
@@ -505,6 +504,8 @@ class BaseModel(MetaModel, nn.Module):
 
                 if model.iteration >= model.engine_cfg['total_iter']:
                     return
+            if hasattr(model.engine_cfg, 'max_epoch') and model.epoch >= model.engine_cfg['max_epoch']:
+                return
 
     @staticmethod
     def run_val(model, load_ckpt=False):
