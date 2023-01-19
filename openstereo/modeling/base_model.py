@@ -428,6 +428,7 @@ class BaseModel(MetaModel, nn.Module):
         Inference all the test data.
         Args:
             model: the model to be tested.
+            loader: data loader.
         Returns:
             Odict: contains the inference results.
         """
@@ -461,7 +462,6 @@ class BaseModel(MetaModel, nn.Module):
         for k, v in info_dict.items():
             v = np.concatenate(v)[:total_size]
             info_dict[k] = v
-        # print(info_dict.keys())
         # the final output is a dict {'disp_est': np.array}
         return info_dict
 
@@ -469,7 +469,8 @@ class BaseModel(MetaModel, nn.Module):
     def run_train(model):
         """Accept the instance object(model) here, and then run the train loop."""
         model.train()
-        while True:
+
+        while model.epoch < model.engine_cfg['total_epoch'] or model.engine_cfg['max_epoch'] is None:
             model.epoch += 1
             for inputs in model.train_loader:
                 ipts = model.inputs_pretreament(inputs)
@@ -503,7 +504,7 @@ class BaseModel(MetaModel, nn.Module):
                         model.msg_mgr.reset_time()
 
                 if model.iteration >= model.engine_cfg['total_iter']:
-                    break
+                    return
 
     @staticmethod
     def run_val(model, load_ckpt=False):
@@ -515,6 +516,7 @@ class BaseModel(MetaModel, nn.Module):
                 model.msg_mgr.log_warning("Failed to resume the checkpoint, got {}".format(e))
 
         rank = model.device_rank
+        model.eval()
         with torch.no_grad():
             loader = model.val_loader
             info_dict = model.inference(model, loader)
@@ -522,11 +524,11 @@ class BaseModel(MetaModel, nn.Module):
             if 'eval_func' in model.cfgs["evaluator_cfg"].keys():
                 eval_func = model.cfgs['evaluator_cfg']["eval_func"]
             else:
-                eval_func = 'identification'
+                eval_func = 'OpenStereoEvaluator'
             eval_func = getattr(eval_functions, eval_func)
-            # valid_args = get_valid_args(eval_func, model.cfgs["evaluator_cfg"], ['metric'])
+            valid_args = get_valid_args(eval_func, model.cfgs["evaluator_cfg"], ['metric'])
             # dataset_name = model.cfgs['data_cfg']['name']
-            return eval_func(info_dict)
+            return eval_func(info_dict, **valid_args)
     
     @staticmethod
     def run_test(model, *args, **kwargs):

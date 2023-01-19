@@ -188,8 +188,8 @@ class hourglass(nn.Module):
 
 
 class GwcNet(BaseModel):
-    def __int__(self):
-        super(GwcNet, self).__init__()
+    def __int__(self, **kwargs):
+        super().__init__(**kwargs)
 
 # class GwcNet(BaseModel):
 #     def __init__(self, *args, **kwargs):
