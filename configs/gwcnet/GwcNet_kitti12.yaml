@@ -16,6 +16,7 @@ data_cfg:
       mean: [ 0.485, 0.456, 0.406 ]
       std: [ 0.229, 0.224, 0.225 ]
 
+
 model_cfg:
   model: GwcNet
 
@@ -38,12 +39,11 @@ model_cfg:
   disp_processor_cfg:
     type: GwcDispProcessor
 
+
 optimizer_cfg:
   solver: Adam
   lr: 0.001
-  betas:
-    - 0.9
-    - 0.999
+  betas: [ 0.9, 0.999 ]
 
 
 loss_cfg:
@@ -79,7 +79,7 @@ trainer_cfg:
 evaluator_cfg:
   eval_func: OpenStereoEvaluator
   save_name: GwcNet_kitti12
-  checkpoint: 19000
+  checkpoint: 5000
   metric:
     - d1_all
     - epe

@@ -14,11 +14,13 @@ class DataSet(Dataset):
 
     def build_dataset(self):
         if self.data_cfg['name'] in ['KITTI2012', 'KITTI2015']:
-            from data.kittireader import KittiReader
+            from data.kitti_reader import KittiReader
             self.dataset = KittiReader(self.data_cfg['root'], self.data_cfg[f'{self.scope}_list'])
+        elif self.data_cfg['name'] == 'SceneFlow':
+            from data.sceneflow_reader import SceneFlowReader
+            self.dataset = SceneFlowReader(self.data_cfg['root'], self.data_cfg[f'{self.scope}_list'])
         else:
             raise NotImplementedError
-
         self.build_transform()
 
     def build_transform(self):
