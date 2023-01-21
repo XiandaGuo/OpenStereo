@@ -143,7 +143,6 @@ class BaseModel(MetaModel, nn.Module):
         self.iteration = 0
         self.epoch = 0
         self.scope = scope
-
         is_train = scope == 'train'
 
         self.engine_cfg = cfgs['trainer_cfg'] if is_train else cfgs['evaluator_cfg']
@@ -203,7 +202,7 @@ class BaseModel(MetaModel, nn.Module):
         if is_list(cost_processor_cfg):
             CostProcessor = nn.ModuleList([self.get_cost_processor(cfg) for cfg in cost_processor_cfg])
             return CostProcessor
-        raise ValueError("Error type for -Backbone-Cfg-, supported: (A list of) dict.")
+        raise ValueError("Error type for -Cost-Processor-Cfg-, supported: (A list of) dict.")
 
     def get_disp_processor(self, disp_processor_cfg):
         """Get the backbone of the model."""
@@ -214,7 +213,7 @@ class BaseModel(MetaModel, nn.Module):
         if is_list(disp_processor_cfg):
             DispProcessor = nn.ModuleList([self.get_cost_processor(cfg) for cfg in disp_processor_cfg])
             return DispProcessor
-        raise ValueError("Error type for -Backbone-Cfg-, supported: (A list of) dict.")
+        raise ValueError("Error type for -Disp-Processor-Cfg-, supported: (A list of) dict.")
 
     def build_network(self, model_cfg):
         if 'backbone_cfg' in model_cfg.keys():
@@ -235,17 +234,10 @@ class BaseModel(MetaModel, nn.Module):
 
     def forward(self, inputs):
         """Forward the network."""
-        outputs = {}
-        outputs['backbone'] = self.Backbone(inputs)
-
-        cost_input = outputs['backbone']
-        outputs['cost_processor'] = self.CostProcessor(cost_input)
-
-        disp_input = outputs['cost_processor']
-        disp_input.update({'disp_shape': inputs['ref_img'].shape[-2:]})
-        outputs['disp_processor'] = self.DispProcessor(disp_input)
-
-        return outputs['disp_processor']
+        backbone_out = self.Backbone(inputs)
+        cost_out = self.CostProcessor(backbone_out)
+        disp_out = self.DispProcessor(cost_out)
+        return disp_out
 
     def init_parameters(self):
         for m in self.modules():
@@ -360,31 +352,29 @@ class BaseModel(MetaModel, nn.Module):
                 module.eval()
 
     def inputs_pretreament(self, inputs):
-        """Conduct transforms on input data.
+        """Reorganize input data for different models
 
         Args:
             inputs: the input data.
         Returns:
-            dict: training data including left image, right image, disp image,
-                  and some meta data.
+            dict: training data including ref_img, tgt_img, disp image,
+                  and other meta data.
         """
-        organized_inputs = {}
-
-        organized_inputs['ref_img'] = inputs['left']
-        organized_inputs['tgt_img'] = inputs['right']
-
-        disp_gt = inputs['disp']
-        max_disp = self.cfgs['model_cfg']['base_config']['max_disp']
-
         # asure the disp_gt has the shape of [B, H, W]
+        disp_gt = inputs['disp']
         if len(disp_gt.shape) == 4:
             disp_gt = disp_gt.squeeze(1)
-            organized_inputs['disp'] = disp_gt
 
-        # # compute the mask of valid disp_gt
+        # compute the mask of valid disp_gt
+        max_disp = self.cfgs['model_cfg']['base_config']['max_disp']
         mask = (disp_gt < max_disp) & (disp_gt > 0)
-        organized_inputs['mask'] = mask
-        return organized_inputs
+
+        return {
+            'ref_img': inputs['left'],
+            'tgt_img': inputs['right'],
+            'disp': disp_gt,
+            'mask': mask,
+        }
 
     def train_step(self, loss_sum) -> bool:
         """
@@ -422,6 +412,7 @@ class BaseModel(MetaModel, nn.Module):
         self.iteration += 1
         self.scheduler.step()
         return True
+
     @staticmethod
     def inference(model, loader):
         """
@@ -530,7 +521,7 @@ class BaseModel(MetaModel, nn.Module):
             valid_args = get_valid_args(eval_func, model.cfgs["evaluator_cfg"], ['metric'])
             # dataset_name = model.cfgs['data_cfg']['name']
             return eval_func(info_dict, **valid_args)
-    
+
     @staticmethod
     def run_test(model, *args, **kwargs):
         try:
@@ -540,4 +531,4 @@ class BaseModel(MetaModel, nn.Module):
         with torch.no_grad():
             loader = model.test_loader
             info_dict = model.inference(model, loader)
-        return  info_dict
+        return info_dict

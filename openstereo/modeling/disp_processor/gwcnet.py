@@ -122,7 +122,7 @@ class GwcDispProcessor(nn.Module):
                     "middle_disp": [pred0, pred1, pred2]
                 },
                 "inference_disp": {
-                    "disp_est": pred3,
+                    None
                 },
                 "visual_summary": {
 
