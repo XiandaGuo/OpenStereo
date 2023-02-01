@@ -1,8 +1,10 @@
-from ctypes import ArgumentError
-import torch.nn as nn
-import torch
-from utils import Odict
 import functools
+from ctypes import ArgumentError
+
+import torch
+import torch.nn as nn
+
+from utils import Odict
 from utils import ddp_all_gather
 
 
@@ -22,6 +24,7 @@ def gather_and_scale_wrapper(func):
             return loss, loss_info
         except:
             raise ArgumentError
+
     return inner
 
 

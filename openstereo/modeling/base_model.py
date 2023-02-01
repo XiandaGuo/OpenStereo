@@ -9,30 +9,29 @@ Typical usage:
 BaseModel.run_train(model)
 BaseModel.run_test(model)
 """
-import torch
-import numpy as np
 import os.path as osp
-import torch.nn as nn
-import torch.optim as optim
-import torch.utils.data as tordata
-
-from tqdm import tqdm
-from torch.cuda.amp import autocast
-from torch.cuda.amp import GradScaler
 from abc import ABCMeta
 from abc import abstractmethod
 
-from . import backbones
-from .loss_aggregator import LossAggregator
-from data.transform import get_transform
-from data.collate_fn import CollateFn
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.cuda.amp import GradScaler
+from torch.cuda.amp import autocast
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+
 from data.dataset import DataSet
-import data.sampler as Samplers
-from utils import Odict, mkdir, ddp_all_gather
-from utils import get_valid_args, is_list, is_dict, np2var, ts2np, list2var, get_attr_from
 from evaluation import evaluator as eval_functions
 from utils import NoOp
+from utils import Odict, mkdir, ddp_all_gather
 from utils import get_msg_mgr
+from utils import get_valid_args, is_list, is_dict, ts2np, get_attr_from
+from . import backbone
+from . import cost_processor
+from . import disp_processor
+from .loss_aggregator import LossAggregator
 
 __all__ = ['BaseModel']
 
@@ -42,6 +41,7 @@ class MetaModel(metaclass=ABCMeta):
 
     This class defines the necessary functions for the base model, in the base model, we have implemented them.
     """
+
     @abstractmethod
     def get_loader(self, data_cfg):
         """Based on the given data_cfg, we get the data loader."""
@@ -88,17 +88,25 @@ class MetaModel(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def inference(self):
+    def inference(self, *args, **kwargs):
         """Do inference (calculate features.)."""
         raise NotImplementedError
 
+    @staticmethod
     @abstractmethod
-    def run_train(model):
+    def run_train(model, *args, **kwargs):
         """Run a whole train schedule."""
         raise NotImplementedError
 
+    @staticmethod
     @abstractmethod
-    def run_test(model):
+    def run_val(model, load_ckpt, *args, **kwargs):
+        """Run a whole test schedule."""
+        raise NotImplementedError
+
+    @staticmethod
+    @abstractmethod
+    def run_test(model, *args, **kwargs):
         """Run a whole test schedule."""
         raise NotImplementedError
 
@@ -117,7 +125,7 @@ class BaseModel(MetaModel, nn.Module):
 
     """
 
-    def __init__(self, cfgs, training):
+    def __init__(self, cfgs, scope='train'):
         """Initialize the base model.
 
         Complete the model initialization, including the data loader, the network, the optimizer, the scheduler, the loss.
@@ -133,36 +141,44 @@ class BaseModel(MetaModel, nn.Module):
         self.msg_mgr = get_msg_mgr()
         self.cfgs = cfgs
         self.iteration = 0
-        self.engine_cfg = cfgs['trainer_cfg'] if training else cfgs['evaluator_cfg']
+        self.epoch = 0
+        self.scope = scope
+
+        is_train = scope == 'train'
+
+        self.engine_cfg = cfgs['trainer_cfg'] if is_train else cfgs['evaluator_cfg']
         if self.engine_cfg is None:
             raise Exception("Initialize a model without -Engine-Cfgs-")
 
-        if training and self.engine_cfg['enable_float16']:
+        if is_train and self.engine_cfg['enable_float16']:
             self.Scaler = GradScaler()
-        self.save_path = osp.join('output/', cfgs['data_cfg']['dataset_name'],
+        self.save_path = osp.join('output/', cfgs['data_cfg']['name'],
                                   cfgs['model_cfg']['model'], self.engine_cfg['save_name'])
 
         self.build_network(cfgs['model_cfg'])
         self.init_parameters()
 
         self.msg_mgr.log_info(cfgs['data_cfg'])
-        if training:
-            self.train_loader = self.get_loader(
-                cfgs['data_cfg'], train=True)
-        if not training or self.engine_cfg['with_test']:
-            self.test_loader = self.get_loader(
-                cfgs['data_cfg'], train=False)
 
-        self.device = torch.distributed.get_rank()
-        torch.cuda.set_device(self.device)
-        self.to(device=torch.device(
-            "cuda", self.device))
+        if scope == 'train':
+            self.train_loader = self.get_loader(cfgs['data_cfg'], scope)
+            if self.engine_cfg['with_test']:
+                self.val_loader = self.get_loader(cfgs['data_cfg'], scope)
+        elif scope == 'val':
+            self.val_loader = self.get_loader(cfgs['data_cfg'], scope)
+        else:
+            self.test_loader = self.get_loader(cfgs['data_cfg'], scope)
 
-        if training:
-            #self.loss_aggregator = LossAggregator(cfgs['loss_cfg'])
+        self.device_rank = torch.distributed.get_rank()
+        torch.cuda.set_device(self.device_rank)
+        self.to(device=torch.device("cuda", self.device_rank))
+
+        if is_train:
+            self.loss_aggregator = LossAggregator(cfgs['loss_cfg'])
             self.optimizer = self.get_optimizer(self.cfgs['optimizer_cfg'])
             self.scheduler = self.get_scheduler(cfgs['scheduler_cfg'])
-        self.train(training)
+
+        self.train(is_train)
         restore_hint = self.engine_cfg['restore_hint']
         if restore_hint != 0:
             self.resume_ckpt(restore_hint)
@@ -170,19 +186,66 @@ class BaseModel(MetaModel, nn.Module):
     def get_backbone(self, backbone_cfg):
         """Get the backbone of the model."""
         if is_dict(backbone_cfg):
-            Backbone = get_attr_from([backbones], backbone_cfg['type'])
+            Backbone = get_attr_from([backbone], backbone_cfg['type'])
             valid_args = get_valid_args(Backbone, backbone_cfg, ['type'])
             return Backbone(**valid_args)
         if is_list(backbone_cfg):
-            Backbone = nn.ModuleList([self.get_backbone(cfg)
-                                      for cfg in backbone_cfg])
+            Backbone = nn.ModuleList([self.get_backbone(cfg) for cfg in backbone_cfg])
             return Backbone
-        raise ValueError(
-            "Error type for -Backbone-Cfg-, supported: (A list of) dict.")
+        raise ValueError("Error type for -Backbone-Cfg-, supported: (A list of) dict.")
+
+    def get_cost_processor(self, cost_processor_cfg):
+        """Get the backbone of the model."""
+        if is_dict(cost_processor_cfg):
+            CostProcessor = get_attr_from([cost_processor], cost_processor_cfg['type'])
+            valid_args = get_valid_args(CostProcessor, cost_processor_cfg, ['type'])
+            return CostProcessor(**valid_args)
+        if is_list(cost_processor_cfg):
+            CostProcessor = nn.ModuleList([self.get_cost_processor(cfg) for cfg in cost_processor_cfg])
+            return CostProcessor
+        raise ValueError("Error type for -Backbone-Cfg-, supported: (A list of) dict.")
+
+    def get_disp_processor(self, disp_processor_cfg):
+        """Get the backbone of the model."""
+        if is_dict(disp_processor_cfg):
+            DispProcessor = get_attr_from([disp_processor], disp_processor_cfg['type'])
+            valid_args = get_valid_args(DispProcessor, disp_processor_cfg, ['type'])
+            return DispProcessor(**valid_args)
+        if is_list(disp_processor_cfg):
+            DispProcessor = nn.ModuleList([self.get_cost_processor(cfg) for cfg in disp_processor_cfg])
+            return DispProcessor
+        raise ValueError("Error type for -Backbone-Cfg-, supported: (A list of) dict.")
 
     def build_network(self, model_cfg):
         if 'backbone_cfg' in model_cfg.keys():
-            self.Backbone = self.get_backbone(model_cfg['backbone_cfg'])
+            base_config = model_cfg['base_config']
+            cfg = base_config.copy()
+            cfg.update(model_cfg['backbone_cfg'])
+            self.Backbone = self.get_backbone(cfg)
+        if 'cost_processor_cfg' in model_cfg.keys():
+            base_config = model_cfg['base_config']
+            cfg = base_config.copy()
+            cfg.update(model_cfg['cost_processor_cfg'])
+            self.CostProcessor = self.get_cost_processor(cfg)
+        if 'disp_processor_cfg' in model_cfg.keys():
+            base_config = model_cfg['base_config']
+            cfg = base_config.copy()
+            cfg.update(model_cfg['disp_processor_cfg'])
+            self.DispProcessor = self.get_disp_processor(cfg)
+
+    def forward(self, inputs):
+        """Forward the network."""
+        outputs = {}
+        outputs['backbone'] = self.Backbone(inputs)
+
+        cost_input = outputs['backbone']
+        outputs['cost_processor'] = self.CostProcessor(cost_input)
+
+        disp_input = outputs['cost_processor']
+        disp_input.update({'disp_shape': inputs['ref_img'].shape[-2:]})
+        outputs['disp_processor'] = self.DispProcessor(disp_input)
+
+        return outputs['disp_processor']
 
     def init_parameters(self):
         for m in self.modules():
@@ -199,39 +262,44 @@ class BaseModel(MetaModel, nn.Module):
                     nn.init.normal_(m.weight.data, 1.0, 0.02)
                     nn.init.constant_(m.bias.data, 0.0)
 
-    def get_loader(self, data_cfg, train=True):
-        sampler_cfg = self.cfgs['trainer_cfg']['sampler'] if train else self.cfgs['evaluator_cfg']['sampler']
-        dataset = DataSet(data_cfg, train)
+    def get_loader(self, data_cfg, scope):
+        is_train = scope == 'train'
+        dataset = DataSet(data_cfg, scope)
+        sampler_cfg = self.cfgs['trainer_cfg']['sampler'] if is_train else self.cfgs['evaluator_cfg']['sampler']
 
-        Sampler = get_attr_from([Samplers], sampler_cfg['type'])
-        vaild_args = get_valid_args(Sampler, sampler_cfg, free_keys=[
-            'sample_type', 'type'])
-        sampler = Sampler(dataset, **vaild_args)
+        # Sampler = get_attr_from([Samplers], sampler_cfg['type'])
+        # vaild_args = get_valid_args(Sampler, sampler_cfg, free_keys=[
+        #     'sample_type', 'type'])
+        # print(vaild_args)
+        # sampler = Sampler(dataset)
+        # print(sampler)
+        # collate_fn = CollateFn(dataset.label_set, sampler_cfg)
 
-        loader = tordata.DataLoader(
+        loader = DataLoader(
             dataset=dataset,
-            batch_sampler=sampler,
-            collate_fn=CollateFn(dataset.label_set, sampler_cfg),
-            num_workers=data_cfg['num_workers'])
+            batch_size=sampler_cfg['batch_size'],
+            shuffle=sampler_cfg['batch_shuffle'] if is_train else False,
+            num_workers=data_cfg['num_workers']
+            # batch_sampler=sampler,
+            # collate_fn=collate_fn,
+        )
         return loader
 
     def get_optimizer(self, optimizer_cfg):
         self.msg_mgr.log_info(optimizer_cfg)
         optimizer = get_attr_from([optim], optimizer_cfg['solver'])
         valid_arg = get_valid_args(optimizer, optimizer_cfg, ['solver'])
-        optimizer = optimizer(
-            filter(lambda p: p.requires_grad, self.parameters()), **valid_arg)
+        optimizer = optimizer(params=filter(lambda p: p.requires_grad, self.parameters()), **valid_arg)
         return optimizer
 
     def get_scheduler(self, scheduler_cfg):
         self.msg_mgr.log_info(scheduler_cfg)
-        Scheduler = get_attr_from(
-            [optim.lr_scheduler], scheduler_cfg['scheduler'])
+        Scheduler = get_attr_from([optim.lr_scheduler], scheduler_cfg['scheduler'])
         valid_arg = get_valid_args(Scheduler, scheduler_cfg, ['scheduler'])
         scheduler = Scheduler(self.optimizer, **valid_arg)
         return scheduler
 
-    def save_ckpt(self, iteration):
+    def save_ckpt(self, iteration=None, epoch=None):
         if torch.distributed.get_rank() == 0:
             mkdir(osp.join(self.save_path, "checkpoints/"))
             save_name = self.engine_cfg['save_name']
@@ -239,15 +307,16 @@ class BaseModel(MetaModel, nn.Module):
                 'model': self.state_dict(),
                 'optimizer': self.optimizer.state_dict(),
                 'scheduler': self.scheduler.state_dict(),
-                'iteration': iteration}
+                'iteration': self.iteration if iteration is None else iteration,
+                'epoch': self.epoch if epoch is None else epoch,
+            }
             torch.save(checkpoint,
-                       osp.join(self.save_path, 'checkpoints/{}-{:0>5}.pt'.format(save_name, iteration)))
+                       osp.join(self.save_path, 'checkpoints/{}-{:0>5}.pt'.format(save_name, self.iteration)))
 
     def _load_ckpt(self, save_name):
         load_ckpt_strict = self.engine_cfg['restore_ckpt_strict']
 
-        checkpoint = torch.load(save_name, map_location=torch.device(
-            "cuda", self.device))
+        checkpoint = torch.load(save_name, map_location=torch.device("cuda", self.device_rank))
         model_state_dict = checkpoint['model']
 
         if not load_ckpt_strict:
@@ -296,38 +365,33 @@ class BaseModel(MetaModel, nn.Module):
         Args:
             inputs: the input data.
         Returns:
-            tuple: training data including inputs, labels, and some meta data.
+            dict: training data including left image, right image, disp image,
+                  and some meta data.
         """
-        seqs_batch, labs_batch, typs_batch, vies_batch, seqL_batch = inputs
-        trf_cfgs = self.engine_cfg['transform']
-        seq_trfs = get_transform(trf_cfgs)
-        if len(seqs_batch) != len(seq_trfs):
-            raise ValueError(
-                "The number of types of input data and transform should be same. But got {} and {}".format(len(seqs_batch), len(seq_trfs)))
-        requires_grad = bool(self.training)
-        seqs = [np2var(np.asarray([trf(fra) for fra in seq]), requires_grad=requires_grad).float()
-                for trf, seq in zip(seq_trfs, seqs_batch)]
+        organized_inputs = {}
 
-        typs = typs_batch
-        vies = vies_batch
+        organized_inputs['ref_img'] = inputs['left']
+        organized_inputs['tgt_img'] = inputs['right']
 
-        labs = list2var(labs_batch).long()
+        disp_gt = inputs['disp']
+        max_disp = self.cfgs['model_cfg']['base_config']['max_disp']
 
-        if seqL_batch is not None:
-            seqL_batch = np2var(seqL_batch).int()
-        seqL = seqL_batch
+        # asure the disp_gt has the shape of [B, H, W]
+        if len(disp_gt.shape) == 4:
+            disp_gt = disp_gt.squeeze(1)
+            organized_inputs['disp'] = disp_gt
 
-        if seqL is not None:
-            seqL_sum = int(seqL.sum().data.cpu().numpy())
-            ipts = [_[:, :seqL_sum] for _ in seqs]
-        else:
-            ipts = seqs
-        del seqs
-        return ipts, labs, typs, vies, seqL
+        # # compute the mask of valid disp_gt
+        mask = (disp_gt < max_disp) & (disp_gt > 0)
+        organized_inputs['mask'] = mask
+        return organized_inputs
 
     def train_step(self, loss_sum) -> bool:
-        """Conduct loss_sum.backward(), self.optimizer.step() and self.scheduler.step().
-
+        """
+        Conduct:
+            loss_sum.backward()
+            self.optimizer.step()
+            self.scheduler.step()
         Args:
             loss_sum:The loss of the current batch.
         Returns:
@@ -347,8 +411,9 @@ class BaseModel(MetaModel, nn.Module):
             # Warning caused by optimizer skip when NaN
             # https://discuss.pytorch.org/t/optimizer-step-before-lr-scheduler-step-error-using-gradscaler/92930/5
             if scale != self.Scaler.get_scale():
-                self.msg_mgr.log_debug("Training step skip. Expected the former scale equals to the present, got {} and {}".format(
-                    scale, self.Scaler.get_scale()))
+                self.msg_mgr.log_debug(
+                    "Training step skip. Expected the former scale equals to the present, got {} and {}".format(
+                        scale, self.Scaler.get_scale()))
                 return False
         else:
             loss_sum.backward()
@@ -357,34 +422,36 @@ class BaseModel(MetaModel, nn.Module):
         self.iteration += 1
         self.scheduler.step()
         return True
-
-    def inference(self, rank):
-        """Inference all the test data.
-
+    @staticmethod
+    def inference(model, loader):
+        """
+        Inference all the test data.
         Args:
-            rank: the rank of the current process.Transform
+            model: the model to be tested.
+            loader: data loader.
         Returns:
             Odict: contains the inference results.
         """
-        total_size = len(self.test_loader)
-        if rank == 0:
+        total_size = len(loader)
+        if model.device_rank == 0:
             pbar = tqdm(total=total_size, desc='Transforming')
         else:
             pbar = NoOp()
-        batch_size = self.test_loader.batch_sampler.batch_size
+        batch_size = loader.batch_sampler.batch_size
         rest_size = total_size
         info_dict = Odict()
-        for inputs in self.test_loader:
-            ipts = self.inputs_pretreament(inputs)
-            with autocast(enabled=self.engine_cfg['enable_float16']):
-                retval = self.forward(ipts)
-                inference_feat = retval['inference_feat']
-                for k, v in inference_feat.items():
-                    inference_feat[k] = ddp_all_gather(v, requires_grad=False)
-                del retval
-            for k, v in inference_feat.items():
-                inference_feat[k] = ts2np(v)
-            info_dict.append(inference_feat)
+        for inputs in loader:
+            ipts = model.inputs_pretreament(inputs)
+            with autocast(enabled=model.engine_cfg['enable_float16']):
+                output = model(ipts)
+                inference_disp = output['inference_disp']
+                for k, v in inference_disp.items():
+                    inference_disp[k] = ddp_all_gather(v, requires_grad=False)
+                del output
+            inference_disp.update(ipts)
+            for k, v in inference_disp.items():
+                inference_disp[k] = ts2np(v)
+            info_dict.append(inference_disp)
             rest_size -= batch_size
             if rest_size >= 0:
                 update_size = batch_size
@@ -395,69 +462,82 @@ class BaseModel(MetaModel, nn.Module):
         for k, v in info_dict.items():
             v = np.concatenate(v)[:total_size]
             info_dict[k] = v
+        # the final output is a dict {'disp_est': np.array}
         return info_dict
 
-
-    @ staticmethod
+    @staticmethod
     def run_train(model):
         """Accept the instance object(model) here, and then run the train loop."""
-        for inputs in model.train_loader:
-            ipts = model.inputs_pretreament(inputs)
-            with autocast(enabled=model.engine_cfg['enable_float16']):
-                retval = model(ipts)
-                training_feat, visual_summary = retval['training_feat'], retval['visual_summary']
-                del retval
-            loss_sum, loss_info = model.loss_aggregator(training_feat)
-            ok = model.train_step(loss_sum)
-            if not ok:
-                continue
+        model.train()
+        while True:
+            model.epoch += 1
+            for inputs in model.train_loader:
+                ipts = model.inputs_pretreament(inputs)
+                with autocast(enabled=model.engine_cfg['enable_float16']):
+                    output = model(ipts)
+                loss_sum, loss_info = model.loss_aggregator(
+                    output, ipts['disp'].to(model.device),
+                    ipts['mask'].to(model.device)
+                )
+                ok = model.train_step(loss_sum)
+                if not ok:
+                    continue
+                visual_summary = {}
+                visual_summary.update(loss_info)
+                visual_summary['scalar/learning_rate'] = model.optimizer.param_groups[0]['lr']
 
-            visual_summary.update(loss_info)
-            visual_summary['scalar/learning_rate'] = model.optimizer.param_groups[0]['lr']
+                model.msg_mgr.train_step(loss_info, visual_summary)
+                if model.iteration % model.engine_cfg['save_iter'] == 0:
+                    # save the checkpoint
+                    model.save_ckpt()
 
-            model.msg_mgr.train_step(loss_info, visual_summary)
-            if model.iteration % model.engine_cfg['save_iter'] == 0:
-                # save the checkpoint
-                model.save_ckpt(model.iteration)
+                    # run test if with_test = true
+                    if model.engine_cfg['with_test']:
+                        model.msg_mgr.log_info("Running test...")
+                        model.eval()
+                        result_dict = BaseModel.run_val(model)
+                        model.train()
+                        # if model.cfgs['trainer_cfg']['fix_BN']:
+                        #     model.fix_BN()
+                        model.msg_mgr.write_to_tensorboard(result_dict)
+                        model.msg_mgr.reset_time()
 
-                # run test if with_test = true
-                if model.engine_cfg['with_test']:
-                    model.msg_mgr.log_info("Running test...")
-                    model.eval()
-                    result_dict = BaseModel.run_test(model)
-                    model.train()
-                    if model.cfgs['trainer_cfg']['fix_BN']:
-                        model.fix_BN()
-                    model.msg_mgr.write_to_tensorboard(result_dict)
-                    model.msg_mgr.reset_time()
-            if model.iteration >= model.engine_cfg['total_iter']:
-                break
+                if model.iteration >= model.engine_cfg['total_iter']:
+                    return
+            if hasattr(model.engine_cfg, 'max_epoch') and model.epoch >= model.engine_cfg['max_epoch']:
+                return
 
-    @ staticmethod
-    def run_test(model):
+    @staticmethod
+    def run_val(model, load_ckpt=False):
         """Accept the instance object(model) here, and then run the test loop."""
+        if load_ckpt:
+            try:
+                model.resume_ckpt(model.cfgs['evaluator_cfg']['checkpoint'])
+            except Exception as e:
+                model.msg_mgr.log_warning("Failed to resume the checkpoint, got {}".format(e))
 
-        rank = torch.distributed.get_rank()
+        rank = model.device_rank
+        model.eval()
         with torch.no_grad():
-            info_dict = model.inference(rank)
+            loader = model.val_loader
+            info_dict = model.inference(model, loader)
         if rank == 0:
-            loader = model.test_loader
-            label_list = loader.dataset.label_list
-            types_list = loader.dataset.types_list
-            views_list = loader.dataset.views_list
-
-            info_dict.update({
-                'labels': label_list, 'types': types_list, 'views': views_list})
-
             if 'eval_func' in model.cfgs["evaluator_cfg"].keys():
                 eval_func = model.cfgs['evaluator_cfg']["eval_func"]
             else:
-                eval_func = 'identification'
+                eval_func = 'OpenStereoEvaluator'
             eval_func = getattr(eval_functions, eval_func)
-            valid_args = get_valid_args(
-                eval_func, model.cfgs["evaluator_cfg"], ['metric'])
-            try:
-                dataset_name = model.cfgs['data_cfg']['test_dataset_name']
-            except:
-                dataset_name = model.cfgs['data_cfg']['dataset_name']
-            return eval_func(info_dict, dataset_name, **valid_args)
+            valid_args = get_valid_args(eval_func, model.cfgs["evaluator_cfg"], ['metric'])
+            # dataset_name = model.cfgs['data_cfg']['name']
+            return eval_func(info_dict, **valid_args)
+    
+    @staticmethod
+    def run_test(model, *args, **kwargs):
+        try:
+            model.resume_ckpt(model.cfgs['evaluator_cfg']['checkpoint'])
+        except Exception as e:
+            model.msg_mgr.log_warning("Failed to resume the checkpoint, got {}".format(e))
+        with torch.no_grad():
+            loader = model.test_loader
+            info_dict = model.inference(model, loader)
+        return  info_dict

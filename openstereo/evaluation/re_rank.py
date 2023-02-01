@@ -20,7 +20,7 @@ def re_ranking(original_dist, query_num, k1, k2, lambda_value):
             candidate_forward_k_neigh_index = initial_rank[candidate, :int(
                 np.around(k1 / 2)) + 1]
             candidate_backward_k_neigh_index = initial_rank[candidate_forward_k_neigh_index,
-                                                            :int(np.around(k1 / 2)) + 1]
+                                               :int(np.around(k1 / 2)) + 1]
             fi_candidate = np.where(
                 candidate_backward_k_neigh_index == candidate)[0]
             candidate_k_reciprocal_index = candidate_forward_k_neigh_index[fi_candidate]
@@ -56,7 +56,7 @@ def re_ranking(original_dist, query_num, k1, k2, lambda_value):
         jaccard_dist[i] = 1 - temp_min / (2 - temp_min)
 
     final_dist = jaccard_dist * (1 - lambda_value) + \
-        original_dist * lambda_value
+                 original_dist * lambda_value
     del original_dist
     del V
     del jaccard_dist

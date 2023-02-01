@@ -1,24 +1,18 @@
 from __future__ import print_function
-import torch
+
 import copy
-import torch.nn as nn
-import torch.utils.data
-import torch.nn.functional as F
-from torch.autograd import Variable
-from ..base_model import BaseModel
 import math
+
 import numpy as np
-from data.kitti15 import KITTI2015
-
-from tqdm import tqdm
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.utils.data
+from torch.autograd import Variable
 from torch.cuda.amp import autocast
-from torch.cuda.amp import GradScaler
-from abc import ABCMeta
-from abc import abstractmethod
-from utils import Odict, mkdir, ddp_all_gather
 
-from utils import NoOp
-from utils.preprocess import get_transform
+from data.kitti15 import KITTI2015
+from ..base_model import BaseModel
 
 
 class hourglass(nn.Module):
@@ -72,7 +66,7 @@ class PSMNet(BaseModel):
     def __init__(self, *args, **kargs):
         super(PSMNet, self).__init__(*args, **kargs)
 
-    def build_network(self,model_cfg):
+    def build_network(self, model_cfg):
         self.maxdisp = model_cfg['maxdisp']
 
         self.feature_extraction = feature_extraction()
@@ -119,6 +113,7 @@ class PSMNet(BaseModel):
         #         m.bias.data.zero_()
         #     elif isinstance(m, nn.Linear):
         #         m.bias.data.zero_()
+
     def init_parameters(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -135,7 +130,6 @@ class PSMNet(BaseModel):
                 m.bias.data.zero_()
             elif isinstance(m, nn.Linear):
                 m.bias.data.zero_()
-
 
     def forward(self, left, right):
 
@@ -197,27 +191,26 @@ class PSMNet(BaseModel):
         else:
             return pred3
 
-
     @staticmethod
     def run_train(model):
-        while(model.iteration < model.engine_cfg['total_iter']):
+        while (model.iteration < model.engine_cfg['total_iter']):
             for inputs in model.train_loader:
                 imgL, imgR, disp_L = model.inputs_pretreament(inputs)
                 mask = (disp_L > 0)
                 mask.detach_()
                 with autocast(enabled=model.engine_cfg['enable_float16']):
-                    output1, output2, output3  = model(imgL,imgR)
+                    output1, output2, output3 = model(imgL, imgR)
                     output1 = torch.squeeze(output1, 1)
                     output2 = torch.squeeze(output2, 1)
                     output3 = torch.squeeze(output3, 1)
                     # training_feat, visual_summary = retval['training_feat'], retval['visual_summary']
                     # del retval
 
-                #loss_sum, loss_info = model.loss_aggregator(training_feat)
-                loss_sum=0.5*F.smooth_l1_loss(output1[mask], disp_L[mask], size_average=True) \
-                         + 0.7*F.smooth_l1_loss(output2[mask], disp_L[mask], size_average=True) \
-                         + F.smooth_l1_loss(output3[mask], disp_L[mask], size_average=True)
-                print("per-iter training loss  = %.3f",loss_sum)
+                # loss_sum, loss_info = model.loss_aggregator(training_feat)
+                loss_sum = 0.5 * F.smooth_l1_loss(output1[mask], disp_L[mask], size_average=True) \
+                           + 0.7 * F.smooth_l1_loss(output2[mask], disp_L[mask], size_average=True) \
+                           + F.smooth_l1_loss(output3[mask], disp_L[mask], size_average=True)
+                print("per-iter training loss  = %.3f", loss_sum)
                 ok = model.train_step(loss_sum)
                 if not ok:
                     continue
@@ -225,8 +218,8 @@ class PSMNet(BaseModel):
                 # visual_summary.update(loss_info)
                 # visual_summary['scalar/learning_rate'] = model.optimizer.param_groups[0]['lr']
 
-                #model.msg_mgr.train_step(loss_info, visual_summary)
-                #model.train_step(loss_sum)
+                # model.msg_mgr.train_step(loss_info, visual_summary)
+                # model.train_step(loss_sum)
                 if model.iteration % model.engine_cfg['save_iter'] == 0:
                     # save the checkpoint
                     model.save_ckpt(model.iteration)
@@ -235,7 +228,7 @@ class PSMNet(BaseModel):
                     if model.engine_cfg['with_test']:
                         model.msg_mgr.log_info("Running test...")
                         model.eval()
-                        result_dict = model.run_test(model)
+                        result_dict = model.run_val(model)
                         model.train()
                         if model.cfgs['trainer_cfg']['fix_BN']:
                             model.fix_BN()
@@ -245,7 +238,7 @@ class PSMNet(BaseModel):
                     break
 
     @staticmethod
-    def run_test(model):
+    def run_val(model):
         total_size = len(model.test_loader)
         # rank = torch.distributed.get_rank()
         # if rank == 0:
@@ -255,11 +248,11 @@ class PSMNet(BaseModel):
         # batch_size = model.test_loader.batch_sampler.batch_size
         # rest_size = total_size
         # info_dict = Odict()
-        total_test_loss=0
+        total_test_loss = 0
         for inputs in model.test_loader:
             imgL, imgR, disp_L = model.inputs_pretreament(inputs)
             with autocast(enabled=model.engine_cfg['enable_float16']):
-                output3 = model.forward(imgL,imgR)
+                output3 = model.forward(imgL, imgR)
 
             pred_disp = output3.data.cpu()
 
@@ -269,13 +262,13 @@ class PSMNet(BaseModel):
             disp_L[index[0][:], index[1][:], index[2][:]] = np.abs(
                 true_disp[disp_L[0][:], index[1][:], index[2][:]] - pred_disp[index[0][:], index[1][:], index[2][:]])
             correct = (disp_L[index[0][:], index[1][:], index[2][:]] < 3) | (
-                        disp_L[index[0][:], index[1][:], index[2][:]] < true_disp[
-                    index[0][:], index[1][:], index[2][:]] * 0.05)
+                    disp_L[index[0][:], index[1][:], index[2][:]] < true_disp[
+                index[0][:], index[1][:], index[2][:]] * 0.05)
             torch.cuda.empty_cache()
 
-            test_loss=1 - (float(torch.sum(correct)) / float(len(index[0])))
-            #print('Iter %d 3-px error in val = %.3f' % (batch_idx, test_loss * 100))
-            total_test_loss+=test_loss
+            test_loss = 1 - (float(torch.sum(correct)) / float(len(index[0])))
+            # print('Iter %d 3-px error in val = %.3f' % (batch_idx, test_loss * 100))
+            total_test_loss += test_loss
 
         # print('epoch %d total 3-px error in val = %.3f' % (epoch, total_test_loss / len(TestImgLoader) * 100))
         # if total_test_loss / len(TestImgLoader) * 100 > max_acc:
@@ -283,15 +276,15 @@ class PSMNet(BaseModel):
         #     max_epo = epoch
         # print('MAX epoch %d total test error = %.3f' % (max_epo, max_acc))
 
-        print("total 3-px error in val = %.3f",total_test_loss/total_size)
+        print("total 3-px error in val = %.3f", total_test_loss / total_size)
 
-        #return info_dict
+        # return info_dict
 
     def get_loader(self, data_cfg, train=True):
 
-        all_left_img, all_right_img, all_left_disp, test_left_img, test_right_img, test_left_disp = KITTI2015.Imageloader(data_cfg['dataset_root'])
-        print("len_all_left_img",len(all_left_img))
-
+        all_left_img, all_right_img, all_left_disp, test_left_img, test_right_img, test_left_disp = KITTI2015.Imageloader(
+            data_cfg['dataset_root'])
+        print("len_all_left_img", len(all_left_img))
 
         if train:
 
@@ -304,9 +297,10 @@ class PSMNet(BaseModel):
                 KITTI2015(test_left_img, test_right_img, test_left_disp, False),
                 batch_size=8, shuffle=False, num_workers=4, drop_last=False)
         return loader
+
     @staticmethod
     def inputs_pretreament(inputs):
-        #processed=get_transform(augment=False)
+        # processed=get_transform(augment=False)
         imgL, imgR, disp_L = inputs
         # imgL=processed(imgL)
         # imgR=processed(imgR)
@@ -314,20 +308,21 @@ class PSMNet(BaseModel):
         return imgL.cuda(), imgR.cuda(), disp_L.cuda()
 
 
-
 def convbn(in_planes, out_planes, kernel_size, stride, pad, dilation):
-
-    return nn.Sequential(nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride, padding=dilation if dilation > 1 else pad, dilation = dilation, bias=False),
+    return nn.Sequential(nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride,
+                                   padding=dilation if dilation > 1 else pad, dilation=dilation, bias=False),
                          nn.BatchNorm2d(out_planes))
 
 
 def convbn_3d(in_planes, out_planes, kernel_size, stride, pad):
+    return nn.Sequential(
+        nn.Conv3d(in_planes, out_planes, kernel_size=kernel_size, padding=pad, stride=stride, bias=False),
+        nn.BatchNorm3d(out_planes))
 
-    return nn.Sequential(nn.Conv3d(in_planes, out_planes, kernel_size=kernel_size, padding=pad, stride=stride,bias=False),
-                         nn.BatchNorm3d(out_planes))
 
 class BasicBlock(nn.Module):
     expansion = 1
+
     def __init__(self, inplanes, planes, stride, downsample, pad, dilation):
         super(BasicBlock, self).__init__()
 
@@ -350,14 +345,16 @@ class BasicBlock(nn.Module):
 
         return out
 
+
 class disparityregression(nn.Module):
     def __init__(self, maxdisp):
         super(disparityregression, self).__init__()
-        self.disp = torch.Tensor(np.reshape(np.array(range(maxdisp)),[1, maxdisp,1,1])).cuda()
+        self.disp = torch.Tensor(np.reshape(np.array(range(maxdisp)), [1, maxdisp, 1, 1])).cuda()
 
     def forward(self, x):
-        out = torch.sum(x*self.disp.data,1, keepdim=True)
+        out = torch.sum(x * self.disp.data, 1, keepdim=True)
         return out
+
 
 class feature_extraction(nn.Module):
     def __init__(self):
@@ -370,72 +367,68 @@ class feature_extraction(nn.Module):
                                        convbn(32, 32, 3, 1, 1, 1),
                                        nn.ReLU(inplace=True))
 
-        self.layer1 = self._make_layer(BasicBlock, 32, 3, 1,1,1)
-        self.layer2 = self._make_layer(BasicBlock, 64, 16, 2,1,1)
-        self.layer3 = self._make_layer(BasicBlock, 128, 3, 1,1,1)
-        self.layer4 = self._make_layer(BasicBlock, 128, 3, 1,1,2)
+        self.layer1 = self._make_layer(BasicBlock, 32, 3, 1, 1, 1)
+        self.layer2 = self._make_layer(BasicBlock, 64, 16, 2, 1, 1)
+        self.layer3 = self._make_layer(BasicBlock, 128, 3, 1, 1, 1)
+        self.layer4 = self._make_layer(BasicBlock, 128, 3, 1, 1, 2)
 
-        self.branch1 = nn.Sequential(nn.AvgPool2d((64, 64), stride=(64,64)),
+        self.branch1 = nn.Sequential(nn.AvgPool2d((64, 64), stride=(64, 64)),
                                      convbn(128, 32, 1, 1, 0, 1),
                                      nn.ReLU(inplace=True))
 
-        self.branch2 = nn.Sequential(nn.AvgPool2d((32, 32), stride=(32,32)),
+        self.branch2 = nn.Sequential(nn.AvgPool2d((32, 32), stride=(32, 32)),
                                      convbn(128, 32, 1, 1, 0, 1),
                                      nn.ReLU(inplace=True))
 
-        self.branch3 = nn.Sequential(nn.AvgPool2d((16, 16), stride=(16,16)),
+        self.branch3 = nn.Sequential(nn.AvgPool2d((16, 16), stride=(16, 16)),
                                      convbn(128, 32, 1, 1, 0, 1),
                                      nn.ReLU(inplace=True))
 
-        self.branch4 = nn.Sequential(nn.AvgPool2d((8, 8), stride=(8,8)),
+        self.branch4 = nn.Sequential(nn.AvgPool2d((8, 8), stride=(8, 8)),
                                      convbn(128, 32, 1, 1, 0, 1),
                                      nn.ReLU(inplace=True))
 
         self.lastconv = nn.Sequential(convbn(320, 128, 3, 1, 1, 1),
                                       nn.ReLU(inplace=True),
-                                      nn.Conv2d(128, 32, kernel_size=1, padding=0, stride = 1, bias=False))
+                                      nn.Conv2d(128, 32, kernel_size=1, padding=0, stride=1, bias=False))
 
     def _make_layer(self, block, planes, blocks, stride, pad, dilation):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
-           downsample = nn.Sequential(
+            downsample = nn.Sequential(
                 nn.Conv2d(self.inplanes, planes * block.expansion,
                           kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(planes * block.expansion),)
+                nn.BatchNorm2d(planes * block.expansion), )
 
         layers = []
         layers.append(block(self.inplanes, planes, stride, downsample, pad, dilation))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes,1,None,pad,dilation))
+            layers.append(block(self.inplanes, planes, 1, None, pad, dilation))
 
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        output      = self.firstconv(x)
-        output      = self.layer1(output)
-        output_raw  = self.layer2(output)
-        output      = self.layer3(output_raw)
+        output = self.firstconv(x)
+        output = self.layer1(output)
+        output_raw = self.layer2(output)
+        output = self.layer3(output_raw)
         output_skip = self.layer4(output)
 
-
         output_branch1 = self.branch1(output_skip)
-        output_branch1 = F.upsample(output_branch1, (output_skip.size()[2],output_skip.size()[3]),mode='bilinear')
+        output_branch1 = F.upsample(output_branch1, (output_skip.size()[2], output_skip.size()[3]), mode='bilinear')
 
         output_branch2 = self.branch2(output_skip)
-        output_branch2 = F.upsample(output_branch2, (output_skip.size()[2],output_skip.size()[3]),mode='bilinear')
+        output_branch2 = F.upsample(output_branch2, (output_skip.size()[2], output_skip.size()[3]), mode='bilinear')
 
         output_branch3 = self.branch3(output_skip)
-        output_branch3 = F.upsample(output_branch3, (output_skip.size()[2],output_skip.size()[3]),mode='bilinear')
+        output_branch3 = F.upsample(output_branch3, (output_skip.size()[2], output_skip.size()[3]), mode='bilinear')
 
         output_branch4 = self.branch4(output_skip)
-        output_branch4 = F.upsample(output_branch4, (output_skip.size()[2],output_skip.size()[3]),mode='bilinear')
+        output_branch4 = F.upsample(output_branch4, (output_skip.size()[2], output_skip.size()[3]), mode='bilinear')
 
-        output_feature = torch.cat((output_raw, output_skip, output_branch4, output_branch3, output_branch2, output_branch1), 1)
+        output_feature = torch.cat(
+            (output_raw, output_skip, output_branch4, output_branch3, output_branch2, output_branch1), 1)
         output_feature = self.lastconv(output_feature)
 
         return output_feature
-
-
-
-

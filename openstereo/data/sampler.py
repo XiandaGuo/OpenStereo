@@ -1,11 +1,22 @@
 import math
 import random
+
 import torch
 import torch.distributed as dist
-import torch.utils.data as tordata
+from torch.utils.data import Sampler, SequentialSampler, RandomSampler
 
 
-class TripletSampler(tordata.sampler.Sampler):
+class BasicStereoSampler(SequentialSampler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class RandomStereoSampler(RandomSampler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class TripletSampler(Sampler):
     def __init__(self, dataset, batch_size, batch_shuffle=False):
         self.dataset = dataset
         self.batch_size = batch_size
@@ -15,7 +26,7 @@ class TripletSampler(tordata.sampler.Sampler):
         self.batch_shuffle = batch_shuffle
 
         self.world_size = dist.get_world_size()
-        if (self.batch_size[0]*self.batch_size[1]) % self.world_size != 0:
+        if (self.batch_size[0] * self.batch_size[1]) % self.world_size != 0:
             raise ValueError("World size ({}) is not divisible by batch_size ({} x {})".format(
                 self.world_size, batch_size[0], batch_size[1]))
         self.rank = dist.get_rank()
@@ -40,7 +51,7 @@ class TripletSampler(tordata.sampler.Sampler):
             total_size = int(math.ceil(total_batch_size /
                                        self.world_size)) * self.world_size
             sample_indices += sample_indices[:(
-                total_batch_size - len(sample_indices))]
+                    total_batch_size - len(sample_indices))]
 
             sample_indices = sample_indices[self.rank:total_size:self.world_size]
             yield sample_indices
@@ -62,7 +73,7 @@ def sync_random_sample_list(obj_list, k):
     return [obj_list[i] for i in idx]
 
 
-class InferenceSampler(tordata.sampler.Sampler):
+class InferenceSampler(Sampler):
     def __init__(self, dataset, batch_size):
         self.dataset = dataset
         self.batch_size = batch_size
@@ -79,7 +90,7 @@ class InferenceSampler(tordata.sampler.Sampler):
 
         if batch_size != 1:
             complement_size = math.ceil(self.size / batch_size) * \
-                batch_size
+                              batch_size
             indices += indices[:(complement_size - self.size)]
             self.size = complement_size
 
@@ -88,7 +99,7 @@ class InferenceSampler(tordata.sampler.Sampler):
 
         for i in range(int(self.size / batch_size_per_rank)):
             indx_batch_per_rank.append(
-                indices[i*batch_size_per_rank:(i+1)*batch_size_per_rank])
+                indices[i * batch_size_per_rank:(i + 1) * batch_size_per_rank])
 
         self.idx_batch_this_rank = indx_batch_per_rank[rank::world_size]
 

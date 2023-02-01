@@ -5,7 +5,7 @@ Please download the dataset and place it in the `datasets/kitti15` directory.
 The directory structure should be as follows:
 
 ```text
-datasets
+data
 |   kitti15
 |   |   ├── training
 |   |   |   ├── colmap

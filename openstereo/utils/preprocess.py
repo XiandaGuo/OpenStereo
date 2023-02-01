@@ -1,19 +1,20 @@
-import torch
-import torchvision.transforms as transforms
 import random
 
-__imagenet_stats = {'mean': [0.485, 0.456, 0.406],
-                   'std': [0.229, 0.224, 0.225]}
+import torch
+import torchvision.transforms as transforms
 
-#__imagenet_stats = {'mean': [0.5, 0.5, 0.5],
+__imagenet_stats = {'mean': [0.485, 0.456, 0.406],
+                    'std': [0.229, 0.224, 0.225]}
+
+# __imagenet_stats = {'mean': [0.5, 0.5, 0.5],
 #                   'std': [0.5, 0.5, 0.5]}
 
 __imagenet_pca = {
     'eigval': torch.Tensor([0.2175, 0.0188, 0.0045]),
     'eigvec': torch.Tensor([
-        [-0.5675,  0.7192,  0.4009],
+        [-0.5675, 0.7192, 0.4009],
         [-0.5808, -0.0045, -0.8140],
-        [-0.5836, -0.6948,  0.4203],
+        [-0.5836, -0.6948, 0.4203],
     ])
 }
 
@@ -23,8 +24,8 @@ def scale_crop(input_size, scale_size=None, normalize=__imagenet_stats):
         transforms.ToTensor(),
         transforms.Normalize(**normalize),
     ]
-    #if scale_size != input_size:
-    #t_list = [transforms.Scale((960,540))] + t_list
+    # if scale_size != input_size:
+    # t_list = [transforms.Scale((960,540))] + t_list
 
     return transforms.Compose(t_list)
 
@@ -58,10 +59,12 @@ def inception_preproccess(input_size, normalize=__imagenet_stats):
         transforms.ToTensor(),
         transforms.Normalize(**normalize)
     ])
+
+
 def inception_color_preproccess(input_size, normalize=__imagenet_stats):
     return transforms.Compose([
-        #transforms.RandomSizedCrop(input_size),
-        #transforms.RandomHorizontalFlip(),
+        # transforms.RandomSizedCrop(input_size),
+        # transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         ColorJitter(
             brightness=0.4,
@@ -78,12 +81,10 @@ def get_transform(name='imagenet', input_size=None,
     normalize = __imagenet_stats
     input_size = 256
     if augment:
-            return inception_color_preproccess(input_size, normalize=normalize)
+        return inception_color_preproccess(input_size, normalize=normalize)
     else:
-            return scale_crop(input_size=input_size,
-                              scale_size=scale_size, normalize=normalize)
-
-
+        return scale_crop(input_size=input_size,
+                          scale_size=scale_size, normalize=normalize)
 
 
 class Lighting(object):
@@ -99,9 +100,9 @@ class Lighting(object):
             return img
 
         alpha = img.new().resize_(3).normal_(0, self.alphastd)
-        rgb = self.eigvec.type_as(img).clone()\
-            .mul(alpha.view(1, 3).expand(3, 3))\
-            .mul(self.eigval.view(1, 3).expand(3, 3))\
+        rgb = self.eigvec.type_as(img).clone() \
+            .mul(alpha.view(1, 3).expand(3, 3)) \
+            .mul(self.eigval.view(1, 3).expand(3, 3)) \
             .sum(1).squeeze()
 
         return img.add(rgb.view(3, 1, 1).expand_as(img))

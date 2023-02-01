@@ -1,20 +1,22 @@
 import copy
-import os
 import inspect
 import logging
-import torch
-import numpy as np
-import torch.nn as nn
-import torch.autograd as autograd
-import yaml
+import os
 import random
-from torch.nn.parallel import DistributedDataParallel as DDP
 from collections import OrderedDict, namedtuple
+
+import numpy as np
+import torch
+import torch.autograd as autograd
+import torch.nn as nn
+import yaml
+from torch.nn.parallel import DistributedDataParallel as DDP
 
 
 class NoOp:
     def __getattr__(self, *args):
         def no_op(*args, **kwargs): pass
+
         return no_op
 
 

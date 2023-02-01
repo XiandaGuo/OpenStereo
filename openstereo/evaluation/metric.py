@@ -1,5 +1,5 @@
-import torch
 import numpy as np
+import torch
 import torch.nn.functional as F
 
 from utils import is_tensor
@@ -24,7 +24,7 @@ def cuda_dist(x, y, metric='euc'):
             _dist = torch.sum(_x ** 2, 1).unsqueeze(1) + torch.sum(_y ** 2, 1).unsqueeze(
                 0) - 2 * torch.matmul(_x, _y.transpose(0, 1))
             dist += torch.sqrt(F.relu(_dist))
-    return 1 - dist/num_bin if metric == 'cos' else dist / num_bin
+    return 1 - dist / num_bin if metric == 'cos' else dist / num_bin
 
 
 def mean_iou(msk1, msk2, eps=1.0e-9):
@@ -56,8 +56,8 @@ def compute_ACC_mAP(distmat, q_pids, g_pids, q_views=None, g_views=None, rank=1)
             q_idx_dist = q_idx_dist[q_idx_mask]
             q_idx_glabels = q_idx_glabels[q_idx_mask]
 
-        assert(len(q_idx_glabels) >
-               0), "No gallery after excluding identical-view cases!"
+        assert (len(q_idx_glabels) >
+                0), "No gallery after excluding identical-view cases!"
         q_idx_indices = np.argsort(q_idx_dist)
         q_idx_matches = (q_idx_glabels[q_idx_indices]
                          == q_pids[q_idx]).astype(np.int32)
@@ -67,7 +67,7 @@ def compute_ACC_mAP(distmat, q_pids, g_pids, q_views=None, g_views=None, rank=1)
         orig_cmc = q_idx_matches
         cmc = orig_cmc.cumsum()
         cmc[cmc > 1] = 1
-        all_ACC.append(cmc[rank-1])
+        all_ACC.append(cmc[rank - 1])
 
         # compute average precision
         # reference: https://en.wikipedia.org/wiki/Evaluation_measures_(information_retrieval)#Average_precision
@@ -118,7 +118,7 @@ def evaluate_rank(distmat, p_lbls, g_lbls, max_rank=50):
 
         cmc = raw_cmc.cumsum()
 
-        pos_idx = np.where(raw_cmc == 1)    # 返回坐标，此处raw_cmc为一维矩阵，所以返回相当于index
+        pos_idx = np.where(raw_cmc == 1)  # 返回坐标，此处raw_cmc为一维矩阵，所以返回相当于index
         max_pos_idx = np.max(pos_idx)
         inp = cmc[max_pos_idx] / (max_pos_idx + 1.0)
         all_INP.append(inp)
@@ -131,7 +131,7 @@ def evaluate_rank(distmat, p_lbls, g_lbls, max_rank=50):
         # compute average precision
         # reference: https://en.wikipedia.org/wiki/Evaluation_measures_(information_retrieval)#Average_precision
         num_rel = raw_cmc.sum()
-        pos_idx = np.where(raw_cmc == 1)    # 返回坐标，此处raw_cmc为一维矩阵，所以返回相当于index
+        pos_idx = np.where(raw_cmc == 1)  # 返回坐标，此处raw_cmc为一维矩阵，所以返回相当于index
         max_pos_idx = np.max(pos_idx)
         inp = cmc[max_pos_idx] / (max_pos_idx + 1.0)
         all_INP.append(inp)
