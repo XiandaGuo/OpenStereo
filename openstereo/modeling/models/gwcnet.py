@@ -19,8 +19,8 @@ class GwcLoss:
 
 
 class GwcNet(BaseModel):
-    def __int__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def forward(self, inputs):
         """Forward the network."""
