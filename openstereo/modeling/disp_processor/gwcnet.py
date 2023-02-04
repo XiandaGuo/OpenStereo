@@ -118,8 +118,8 @@ class GwcDispProcessor(nn.Module):
 
             output = {
                 "training_disp": {
-                    "disp": pred3,
-                    "middle_disp": [pred0, pred1, pred2]
+                    "disp_est": pred3,
+                    "disp_hidden": [pred0, pred1, pred2]
                 },
                 "inference_disp": {
                     None
@@ -137,9 +137,6 @@ class GwcDispProcessor(nn.Module):
             pred3 = F.softmax(cost3, dim=1)
             pred3 = disparity_regression(pred3, self.maxdisp)
             output = {
-                "training_disp": {
-                    None
-                },
                 "inference_disp": {
                     "disp_est": pred3,
                 },

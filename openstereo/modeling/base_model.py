@@ -100,7 +100,7 @@ class MetaModel(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def run_val(model, load_ckpt, *args, **kwargs):
+    def run_val(model, *args, **kwargs):
         """Run a whole test schedule."""
         raise NotImplementedError
 
@@ -173,7 +173,7 @@ class BaseModel(MetaModel, nn.Module):
         self.to(device=torch.device("cuda", self.device_rank))
 
         if is_train:
-            self.loss_aggregator = LossAggregator(cfgs['loss_cfg'])
+            self.loss_aggregator = self.get_loss_func(cfgs['loss_cfg'])
             self.optimizer = self.get_optimizer(self.cfgs['optimizer_cfg'])
             self.scheduler = self.get_scheduler(cfgs['scheduler_cfg'])
 
@@ -181,6 +181,10 @@ class BaseModel(MetaModel, nn.Module):
         restore_hint = self.engine_cfg['restore_hint']
         if restore_hint != 0:
             self.resume_ckpt(restore_hint)
+
+    def get_loss_func(self, loss_cfg):
+        """Get the loss function."""
+        return LossAggregator(loss_cfg)
 
     def get_backbone(self, backbone_cfg):
         """Get the backbone of the model."""
@@ -271,7 +275,8 @@ class BaseModel(MetaModel, nn.Module):
             dataset=dataset,
             batch_size=sampler_cfg['batch_size'],
             shuffle=sampler_cfg['batch_shuffle'] if is_train else False,
-            num_workers=data_cfg['num_workers']
+            num_workers=data_cfg['num_workers'],
+            drop_last=is_train
             # batch_sampler=sampler,
             # collate_fn=collate_fn,
         )
@@ -304,13 +309,13 @@ class BaseModel(MetaModel, nn.Module):
             }
             torch.save(checkpoint,
                        osp.join(self.save_path, 'checkpoints/{}-{:0>5}.pt'.format(save_name, self.iteration)))
+            self.msg_mgr.log_info('Save checkpoints in checkpoints/{}-{:0>5}.pt'.format(save_name, self.iteration))
 
     def _load_ckpt(self, save_name):
-        load_ckpt_strict = self.engine_cfg['restore_ckpt_strict']
-
         checkpoint = torch.load(save_name, map_location=torch.device("cuda", self.device_rank))
         model_state_dict = checkpoint['model']
 
+        load_ckpt_strict = self.engine_cfg['restore_ckpt_strict']
         if not load_ckpt_strict:
             self.msg_mgr.log_info("-------- Restored Params List --------")
             self.msg_mgr.log_info(sorted(set(model_state_dict.keys()).intersection(
@@ -457,7 +462,7 @@ class BaseModel(MetaModel, nn.Module):
         return info_dict
 
     @staticmethod
-    def run_train(model):
+    def run_train(model, *args, **kwargs):
         """Accept the instance object(model) here, and then run the train loop."""
         model.train()
         while True:
@@ -486,27 +491,24 @@ class BaseModel(MetaModel, nn.Module):
                     if model.engine_cfg['with_test']:
                         model.msg_mgr.log_info("Running test...")
                         model.eval()
-                        result_dict = BaseModel.run_val(model)
-                        model.train()
-                        # if model.cfgs['trainer_cfg']['fix_BN']:
-                        #     model.fix_BN()
+                        result_dict = model.run_val(model)
                         model.msg_mgr.write_to_tensorboard(result_dict)
                         model.msg_mgr.reset_time()
+                        model.train()
+                        if model.cfgs['trainer_cfg']['fix_BN']:
+                            model.fix_BN()
 
                 if model.iteration >= model.engine_cfg['total_iter']:
+                    model.save_ckpt()
                     return
+
             if hasattr(model.engine_cfg, 'max_epoch') and model.epoch >= model.engine_cfg['max_epoch']:
+                model.save_ckpt()
                 return
 
     @staticmethod
-    def run_val(model, load_ckpt=False):
+    def run_val(model, *args, **kwargs):
         """Accept the instance object(model) here, and then run the test loop."""
-        if load_ckpt:
-            try:
-                model.resume_ckpt(model.cfgs['evaluator_cfg']['checkpoint'])
-            except Exception as e:
-                model.msg_mgr.log_warning("Failed to resume the checkpoint, got {}".format(e))
-
         rank = model.device_rank
         model.eval()
         with torch.no_grad():

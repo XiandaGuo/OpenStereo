@@ -8,7 +8,8 @@ Please download the following parts of FlyingThings3D dataset and place it in th
 The directory structure should be as follows:
 ```text
 data
-|   sceneflow
+|   SceneFlow
+|   ├── FlyingThings3D
 |   |   ├── frames_finalpass
 |   |   |   ├── TRAIN
 |   |   |   |   ├── A
@@ -31,6 +32,12 @@ data
 |   |   |   |   |   |   ├── left
 |   |   |   |   |   |   |   ├── 0006.png
 |   |   |   |   |   |   |   ├── 0007.png
+...
+|   ├── Driving
+|   |   ├── frames_finalpass
+...
+|   ├── Monkaa
+|   |   ├── frames_finalpass
 ...
 ```
 

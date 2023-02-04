@@ -23,7 +23,7 @@ class GwcVolumeCostProcessor(nn.Module):
         B, C, H, W = refimg_fea.shape
         maxdisp = self.maxdisp // self.downsample
         num_groups = self.num_groups
-        volume = refimg_fea.new_zeros([B, num_groups, maxdisp, H, W])
+        volume = refimg_fea.new_zeros([B, num_groups, maxdisp, H, W], requires_grad=False)
         for i in range(maxdisp):
             if i > 0:
                 volume[:, :, i, :, i:] = self.groupwise_correlation(
@@ -41,7 +41,7 @@ class GwcVolumeCostProcessor(nn.Module):
     def build_concat_volume(self, refimg_fea, targetimg_fea):
         B, C, H, W = refimg_fea.shape
         maxdisp = self.maxdisp // self.downsample
-        volume = refimg_fea.new_zeros([B, 2 * C, maxdisp, H, W])
+        volume = refimg_fea.new_zeros([B, 2 * C, maxdisp, H, W], requires_grad=False)
         for i in range(maxdisp):
             if i > 0:
                 volume[:, :C, i, :, i:] = refimg_fea[:, :, :, i:]

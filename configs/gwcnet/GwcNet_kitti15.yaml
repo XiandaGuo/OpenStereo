@@ -1,9 +1,9 @@
 data_cfg:
   name: KITTI2015
   root: data/kitti15
-  train_list: data/kitti15/train.txt
-  val_list: data/kitti15/val.txt
-  test_list: data/kitti15/test.txt
+  train_list: datasets/kitti15/train.txt
+  val_list: datasets/kitti15/val.txt
+  test_list: datasets/kitti15/test.txt
   num_workers: 4
 
   transform:
@@ -79,7 +79,7 @@ trainer_cfg:
 evaluator_cfg:
   eval_func: OpenStereoEvaluator
   save_name: GwcNet_kitti12
-  checkpoint: 5000
+  restore_hint: 5000
   metric:
     - d1_all
     - epe
@@ -90,7 +90,6 @@ evaluator_cfg:
   enable_float16: False
   fix_BN: false
   restore_ckpt_strict: true
-  restore_hint: 0
   sync_BN: true
 
   sampler:

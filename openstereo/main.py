@@ -54,9 +54,9 @@ def run_model(cfgs, scope):
     if scope == 'train':
         Model.run_train(model)
     elif scope == 'val':
-        Model.run_val(model, load_ckpt=True)
-    elif scope == 'test':
         Model.run_val(model)
+    elif scope == 'test':
+        Model.run_test(model)
     else:
         raise ValueError("Scope should be one of ['train', 'val', 'test'].")
 
