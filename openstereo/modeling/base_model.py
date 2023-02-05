@@ -498,11 +498,11 @@ class BaseModel(MetaModel, nn.Module):
                         if model.cfgs['trainer_cfg']['fix_BN']:
                             model.fix_BN()
 
-                if model.iteration >= model.engine_cfg['total_iter']:
+                if model.engine_cfg['total_epoch'] is None and model.iteration >= model.engine_cfg['total_iter']:
                     model.save_ckpt()
                     return
 
-            if hasattr(model.engine_cfg, 'max_epoch') and model.epoch >= model.engine_cfg['max_epoch']:
+            if hasattr(model.engine_cfg, 'total_epoch') and model.epoch >= model.engine_cfg['total_epoch']:
                 model.save_ckpt()
                 return
 

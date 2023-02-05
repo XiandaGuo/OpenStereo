@@ -90,9 +90,7 @@ evaluator_cfg:
     - thres_3
 
   enable_float16: false
-  fix_BN: false
   restore_ckpt_strict: true
-  sync_BN: true
 
   sampler:
     type: BasicStereoSampler
