@@ -160,13 +160,13 @@ class BaseModel(MetaModel, nn.Module):
         self.msg_mgr.log_info(cfgs['data_cfg'])
 
         if scope == 'train':
-            self.train_loader = self.get_loader(cfgs['data_cfg'], scope)
+            self.train_loader = self.get_loader(cfgs['data_cfg'], 'train')
             if self.engine_cfg['with_test']:
-                self.val_loader = self.get_loader(cfgs['data_cfg'], scope)
+                self.val_loader = self.get_loader(cfgs['data_cfg'], 'val')
         elif scope == 'val':
-            self.val_loader = self.get_loader(cfgs['data_cfg'], scope)
+            self.val_loader = self.get_loader(cfgs['data_cfg'], 'val')
         else:
-            self.test_loader = self.get_loader(cfgs['data_cfg'], scope)
+            self.test_loader = self.get_loader(cfgs['data_cfg'], 'test')
 
         self.device_rank = torch.distributed.get_rank()
         torch.cuda.set_device(self.device_rank)

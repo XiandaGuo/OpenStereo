@@ -1,0 +1,98 @@
+data_cfg:
+  name: KITTI2012
+  root: data/kitti12
+  train_list: data/kitti12/train.txt
+  val_list: data/kitti12/val.txt
+  test_list: data/kitti12/test.txt
+  num_workers: 4
+
+  transform:
+    train:
+      size: [ 256, 512 ]
+      mean: [ 0.485, 0.456, 0.406 ]
+      std: [ 0.229, 0.224, 0.225 ]
+    test:
+      size: [ 384, 1248 ]
+      mean: [ 0.485, 0.456, 0.406 ]
+      std: [ 0.229, 0.224, 0.225 ]
+
+
+model_cfg:
+  model: GwcNet
+
+  base_config:
+    max_disp: 192
+    downsample: 4
+    num_groups: 40
+    use_concat_volume: True
+    concat_channels: 12
+
+  # Backbone
+  backbone_cfg:
+    type: GwcNet
+
+  # VolumeCostProcessor
+  cost_processor_cfg:
+    type: GwcVolumeCostProcessor
+
+  # DispProcessor
+  disp_processor_cfg:
+    type: GwcDispProcessor
+
+
+optimizer_cfg:
+  solver: Adam
+  lr: 0.001
+  betas: [ 0.9, 0.999 ]
+
+
+loss_cfg:
+  type: Weighted_Smooth_l1_Loss
+
+scheduler_cfg:
+  gamma: 0.1
+  milestones: # Learning Rate Reduction at each milestones
+    - 5000
+    - 15000
+  scheduler: MultiStepLR
+
+
+trainer_cfg:
+  enable_float16: False
+  fix_BN: false
+  log_iter: 20
+  with_test: true
+  restore_ckpt_strict: true
+  restore_hint: 0
+  save_iter: 100
+  save_name: GwcNet_kitti12
+  sync_BN: true
+  total_iter: 20000
+  total_epoch: 300
+
+  sampler:
+    type: BasicStereoSampler
+    batch_shuffle: false
+    batch_size: 4
+
+
+evaluator_cfg:
+  eval_func: OpenStereoEvaluator
+  save_name: GwcNet_kitti12
+  restore_hint: 5000
+  metric:
+    - d1_all
+    - epe
+    - thres_1
+    - thres_2
+    - thres_3
+
+  enable_float16: False
+  fix_BN: false
+  restore_ckpt_strict: true
+  sync_BN: true
+
+  sampler:
+    type: BasicStereoSampler
+    batch_shuffle: false
+    batch_size: 1
