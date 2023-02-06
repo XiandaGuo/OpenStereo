@@ -655,7 +655,6 @@ class cfnet(nn.Module):
             pred1_s2 = F.upsample(pred1_s2 * 2, [left.size()[2], left.size()[3]], mode='bilinear', align_corners=True)
             pred1_s2 = torch.squeeze(pred1_s2, 1)
 
-
             return [pred1_s2], [pred1_s3_up], [pred2_s4]
 
 
