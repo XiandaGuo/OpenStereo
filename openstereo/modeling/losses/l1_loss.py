@@ -1,6 +1,6 @@
 import torch.nn.functional as F
 
-from .base import BaseLoss
+from .base import BaseLoss, gather_and_scale_wrapper
 
 
 class Smooth_l1_Loss(BaseLoss):
@@ -18,6 +18,7 @@ class Weighted_Smooth_l1_Loss(BaseLoss):
         self.weights = [0.5, 0.5, 0.7, 1.0] if weights is None else weights
         self.reduction = reduction
 
+    @gather_and_scale_wrapper
     def forward(self, disp_ests, disp_gt, mask=None):
         weights = self.weights
         all_losses = []
