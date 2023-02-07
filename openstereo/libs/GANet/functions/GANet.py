@@ -3,7 +3,150 @@ from torch.autograd import Function
 from ..build.lib import GANet
 from torch.autograd import Variable
 #import GANet
+class NlfDownFunction(Function):
+    @staticmethod
+    def forward(ctx, input, g0):
+        assert(input.is_contiguous() == True and g0.is_contiguous() == True)
+        with torch.cuda.device_of(input):
+            output_down = input.new().resize_(input.size()).zero_()
+            GANet.nlf_down_cuda_forward(input, g0, output_down)
+            output_down = output_down.contiguous()
+        ctx.save_for_backward(input, g0, output_down)
+        return output_down
+    @staticmethod
+    def backward(ctx, gradOutput):
+        input, g0, output_down = ctx.saved_tensors
+        assert(gradOutput.is_contiguous() == True)
+        with torch.cuda.device_of(gradOutput):
+
+            gradInput = gradOutput.new().resize_(input.size()).zero_()
+            grad0 = gradOutput.new().resize_(g0.size()).zero_()
+            GANet.nlf_down_cuda_backward(input, g0, output_down, gradOutput, gradInput, grad0)
+            gradInput = gradInput.contiguous()
+            grad0 = grad0.contiguous()
+        return gradInput, grad0
+class NlfUpFunction(Function):
+    @staticmethod
+    def forward(ctx, input, g1):
+        assert(input.is_contiguous() == True and g1.is_contiguous() == True)
+        with torch.cuda.device_of(input):
+            output_up = input.new().resize_(input.size()).zero_()
+            GANet.nlf_up_cuda_forward(input, g1, output_up)
+            output_up = output_up.contiguous()
+        ctx.save_for_backward(input, g1, output_up)
+        return output_up
+    @staticmethod
+    def backward(ctx, gradOutput):
+        input, g1, output_up = ctx.saved_tensors
+        assert(gradOutput.is_contiguous() == True)
+        with torch.cuda.device_of(gradOutput):
+            gradInput = gradOutput.new().resize_(input.size()).zero_()
+            grad1 = gradOutput.new().resize_(g1.size()).zero_()
+            GANet.nlf_up_cuda_backward(input, g1, output_up, gradOutput, gradInput, grad1)
+            gradInput = gradInput.contiguous()
+            grad1 = grad1.contiguous()
+        return gradInput, grad1
+class NlfRightFunction(Function):
+    @staticmethod
+    def forward(ctx, input, g2):
+        assert(input.is_contiguous() == True and g2.is_contiguous() == True)
+        with torch.cuda.device_of(input):
+#            num, channels, height, width = input.size()
+#            output_right = input.new().resize_(num, channels, height, width).zero_()
+            output_right = input.new().resize_(input.size()).zero_()
+            GANet.nlf_right_cuda_forward(input, g2, output_right)
+            output_right = output_right.contiguous()
+        ctx.save_for_backward(input, g2, output_right)
+        return output_right
+    @staticmethod
+    def backward(ctx, gradOutput):
+        input, g2, output_right = ctx.saved_tensors
+        assert(gradOutput.is_contiguous() == True)
+        with torch.cuda.device_of(gradOutput):
+#            num, channels, height, width = input.size()
+#            _, fsize, _, _ = g2.size()
+#            gradInput = gradOutput.new().resize_(num, channels, height, width).zero_()
+#            grad2 = gradOutput.new().resize_(num, fsize, height, width).zero_()
+            gradInput = gradOutput.new().resize_(input.size()).zero_()
+            grad2 = gradOutput.new().resize_(g2.size()).zero_()
+            GANet.nlf_right_cuda_backward(input, g2, output_right, gradOutput, gradInput, grad2)
+            gradInput = gradInput.contiguous()
+            grad2 = grad2.contiguous()
+        return gradInput, grad2
+class NlfLeftFunction(Function):
+    @staticmethod
+    def forward(ctx, input, g3):
+
+        assert(input.is_contiguous() == True and g3.is_contiguous() == True)
+        with torch.cuda.device_of(input):
+#            num, channels, height, width = input.size()
+#            output_left = input.new().resize_(num, channels, height, width).zero_()
+            output_left = input.new().resize_(input.size()).zero_()
+            GANet.nlf_left_cuda_forward(input, g3, output_left)
+            output_left = output_left.contiguous()
+        ctx.save_for_backward(input, g3, output_left)
+        return output_left
+    @staticmethod
+    def backward(ctx, gradOutput):
+        input, g3, output_left = ctx.saved_tensors
+        gradOutput = gradOutput.contiguous()
+        assert(gradOutput.is_contiguous() == True)
+        with torch.cuda.device_of(gradOutput):
+#            num, channels, height, width = input.size()
+#            _, fsize, _, _ = g3.size()
+#            gradInput = gradOutput.new().resize_(num, channels, height, width).zero_()
+#            grad3 = gradOutput.new().resize_(num, fsize, height, width).zero_()
+            gradInput = gradOutput.new().resize_(input.size()).zero_()
+            grad3 = gradOutput.new().resize_(g3.size()).zero_()
+            GANet.nlf_left_cuda_backward(input, g3, output_left, gradOutput, gradInput, grad3)
+            gradInput = gradInput.contiguous()
+            grad3 = grad3.contiguous()
+        return gradInput, grad3
 		
+class NlfFunction(Function):
+    @staticmethod
+    def forward(ctx, input, g0, g1, g2, g3):
+        assert(input.is_contiguous() == True and g0.is_contiguous() == True and g1.is_contiguous() == True and g2.is_contiguous() == True and g3.is_contiguous() == True)
+        with torch.cuda.device_of(input):
+            num, channels, height, width = input.size()
+            output_down = input.new().resize_(num, channels, height, width).zero_()
+            output_up = input.new().resize_(num, channels, height, width).zero_()
+            output_right = input.new().resize_(num, channels, height, width).zero_()
+            output_left = input.new().resize_(num, channels, height, width).zero_()
+            GANet.nlf_cuda_forward(input, g0, g1, g2, g3, output_down, output_up, output_right, output_left)
+ #           GANet.sga_cuda_forward(input, filters, output, radius)
+            
+            output_down = output_down.contiguous()
+            output_up = output_up.contiguous()
+            output_right = output_right.contiguous()
+            output_left = output_left.contiguous()
+        ctx.save_for_backward(input, g0, g1, g2, g3, output_down, output_up, output_right, output_left)
+#        print(output_left.size())
+        return output_left
+    @staticmethod
+    def backward(ctx, gradOutput):
+        input, g0, g1, g2, g3, output_down, output_up, output_right, output_left = ctx.saved_tensors
+#        print temp_out.size()
+#        print mask.size()
+        assert(gradOutput.is_contiguous() == True)
+        with torch.cuda.device_of(gradOutput):
+            num, channels, height, width = input.size()
+            _, _, fsize, _, _ = g0.size()
+#            print fsize            
+            gradInput = gradOutput.new().resize_(num, channels, height, width).zero_()
+            grad0 = gradOutput.new().resize_(num, channels, fsize, height, width).zero_()
+            grad1 = gradOutput.new().resize_(num, channels, fsize, height, width).zero_()
+            grad2 = gradOutput.new().resize_(num, channels, fsize, height, width).zero_()
+            grad3 = gradOutput.new().resize_(num, channels, fsize, height, width).zero_()
+
+            GANet.nlf_cuda_backward(input, g0, g1, g2, g3, output_down, output_up, output_right, output_left, gradOutput, gradInput, grad0, grad1, grad2, grad3)
+#            GANet.lga_cuda_backward(input, filters, gradOutput, gradInput, gradFilters, radius)
+            gradInput = gradInput.contiguous()
+            grad0 = grad0.contiguous()
+            grad1 = grad1.contiguous()
+            grad2 = grad2.contiguous()
+            grad3 = grad3.contiguous()
+        return gradInput, grad0, grad1, grad2, grad3
 
 class SgaFunction(Function):
     @staticmethod
@@ -308,4 +451,5 @@ class MyLossFunction(Function):
         diff[diff < 0] = -1
         diff = diff * scale * gradOutput
         return diff, Variable(torch.Tensor([0])), None, None
+
 
