@@ -127,8 +127,8 @@ class LossAggregator():
         training_disp = training_output['training_disp']
         loss_info = Odict()
 
-        pred_disp = training_disp['disp']
-        middle = training_disp['middle_disp']
+        pred_disp = training_disp['disp_est']
+        middle = training_disp['disp_hidden']
         # print(middle + [pred_disp])
         # print(gt_disp.shape)
         # print(mask.shape)

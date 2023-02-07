@@ -100,7 +100,7 @@ class MetaModel(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def run_val(model, load_ckpt, *args, **kwargs):
+    def run_val(model, *args, **kwargs):
         """Run a whole test schedule."""
         raise NotImplementedError
 
@@ -143,7 +143,6 @@ class BaseModel(MetaModel, nn.Module):
         self.iteration = 0
         self.epoch = 0
         self.scope = scope
-
         is_train = scope == 'train'
 
         self.engine_cfg = cfgs['trainer_cfg'] if is_train else cfgs['evaluator_cfg']
@@ -161,20 +160,20 @@ class BaseModel(MetaModel, nn.Module):
         self.msg_mgr.log_info(cfgs['data_cfg'])
 
         if scope == 'train':
-            self.train_loader = self.get_loader(cfgs['data_cfg'], scope)
+            self.train_loader = self.get_loader(cfgs['data_cfg'], 'train')
             if self.engine_cfg['with_test']:
-                self.val_loader = self.get_loader(cfgs['data_cfg'], scope)
+                self.val_loader = self.get_loader(cfgs['data_cfg'], 'val')
         elif scope == 'val':
-            self.val_loader = self.get_loader(cfgs['data_cfg'], scope)
+            self.val_loader = self.get_loader(cfgs['data_cfg'], 'val')
         else:
-            self.test_loader = self.get_loader(cfgs['data_cfg'], scope)
+            self.test_loader = self.get_loader(cfgs['data_cfg'], 'test')
 
         self.device_rank = torch.distributed.get_rank()
         torch.cuda.set_device(self.device_rank)
         self.to(device=torch.device("cuda", self.device_rank))
 
         if is_train:
-            self.loss_aggregator = LossAggregator(cfgs['loss_cfg'])
+            self.loss_aggregator = self.get_loss_func(cfgs['loss_cfg'])
             self.optimizer = self.get_optimizer(self.cfgs['optimizer_cfg'])
             self.scheduler = self.get_scheduler(cfgs['scheduler_cfg'])
 
@@ -182,6 +181,10 @@ class BaseModel(MetaModel, nn.Module):
         restore_hint = self.engine_cfg['restore_hint']
         if restore_hint != 0:
             self.resume_ckpt(restore_hint)
+
+    def get_loss_func(self, loss_cfg):
+        """Get the loss function."""
+        return LossAggregator(loss_cfg)
 
     def get_backbone(self, backbone_cfg):
         """Get the backbone of the model."""
@@ -203,7 +206,7 @@ class BaseModel(MetaModel, nn.Module):
         if is_list(cost_processor_cfg):
             CostProcessor = nn.ModuleList([self.get_cost_processor(cfg) for cfg in cost_processor_cfg])
             return CostProcessor
-        raise ValueError("Error type for -Backbone-Cfg-, supported: (A list of) dict.")
+        raise ValueError("Error type for -Cost-Processor-Cfg-, supported: (A list of) dict.")
 
     def get_disp_processor(self, disp_processor_cfg):
         """Get the backbone of the model."""
@@ -214,7 +217,7 @@ class BaseModel(MetaModel, nn.Module):
         if is_list(disp_processor_cfg):
             DispProcessor = nn.ModuleList([self.get_cost_processor(cfg) for cfg in disp_processor_cfg])
             return DispProcessor
-        raise ValueError("Error type for -Backbone-Cfg-, supported: (A list of) dict.")
+        raise ValueError("Error type for -Disp-Processor-Cfg-, supported: (A list of) dict.")
 
     def build_network(self, model_cfg):
         if 'backbone_cfg' in model_cfg.keys():
@@ -235,17 +238,10 @@ class BaseModel(MetaModel, nn.Module):
 
     def forward(self, inputs):
         """Forward the network."""
-        outputs = {}
-        outputs['backbone'] = self.Backbone(inputs)
-
-        cost_input = outputs['backbone']
-        outputs['cost_processor'] = self.CostProcessor(cost_input)
-
-        disp_input = outputs['cost_processor']
-        disp_input.update({'disp_shape': inputs['ref_img'].shape[-2:]})
-        outputs['disp_processor'] = self.DispProcessor(disp_input)
-
-        return outputs['disp_processor']
+        backbone_out = self.Backbone(inputs)
+        cost_out = self.CostProcessor(backbone_out)
+        disp_out = self.DispProcessor(cost_out)
+        return disp_out
 
     def init_parameters(self):
         for m in self.modules():
@@ -279,7 +275,8 @@ class BaseModel(MetaModel, nn.Module):
             dataset=dataset,
             batch_size=sampler_cfg['batch_size'],
             shuffle=sampler_cfg['batch_shuffle'] if is_train else False,
-            num_workers=data_cfg['num_workers']
+            num_workers=data_cfg['num_workers'],
+            drop_last=is_train
             # batch_sampler=sampler,
             # collate_fn=collate_fn,
         )
@@ -312,13 +309,13 @@ class BaseModel(MetaModel, nn.Module):
             }
             torch.save(checkpoint,
                        osp.join(self.save_path, 'checkpoints/{}-{:0>5}.pt'.format(save_name, self.iteration)))
+            self.msg_mgr.log_info('Save checkpoints in checkpoints/{}-{:0>5}.pt'.format(save_name, self.iteration))
 
     def _load_ckpt(self, save_name):
-        load_ckpt_strict = self.engine_cfg['restore_ckpt_strict']
-
         checkpoint = torch.load(save_name, map_location=torch.device("cuda", self.device_rank))
         model_state_dict = checkpoint['model']
 
+        load_ckpt_strict = self.engine_cfg['restore_ckpt_strict']
         if not load_ckpt_strict:
             self.msg_mgr.log_info("-------- Restored Params List --------")
             self.msg_mgr.log_info(sorted(set(model_state_dict.keys()).intersection(
@@ -360,31 +357,29 @@ class BaseModel(MetaModel, nn.Module):
                 module.eval()
 
     def inputs_pretreament(self, inputs):
-        """Conduct transforms on input data.
+        """Reorganize input data for different models
 
         Args:
             inputs: the input data.
         Returns:
-            dict: training data including left image, right image, disp image,
-                  and some meta data.
+            dict: training data including ref_img, tgt_img, disp image,
+                  and other meta data.
         """
-        organized_inputs = {}
-
-        organized_inputs['ref_img'] = inputs['left']
-        organized_inputs['tgt_img'] = inputs['right']
-
-        disp_gt = inputs['disp']
-        max_disp = self.cfgs['model_cfg']['base_config']['max_disp']
-
         # asure the disp_gt has the shape of [B, H, W]
+        disp_gt = inputs['disp']
         if len(disp_gt.shape) == 4:
             disp_gt = disp_gt.squeeze(1)
-            organized_inputs['disp'] = disp_gt
 
-        # # compute the mask of valid disp_gt
+        # compute the mask of valid disp_gt
+        max_disp = self.cfgs['model_cfg']['base_config']['max_disp']
         mask = (disp_gt < max_disp) & (disp_gt > 0)
-        organized_inputs['mask'] = mask
-        return organized_inputs
+
+        return {
+            'ref_img': inputs['left'],
+            'tgt_img': inputs['right'],
+            'disp': disp_gt,
+            'mask': mask,
+        }
 
     def train_step(self, loss_sum) -> bool:
         """
@@ -422,6 +417,7 @@ class BaseModel(MetaModel, nn.Module):
         self.iteration += 1
         self.scheduler.step()
         return True
+
     @staticmethod
     def inference(model, loader):
         """
@@ -466,7 +462,7 @@ class BaseModel(MetaModel, nn.Module):
         return info_dict
 
     @staticmethod
-    def run_train(model):
+    def run_train(model, *args, **kwargs):
         """Accept the instance object(model) here, and then run the train loop."""
         model.train()
         while True:
@@ -495,27 +491,24 @@ class BaseModel(MetaModel, nn.Module):
                     if model.engine_cfg['with_test']:
                         model.msg_mgr.log_info("Running test...")
                         model.eval()
-                        result_dict = BaseModel.run_val(model)
-                        model.train()
-                        # if model.cfgs['trainer_cfg']['fix_BN']:
-                        #     model.fix_BN()
+                        result_dict = model.run_val(model)
                         model.msg_mgr.write_to_tensorboard(result_dict)
                         model.msg_mgr.reset_time()
+                        model.train()
+                        if model.cfgs['trainer_cfg']['fix_BN']:
+                            model.fix_BN()
 
-                if model.iteration >= model.engine_cfg['total_iter']:
+                if model.engine_cfg['total_epoch'] is None and model.iteration >= model.engine_cfg['total_iter']:
+                    model.save_ckpt()
                     return
-            if hasattr(model.engine_cfg, 'max_epoch') and model.epoch >= model.engine_cfg['max_epoch']:
+
+            if hasattr(model.engine_cfg, 'total_epoch') and model.epoch >= model.engine_cfg['total_epoch']:
+                model.save_ckpt()
                 return
 
     @staticmethod
-    def run_val(model, load_ckpt=False):
+    def run_val(model, *args, **kwargs):
         """Accept the instance object(model) here, and then run the test loop."""
-        if load_ckpt:
-            try:
-                model.resume_ckpt(model.cfgs['evaluator_cfg']['checkpoint'])
-            except Exception as e:
-                model.msg_mgr.log_warning("Failed to resume the checkpoint, got {}".format(e))
-
         rank = model.device_rank
         model.eval()
         with torch.no_grad():
@@ -530,7 +523,7 @@ class BaseModel(MetaModel, nn.Module):
             valid_args = get_valid_args(eval_func, model.cfgs["evaluator_cfg"], ['metric'])
             # dataset_name = model.cfgs['data_cfg']['name']
             return eval_func(info_dict, **valid_args)
-    
+
     @staticmethod
     def run_test(model, *args, **kwargs):
         try:
@@ -540,4 +533,4 @@ class BaseModel(MetaModel, nn.Module):
         with torch.no_grad():
             loader = model.test_loader
             info_dict = model.inference(model, loader)
-        return  info_dict
+        return info_dict

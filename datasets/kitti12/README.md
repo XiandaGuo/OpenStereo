@@ -21,8 +21,6 @@ data
 |   |   |   |   |   ├── 000001.png
 |   |   |   |   |   ├── 000002.png
 ...
-|   |   ├── train.txt
-|   |   ├── val.txt
 ```
 
 ### Reference

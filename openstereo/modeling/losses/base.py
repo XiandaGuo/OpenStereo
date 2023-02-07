@@ -15,7 +15,6 @@ def gather_and_scale_wrapper(func):
     @functools.wraps(func)
     def inner(*args, **kwds):
         try:
-
             for k, v in kwds.items():
                 kwds[k] = ddp_all_gather(v)
 
