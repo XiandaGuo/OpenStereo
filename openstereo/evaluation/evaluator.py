@@ -96,5 +96,5 @@ def OpenStereoEvaluator(data, metric=None):
         else:
             metric_func = METRICS[m]
             res[f"scalar/val/{m}"] = metric_func(disp_est, disp_gt, disp_gt > 0)
-    print(res)
+    # print(res)
     return res

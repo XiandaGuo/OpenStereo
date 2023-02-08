@@ -319,9 +319,10 @@ class BaseModel(MetaModel, nn.Module):
         torch.distributed.barrier()
 
     def _load_ckpt(self, save_name):
+        map_location = {"cuda:0": f"cuda:{os.environ['LOCAL_RANK']}"}
         checkpoint = torch.load(
             save_name,
-            map_location=torch.device("cuda", local_rank=os.environ['LOCAL_RANK'])
+            map_location=map_location
         )
         model_state_dict = checkpoint['model']
 
@@ -500,6 +501,7 @@ class BaseModel(MetaModel, nn.Module):
                         model.msg_mgr.log_info("Running test...")
                         model.eval()
                         result_dict = model.run_val(model)
+                        model.msg_mgr.log_info(result_dict)
                         model.msg_mgr.write_to_tensorboard(result_dict)
                         model.msg_mgr.reset_time()
                         model.train()
@@ -523,7 +525,6 @@ class BaseModel(MetaModel, nn.Module):
         eval_func = model.cfgs['evaluator_cfg']["eval_func"]
         eval_func = getattr(eval_functions, eval_func)
         valid_args = get_valid_args(eval_func, model.cfgs["evaluator_cfg"], ['metric'])
-        # dataset_name = model.cfgs['data_cfg']['name']
 
         total_size = len(loader)
         if model.device_rank == 0:
@@ -556,22 +557,14 @@ class BaseModel(MetaModel, nn.Module):
             pbar.update(update_size)
 
         pbar.close()
-
+        result_dict = {}
         for k, v in info_dict.items():
-            v = np.concatenate(v)[:total_size]
-            info_dict[k] = v
-        # the final output is a dict {'disp_est': np.array}
-
+            res = np.mean(v)
+            print(k, res)
+            result_dict[k] = res
         if rank == 0:
-            print(info_dict.keys())
-            # if 'eval_func' in model.cfgs["evaluator_cfg"].keys():
-            #     eval_func = model.cfgs['evaluator_cfg']["eval_func"]
-            # else:
-            #     eval_func = 'OpenStereoEvaluator'
-            # eval_func = getattr(eval_functions, eval_func)
-            # valid_args = get_valid_args(eval_func, model.cfgs["evaluator_cfg"], ['metric'])
-            # # dataset_name = model.cfgs['data_cfg']['name']
-            # return eval_func(info_dict, **valid_args)
+            print(result_dict)
+            return result_dict
 
     @staticmethod
     def run_test(model, *args, **kwargs):
