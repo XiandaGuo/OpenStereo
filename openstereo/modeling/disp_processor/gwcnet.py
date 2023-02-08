@@ -82,7 +82,7 @@ class GwcDispProcessor(nn.Module):
 
     def forward(self, inputs):
         volume = inputs['cost_volume']
-        h, w = inputs['disp_shape']
+        h, w = inputs['ref_img'].shape[2:]
         cost0 = self.dres0(volume)
         cost0 = self.dres1(cost0) + cost0
 
@@ -118,8 +118,26 @@ class GwcDispProcessor(nn.Module):
 
             output = {
                 "training_disp": {
-                    "disp_est": pred3,
-                    "disp_hidden": [pred0, pred1, pred2]
+                    "pred0": {
+                        "disp_ests": pred0,
+                        "disp_gt": inputs['disp_gt'],
+                        "mask": inputs['mask']
+                    },
+                    "pred1": {
+                        "disp_ests": pred1,
+                        "disp_gt": inputs['disp_gt'],
+                        "mask": inputs['mask']
+                    },
+                    "pred2": {
+                        "disp_ests": pred2,
+                        "disp_gt": inputs['disp_gt'],
+                        "mask": inputs['mask']
+                    },
+                    "pred3": {
+                        "disp_ests": pred3,
+                        "disp_gt": inputs['disp_gt'],
+                        "mask": inputs['mask']
+                    },
                 },
                 "inference_disp": {
                     None
@@ -132,7 +150,7 @@ class GwcDispProcessor(nn.Module):
 
         else:
             cost3 = self.classif3(out3)
-            cost3 = F.interpolate(cost3, [self.maxdisp,h, w], mode='trilinear')
+            cost3 = F.interpolate(cost3, [self.maxdisp, h, w], mode='trilinear')
             cost3 = torch.squeeze(cost3, 1)
             pred3 = F.softmax(cost3, dim=1)
             pred3 = disparity_regression(pred3, self.maxdisp)

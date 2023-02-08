@@ -12,7 +12,7 @@ from torch.autograd import Variable
 import numpy as np
 
 from modeling.base_model import BaseModel
-from modeling.losses import Weighted_Smooth_l1_Loss
+# from modeling.losses import Weighted_Smooth_l1_Loss
 from utils import Odict
 
 
@@ -424,20 +424,6 @@ class GaNet(nn.Module):
             return self.cost_agg(x, g)
 
 
-class GALoss:
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.loss_func = Weighted_Smooth_l1_Loss(weights=[0.5, 0.5, 1])
-
-    def __call__(self, training_output, disp_gt, mask):
-        training_disp = training_output['training_disp']
-        loss_info = Odict()
-        pred_disp = training_disp['disp_est']
-        loss = self.loss_func(pred_disp, disp_gt, mask)
-        loss_info['scalar/Weighted_Smooth_l1_Loss'] = loss
-        return loss, loss_info
-
-
 class GANet(BaseModel):
     def __init__(self, *args, **kwargs):
         self.maxdisp = 192
@@ -447,10 +433,6 @@ class GANet(BaseModel):
         """Build the network."""
         self.net = GaNet(maxdisp=self.maxdisp)
 
-    def get_loss_func(self, loss_cfg):
-        """Build the loss."""
-        return GALoss()
-
     def forward(self, inputs):
         """Forward the network."""
         ref_img = inputs["ref_img"]
@@ -458,17 +440,28 @@ class GANet(BaseModel):
         res = self.net(ref_img, tgt_img)
 
         if self.training:
-            # disp0, disp1, disp2 = self.net(ref_img, tgt_img)
-            # print(disp0.shape, disp1.shape, disp2.shape)
-            # return  [disp0, disp1, disp2]
+            [disp0, disp1, disp2] = res
             output = {
                 "training_disp": {
-                    "disp_est": res
+                    "disp0": {
+                        "disp_ests": disp0,
+                        "disp_gt": inputs['disp_gt'],
+                        "mask": inputs['mask']
+                    },
+                    "disp1": {
+                        "disp_ests": disp1,
+                        "disp_gt": inputs['disp_gt'],
+                        "mask": inputs['mask']
+                    },
+                    "disp2": {
+                        "disp_ests": disp2,
+                        "disp_gt": inputs['disp_gt'],
+                        "mask": inputs['mask']
+                    },
                 },
                 "visual_summary": {}
             }
         else:
-            # disp = self.net(ref_img, tgt_img)
             output = {
                 "inference_disp": {
                     "disp_est": res

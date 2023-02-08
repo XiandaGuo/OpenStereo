@@ -239,9 +239,12 @@ class BaseModel(MetaModel, nn.Module):
     def forward(self, inputs):
         """Forward the network."""
         backbone_out = self.Backbone(inputs)
-        cost_out = self.CostProcessor(backbone_out)
-        disp_out = self.DispProcessor(cost_out)
-        return disp_out
+        inputs.update(backbone_out)
+        cost_out = self.CostProcessor(inputs)
+        inputs.update(cost_out)
+        disp_out = self.DispProcessor(inputs)
+        inputs.update(disp_out)
+        return inputs
 
     def init_parameters(self):
         for m in self.modules():
@@ -377,7 +380,7 @@ class BaseModel(MetaModel, nn.Module):
         return {
             'ref_img': inputs['left'],
             'tgt_img': inputs['right'],
-            'disp': disp_gt,
+            'disp_gt': disp_gt,
             'mask': mask,
         }
 
@@ -471,14 +474,12 @@ class BaseModel(MetaModel, nn.Module):
                 ipts = model.inputs_pretreament(inputs)
                 with autocast(enabled=model.engine_cfg['enable_float16']):
                     output = model(ipts)
-                loss_sum, loss_info = model.loss_aggregator(
-                    output, ipts['disp'].to(model.device),
-                    ipts['mask'].to(model.device)
-                )
+                    training_disp, visual_summary = output['training_disp'], output['visual_summary']
+                    del output
+                loss_sum, loss_info = model.loss_aggregator(training_disp)
                 ok = model.train_step(loss_sum)
                 if not ok:
                     continue
-                visual_summary = {}
                 visual_summary.update(loss_info)
                 visual_summary['scalar/learning_rate'] = model.optimizer.param_groups[0]['lr']
 

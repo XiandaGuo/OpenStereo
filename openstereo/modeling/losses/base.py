@@ -4,7 +4,7 @@ from ctypes import ArgumentError
 import torch
 import torch.nn as nn
 
-from utils import Odict
+from utils import Odict, is_tensor
 from utils import ddp_all_gather
 
 
@@ -16,8 +16,7 @@ def gather_and_scale_wrapper(func):
     def inner(*args, **kwds):
         try:
             for k, v in kwds.items():
-                kwds[k] = ddp_all_gather(v)
-
+                kwds[k] = ddp_all_gather(v) if is_tensor(v) else v
             loss, loss_info = func(*args, **kwds)
             loss *= torch.distributed.get_world_size()
             return loss, loss_info

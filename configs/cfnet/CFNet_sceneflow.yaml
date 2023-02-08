@@ -43,7 +43,11 @@ optimizer_cfg:
 
 
 loss_cfg:
-  type: Weighted_Smooth_l1_Loss
+  - log_prefix: disp
+    type: Weighted_Smooth_l1_Loss
+    loss_term_weight: 1
+    weights: [0.25, 0.35, 0.5, 0.5, 0.7, 1.0, 1.0, 1.4, 2]
+
 
 scheduler_cfg:
   gamma: 0.1

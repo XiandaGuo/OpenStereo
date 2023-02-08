@@ -4,18 +4,19 @@ from .cfnet import CFNet as cfnet
 from .loss import model_loss
 
 
-class CFLoss:
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.loss_func = model_loss
-
-    def __call__(self, training_output, disp_gt, mask):
-        training_disp = training_output['training_disp']
-        loss_info = Odict()
-        pred_disp = training_disp['disp_est']
-        loss = self.loss_func(pred_disp, disp_gt, mask)
-        loss_info['scalar/CFLoss'] = loss
-        return loss, loss_info
+#
+# class CFLoss:
+#     def __init__(self, **kwargs):
+#         super().__init__(**kwargs)
+#         self.loss_func = model_loss
+#
+#     def __call__(self, training_output, disp_gt, mask):
+#         training_disp = training_output['training_disp']
+#         loss_info = Odict()
+#         pred_disp = training_disp['disp_est']
+#         loss = self.loss_func(pred_disp, disp_gt, mask)
+#         loss_info['scalar/CFLoss'] = loss
+#         return loss, loss_info
 
 
 class CFNet(BaseModel):
@@ -33,10 +34,15 @@ class CFNet(BaseModel):
             res = self.net(ref_img, tgt_img)
             output = {
                 "training_disp": {
-                    "disp_est": res
+                    "disp": {
+                        "disp_ests": res,
+                        "disp_gt": inputs['disp_gt'],
+                        "mask": inputs['mask']
+                    },
                 },
-                "visual_summary": {}
+                "visual_summary": {},
             }
+
         else:
             res = self.net(ref_img, tgt_img)
             output = {
@@ -46,6 +52,3 @@ class CFNet(BaseModel):
                 "visual_summary": {}
             }
         return output
-
-    def get_loss_func(self, loss_cfg):
-        return CFLoss()

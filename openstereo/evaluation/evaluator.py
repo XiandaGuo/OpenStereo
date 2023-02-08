@@ -88,7 +88,7 @@ def OpenStereoEvaluator(data, metric=None):
     if metric is None:
         metric = ['epe', 'd1_all']
     disp_est = data['disp_est']
-    disp_gt = data['disp']
+    disp_gt = data['disp_gt']
     res = {}
     for m in metric:
         if m not in METRICS:
