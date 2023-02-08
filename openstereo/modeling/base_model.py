@@ -9,6 +9,7 @@ Typical usage:
 BaseModel.run_train(model)
 BaseModel.run_test(model)
 """
+import os
 import os.path as osp
 from abc import ABCMeta
 from abc import abstractmethod
@@ -265,6 +266,7 @@ class BaseModel(MetaModel, nn.Module):
         is_train = scope == 'train'
         dataset = DataSet(data_cfg, scope)
         sampler_cfg = self.cfgs['trainer_cfg']['sampler'] if is_train else self.cfgs['evaluator_cfg']['sampler']
+        sampler = torch.utils.data.distributed.DistributedSampler(dataset)
 
         # Sampler = get_attr_from([Samplers], sampler_cfg['type'])
         # vaild_args = get_valid_args(Sampler, sampler_cfg, free_keys=[
@@ -278,6 +280,7 @@ class BaseModel(MetaModel, nn.Module):
             dataset=dataset,
             batch_size=sampler_cfg['batch_size'],
             shuffle=sampler_cfg['batch_shuffle'] if is_train else False,
+            sampler=sampler,
             num_workers=data_cfg['num_workers'],
             drop_last=is_train
             # batch_sampler=sampler,
@@ -313,9 +316,13 @@ class BaseModel(MetaModel, nn.Module):
             torch.save(checkpoint,
                        osp.join(self.save_path, 'checkpoints/{}-{:0>5}.pt'.format(save_name, self.iteration)))
             self.msg_mgr.log_info('Save checkpoints in checkpoints/{}-{:0>5}.pt'.format(save_name, self.iteration))
+        torch.distributed.barrier()
 
     def _load_ckpt(self, save_name):
-        checkpoint = torch.load(save_name, map_location=torch.device("cuda", self.device_rank))
+        checkpoint = torch.load(
+            save_name,
+            map_location=torch.device("cuda", local_rank=os.environ['LOCAL_RANK'])
+        )
         model_state_dict = checkpoint['model']
 
         load_ckpt_strict = self.engine_cfg['restore_ckpt_strict']
@@ -510,20 +517,61 @@ class BaseModel(MetaModel, nn.Module):
     @staticmethod
     def run_val(model, *args, **kwargs):
         """Accept the instance object(model) here, and then run the test loop."""
-        rank = model.device_rank
+        rank = torch.distributed.get_rank()
         model.eval()
-        with torch.no_grad():
-            loader = model.val_loader
-            info_dict = model.inference(model, loader)
-        if rank == 0:
-            if 'eval_func' in model.cfgs["evaluator_cfg"].keys():
-                eval_func = model.cfgs['evaluator_cfg']["eval_func"]
+        loader = model.val_loader
+        eval_func = model.cfgs['evaluator_cfg']["eval_func"]
+        eval_func = getattr(eval_functions, eval_func)
+        valid_args = get_valid_args(eval_func, model.cfgs["evaluator_cfg"], ['metric'])
+        # dataset_name = model.cfgs['data_cfg']['name']
+
+        total_size = len(loader)
+        if model.device_rank == 0:
+            pbar = tqdm(total=total_size, desc='Transforming')
+        else:
+            pbar = NoOp()
+        batch_size = loader.batch_sampler.batch_size
+        rest_size = total_size
+        info_dict = Odict()
+        for inputs in loader:
+            ipts = model.inputs_pretreament(inputs)
+            with autocast(enabled=model.engine_cfg['enable_float16']):
+                output = model(ipts)
+                inference_disp = output['inference_disp']
+                for k, v in inference_disp.items():
+                    inference_disp[k] = ddp_all_gather(v, requires_grad=False)
+                del output
+            inference_disp.update(ipts)
+            for k, v in inference_disp.items():
+                inference_disp[k] = ts2np(v)
+
+            info = eval_func(inference_disp, **valid_args)
+
+            info_dict.append(info)
+            rest_size -= batch_size
+            if rest_size >= 0:
+                update_size = batch_size
             else:
-                eval_func = 'OpenStereoEvaluator'
-            eval_func = getattr(eval_functions, eval_func)
-            valid_args = get_valid_args(eval_func, model.cfgs["evaluator_cfg"], ['metric'])
-            # dataset_name = model.cfgs['data_cfg']['name']
-            return eval_func(info_dict, **valid_args)
+                update_size = total_size % batch_size
+            pbar.update(update_size)
+
+        pbar.close()
+
+        for k, v in info_dict.items():
+            v = np.concatenate(v)[:total_size]
+            info_dict[k] = v
+        # the final output is a dict {'disp_est': np.array}
+
+        if rank == 0:
+            print(info_dict.keys())
+            # if 'eval_func' in model.cfgs["evaluator_cfg"].keys():
+            #     eval_func = model.cfgs['evaluator_cfg']["eval_func"]
+            # else:
+            #     eval_func = 'OpenStereoEvaluator'
+            # eval_func = getattr(eval_functions, eval_func)
+            # valid_args = get_valid_args(eval_func, model.cfgs["evaluator_cfg"], ['metric'])
+            # # dataset_name = model.cfgs['data_cfg']['name']
+            # return eval_func(info_dict, **valid_args)
 
     @staticmethod
     def run_test(model, *args, **kwargs):
