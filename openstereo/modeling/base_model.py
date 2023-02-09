@@ -2,17 +2,18 @@
 
 This module defines the abstract meta model class and base model class. In the base model,
  we define the basic model functions, like get_loader, build_network, and run_train, etc.
- The api of the base model is run_train and run_test, they are used in `opengait/main.py`.
+ The api of the base model is run_train and run_test, they are used in `openstereo/main.py`.
 
 Typical usage:
 
 BaseModel.run_train(model)
-BaseModel.run_test(model)
+BaseModel.run_val(model)
 """
 import os
 import os.path as osp
 from abc import ABCMeta
 from abc import abstractmethod
+from functools import partial
 
 import numpy as np
 import torch
@@ -282,7 +283,7 @@ class BaseModel(MetaModel, nn.Module):
             shuffle=sampler_cfg['batch_shuffle'] if is_train else False,
             sampler=sampler,
             num_workers=data_cfg['num_workers'],
-            drop_last=is_train
+            drop_last=False,
             # batch_sampler=sampler,
             # collate_fn=collate_fn,
         )
@@ -519,52 +520,54 @@ class BaseModel(MetaModel, nn.Module):
     @staticmethod
     def run_val(model, *args, **kwargs):
         """Accept the instance object(model) here, and then run the test loop."""
-        rank = torch.distributed.get_rank()
-        model.eval()
-        loader = model.val_loader
+
+        dataloader =  model.val_loader
         eval_func = model.cfgs['evaluator_cfg']["eval_func"]
         eval_func = getattr(eval_functions, eval_func)
         valid_args = get_valid_args(eval_func, model.cfgs["evaluator_cfg"], ['metric'])
+        eval_func = partial(eval_func, **valid_args)
 
-        total_size = len(loader)
-        if model.device_rank == 0:
-            pbar = tqdm(total=total_size, desc='Transforming')
-        else:
-            pbar = NoOp()
-        batch_size = loader.batch_sampler.batch_size
+        infoList = []
+
+        total_size = len(dataloader)
         rest_size = total_size
-        info_dict = Odict()
-        for inputs in loader:
+        batch_size = dataloader.batch_sampler.batch_size
+        pbar = tqdm(total=total_size) if torch.distributed.get_rank() == 0 else NoOp()
+        for inputs in dataloader:
             ipts = model.inputs_pretreament(inputs)
             with autocast(enabled=model.engine_cfg['enable_float16']):
                 output = model(ipts)
                 inference_disp = output['inference_disp']
+                inference_disp.update(ipts)
                 for k, v in inference_disp.items():
-                    inference_disp[k] = ddp_all_gather(v, requires_grad=False)
-                del output
-            inference_disp.update(ipts)
-            for k, v in inference_disp.items():
-                inference_disp[k] = ts2np(v)
-
-            info = eval_func(inference_disp, **valid_args)
-
-            info_dict.append(info)
+                    inference_disp[k] = ts2np(v)
+                info = eval_func(inference_disp)
+                infoList.append(info)
             rest_size -= batch_size
-            if rest_size >= 0:
-                update_size = batch_size
-            else:
-                update_size = total_size % batch_size
+            update_size = batch_size if rest_size >= 0 else  total_size % batch_size
             pbar.update(update_size)
-
         pbar.close()
-        result_dict = {}
-        for k, v in info_dict.items():
-            res = np.mean(v)
-            print(k, res)
-            result_dict[k] = res
-        if rank == 0:
-            print(result_dict)
-            return result_dict
+
+        world_size = torch.distributed.get_world_size()
+
+        # gather all the info from different processes
+        output = [None for _ in range(world_size)]
+        torch.distributed.all_gather_object(output, infoList)
+
+        # calculate the mean of the matric
+        if torch.distributed.get_rank() == 0:
+            all_info = []
+            for rank in range(world_size):
+                all_info.extend(output[rank])
+            res_dict_keys = all_info[0].keys()
+            res_dict = {k: [] for k in res_dict_keys}
+            for info in all_info:
+                for k, v in info.items():
+                    res_dict[k].append(v)
+            for k, v in res_dict.items():
+                res_dict[k] = np.mean(v)
+            print(res_dict)
+            return res_dict
 
     @staticmethod
     def run_test(model, *args, **kwargs):
