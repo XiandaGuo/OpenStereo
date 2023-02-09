@@ -46,9 +46,9 @@ def run_model(cfgs, scope):
     model = Model(cfgs, scope)
     if is_train and cfgs['trainer_cfg']['sync_BN']:
         model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
-    if cfgs['trainer_cfg']['fix_BN']:
-        model.fix_BN()
-    model = get_ddp_module(model)
+    # if cfgs['trainer_cfg']['fix_BN']:
+    #     model.fix_BN()
+    model = get_ddp_module(model, find_unused_parameters=model_cfg['find_unused_parameters'])
     msg_mgr.log_info(params_count(model))
     msg_mgr.log_info("Model Initialization Finished!")
     if scope == 'train':

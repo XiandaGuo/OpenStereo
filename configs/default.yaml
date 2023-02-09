@@ -19,6 +19,7 @@ data_cfg:
 
 model_cfg:
   model: GwcNet
+  find_unused_parameters: false
 
   base_config:
     max_disp: 192
@@ -40,14 +41,25 @@ model_cfg:
     type: GwcDispProcessor
 
 
+loss_cfg:
+  - log_prefix: pred0
+    type: Smooth_l1_Loss
+    loss_term_weight: 0.5
+  - log_prefix: pred1
+    type: Smooth_l1_Loss
+    loss_term_weight: 0.5
+  - log_prefix: pred2
+    type: Smooth_l1_Loss
+    loss_term_weight: 0.7
+  - log_prefix: pred3
+    type: Smooth_l1_Loss
+    loss_term_weight: 1.0
+
+
 optimizer_cfg:
   solver: Adam
   lr: 0.001
-#  betas: [ 0.9, 0.999 ]
 
-
-loss_cfg:
-  type: Weighted_Smooth_l1_Loss
 
 scheduler_cfg:
   gamma: 0.1
