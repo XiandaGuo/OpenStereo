@@ -85,7 +85,7 @@ class MessageManager:
                 continue
             k = k.replace('scalar/', '').replace('/', '_')
             end = "\n" if i == len(self.info_dict) - 1 else ""
-            string += ", {0}={1:.4f}".format(k, np.mean(v), end=end)
+            string += ", {0}={1:.5f}".format(k, np.mean(v), end=end)
         self.log_info(string)
         self.reset_time()
 

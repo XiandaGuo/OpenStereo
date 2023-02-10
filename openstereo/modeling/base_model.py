@@ -267,8 +267,10 @@ class BaseModel(MetaModel, nn.Module):
         is_train = scope == 'train'
         dataset = DataSet(data_cfg, scope)
         sampler_cfg = self.cfgs['trainer_cfg']['sampler'] if is_train else self.cfgs['evaluator_cfg']['sampler']
-        sampler = torch.utils.data.distributed.DistributedSampler(dataset)
-
+        sampler = torch.utils.data.distributed.DistributedSampler(
+            dataset,
+            shuffle=sampler_cfg['batch_shuffle'] if is_train else False,
+        )
         # Sampler = get_attr_from([Samplers], sampler_cfg['type'])
         # vaild_args = get_valid_args(Sampler, sampler_cfg, free_keys=[
         #     'sample_type', 'type'])
@@ -280,7 +282,6 @@ class BaseModel(MetaModel, nn.Module):
         loader = DataLoader(
             dataset=dataset,
             batch_size=sampler_cfg['batch_size'],
-            shuffle=sampler_cfg['batch_shuffle'] if is_train else False,
             sampler=sampler,
             num_workers=data_cfg['num_workers'],
             drop_last=False,
@@ -491,6 +492,7 @@ class BaseModel(MetaModel, nn.Module):
                     continue
                 visual_summary.update(loss_info)
                 visual_summary['scalar/learning_rate'] = model.optimizer.param_groups[0]['lr']
+                loss_info['scalar/learning_rate'] = model.optimizer.param_groups[0]['lr']
 
                 model.msg_mgr.train_step(loss_info, visual_summary)
                 if model.iteration % model.engine_cfg['save_iter'] == 0:
@@ -506,8 +508,8 @@ class BaseModel(MetaModel, nn.Module):
                         model.msg_mgr.write_to_tensorboard(result_dict)
                         model.msg_mgr.reset_time()
                         model.train()
-                        if model.cfgs['trainer_cfg']['fix_BN']:
-                            model.fix_BN()
+                        # if model.cfgs['trainer_cfg']['fix_BN']:
+                        #     model.fix_BN()
 
                 if model.engine_cfg['total_epoch'] is None and model.iteration >= model.engine_cfg['total_iter']:
                     model.save_ckpt()
@@ -532,7 +534,12 @@ class BaseModel(MetaModel, nn.Module):
         total_size = len(dataloader)
         rest_size = total_size
         batch_size = dataloader.batch_sampler.batch_size
-        pbar = tqdm(total=total_size) if torch.distributed.get_rank() == 0 else NoOp()
+        show_progress_bar = model.cfgs['evaluator_cfg']['show_progress_bar']
+        if show_progress_bar and torch.distributed.get_rank() == 0:
+            pbar = tqdm(total=total_size, desc='Evaluating')
+        else:
+            pbar = NoOp()
+        print(f"Total size: {total_size}. Start evaluating...")
         for inputs in dataloader:
             ipts = model.inputs_pretreament(inputs)
             with autocast(enabled=model.engine_cfg['enable_float16']):
@@ -544,7 +551,7 @@ class BaseModel(MetaModel, nn.Module):
                 info = eval_func(inference_disp)
                 infoList.append(info)
             rest_size -= batch_size
-            update_size = batch_size if rest_size >= 0 else  total_size % batch_size
+            update_size = batch_size if rest_size >= 0 else total_size % batch_size
             pbar.update(update_size)
         pbar.close()
 
