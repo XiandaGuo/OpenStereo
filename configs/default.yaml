@@ -19,6 +19,7 @@ data_cfg:
 
 model_cfg:
   model: GwcNet
+  find_unused_parameters: false
 
   base_config:
     max_disp: 192
@@ -59,7 +60,6 @@ scheduler_cfg:
 
 trainer_cfg:
   enable_float16: false
-  fix_BN: false
   log_iter: 1
   with_test: true
   restore_ckpt_strict: true
@@ -88,9 +88,8 @@ evaluator_cfg:
     - thres_3
 
   enable_float16: false
-  fix_BN: false
   restore_ckpt_strict: true
-  sync_BN: true
+  show_progress_bar: false
 
   sampler:
     type: BasicStereoSampler
