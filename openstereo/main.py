@@ -54,7 +54,8 @@ def run_model(cfgs, scope):
     if scope == 'train':
         Model.run_train(model)
     elif scope == 'val':
-        Model.run_val(model)
+        res = Model.run_val(model)
+        msg_mgr.log_info(res)
     elif scope == 'test':
         Model.run_test(model)
     else:

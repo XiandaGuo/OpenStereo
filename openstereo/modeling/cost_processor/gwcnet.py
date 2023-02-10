@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class GwcVolumeCostProcessor(nn.Module):
-    def __init__(self, maxdisp=80, downsample=4, num_groups=40, use_concat_volume=True, *args, **kwargs):
+    def __init__(self, maxdisp=192, downsample=4, num_groups=40, use_concat_volume=True, *args, **kwargs):
         super().__init__()
         self.maxdisp = maxdisp
         self.downsample = downsample

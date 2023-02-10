@@ -573,7 +573,6 @@ class BaseModel(MetaModel, nn.Module):
                     res_dict[k].append(v)
             for k, v in res_dict.items():
                 res_dict[k] = np.mean(v)
-            print(res_dict)
             return res_dict
 
     @staticmethod
