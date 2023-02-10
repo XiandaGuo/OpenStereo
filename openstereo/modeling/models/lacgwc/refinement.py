@@ -93,7 +93,6 @@ class StereoDRNetRefinement(nn.Module):
         self.final_conv = nn.Conv2d(32, 1, 3, 1, 1)
 
     def forward(self, left_img, right_img, left_disp):
-
         # Warp right image to left view with current disparity
         recon_left_img = reconstruction(right_img, left_disp.squeeze(1))[0]  # [B, C, H, W]
         error = recon_left_img - left_img  # [B, C, H, W]

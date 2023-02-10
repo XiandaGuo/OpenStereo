@@ -38,14 +38,13 @@ class LacGwcLoss:
 
 class LacGwcNet(BaseModel):
     def __init__(self, *args, **kwargs):
-        self.max_disp = self.model_cfg['base_config']['max_disp']
         super().__init__(*args, **kwargs)
 
     def build_network(self, model_cfg):
-        self.net = PSMNet(self.max_disp)
+        self.net = PSMNet(model_cfg['base_config']['max_disp'])
 
     def get_loss_func(self, loss_cfg):
-        return LacGwcLoss(max_disp=self.max_disp)
+        return LacGwcLoss(max_disp=192)
 
     def forward(self, inputs):
         """Forward the network."""

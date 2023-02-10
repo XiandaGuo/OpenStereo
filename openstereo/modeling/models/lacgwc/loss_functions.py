@@ -2,9 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-import cv2
+# import cv2
 from PIL import Image
-import matplotlib.pyplot as plt
 
 
 def disp2distribute(disp_gt, max_disp, b=2):
@@ -74,36 +73,36 @@ class DispAffinity(nn.Module):
         return affinity, valid_mask
 
 
-def random_noise(img, type):
-    if type == 'illumination':
-        yuv_img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2YUV)
-        # yuv_rimg[:, :, 0] = yuv_rimg[:, :, 0] - 20
-        illu_mask = yuv_img[:, :, 0] > 50
-        yuv_img[:, :, 0][illu_mask] = yuv_img[:, :, 0][illu_mask] - 50
-        img = Image.fromarray(cv2.cvtColor(yuv_img, cv2.COLOR_YUV2RGB))
-    elif type == 'color':
-        rgb_img = np.array(img)
-        color_mask = rgb_img[:, :, 2] > 50
-        rgb_img[:, :, 2][color_mask] = rgb_img[:, :, 2][color_mask] - 50
-        color_mask = rgb_img[:, :, 0] < 195
-        rgb_img[:, :, 0][color_mask] = rgb_img[:, :, 0][color_mask] + 50
-        img = Image.fromarray(rgb_img)
-    elif type == 'noise':
-        rgb_img = np.array(img)
-        shape = rgb_img.shape
-        noise = np.random.randint(-20, 20, size=shape).astype('uint8')
-        rgb_img = rgb_img + noise
-        rgb_img[rgb_img > 255] = 255
-        rgb_img[rgb_img < 0] = 0
-        img = Image.fromarray(rgb_img)
-    elif type == 'haze':
-        rgb_img = np.array(img)
-        A = np.random.uniform(0.6, 0.95) * 255
-        t = np.random.uniform(0.3, 0.95) * 255
-        img = rgb_img * t + A * (1 - t)
-        img = Image.fromarray(img.astype('uint8'))
-
-    return img
+# def random_noise(img, type):
+#     if type == 'illumination':
+#         yuv_img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2YUV)
+#         # yuv_rimg[:, :, 0] = yuv_rimg[:, :, 0] - 20
+#         illu_mask = yuv_img[:, :, 0] > 50
+#         yuv_img[:, :, 0][illu_mask] = yuv_img[:, :, 0][illu_mask] - 50
+#         img = Image.fromarray(cv2.cvtColor(yuv_img, cv2.COLOR_YUV2RGB))
+#     elif type == 'color':
+#         rgb_img = np.array(img)
+#         color_mask = rgb_img[:, :, 2] > 50
+#         rgb_img[:, :, 2][color_mask] = rgb_img[:, :, 2][color_mask] - 50
+#         color_mask = rgb_img[:, :, 0] < 195
+#         rgb_img[:, :, 0][color_mask] = rgb_img[:, :, 0][color_mask] + 50
+#         img = Image.fromarray(rgb_img)
+#     elif type == 'noise':
+#         rgb_img = np.array(img)
+#         shape = rgb_img.shape
+#         noise = np.random.randint(-20, 20, size=shape).astype('uint8')
+#         rgb_img = rgb_img + noise
+#         rgb_img[rgb_img > 255] = 255
+#         rgb_img[rgb_img < 0] = 0
+#         img = Image.fromarray(rgb_img)
+#     elif type == 'haze':
+#         rgb_img = np.array(img)
+#         A = np.random.uniform(0.6, 0.95) * 255
+#         t = np.random.uniform(0.3, 0.95) * 255
+#         img = rgb_img * t + A * (1 - t)
+#         img = Image.fromarray(img.astype('uint8'))
+#
+#     return img
 
 
 def gradient_x(img):

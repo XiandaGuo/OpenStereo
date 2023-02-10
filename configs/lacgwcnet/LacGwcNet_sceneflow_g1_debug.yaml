@@ -2,7 +2,7 @@ data_cfg:
   name: SceneFlow
   root: data/SceneFlow
   train_list: datasets/sceneflow/train.txt
-  val_list: datasets/sceneflow/val.txt
+  val_list: datasets/sceneflow/debug.txt
   test_list: datasets/sceneflow/test.txt
   num_workers: 4
 
@@ -12,14 +12,13 @@ data_cfg:
       mean: [ 0.485, 0.456, 0.406 ]
       std: [ 0.229, 0.224, 0.225 ]
     test:
-      size: [ 512, 960 ]
+      size: [ 256, 512 ]
       mean: [ 0.485, 0.456, 0.406 ]
       std: [ 0.229, 0.224, 0.225 ]
 
 
 model_cfg:
   model: LacGwcNet
-#  find_unused_parameters: true
   base_config:
     max_disp: 192
 
@@ -44,11 +43,11 @@ trainer_cfg:
   save_name: LacGwcNet_SceneFlow
   restore_hint: 0
   restore_ckpt_strict: true
-  log_iter: 100
+  log_iter: 10
   with_test: true
   enable_float16: false
   sync_BN: true
-  save_iter: 5000
+  save_iter: 100
   total_iter: 150000
   total_epoch: 20
   optimizer_reset: false
@@ -56,7 +55,7 @@ trainer_cfg:
   sampler:
     # type: BasicStereoSampler
     batch_shuffle: true
-    batch_size: 4
+    batch_size: 1
 
 
 evaluator_cfg:

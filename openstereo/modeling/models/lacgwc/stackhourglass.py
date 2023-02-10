@@ -1,4 +1,3 @@
-from __future__ import print_function
 import torch
 import torch.nn as nn
 import torch.utils.data
@@ -6,7 +5,6 @@ import torch.nn.functional as F
 import math
 from .submodule import convbn_3d, feature_extraction, DisparityRegression
 from .deformable_refine import DeformableRefineF
-from . import loss_functions as lf
 
 
 class hourglass(nn.Module):
@@ -211,20 +209,3 @@ class PSMNet(nn.Module):
             return pred1, pred2, pred3, distribute1, distribute2, distribute3, distributer, predr
         else:
             return predr
-
-        # if self.training:
-        #     mask = (gt_left < self.maxdisp) & (gt_left > 0)
-        #     loss1 = 0.5 * F.smooth_l1_loss(pred1[mask], gt_left[mask]) + \
-        #             0.7 * F.smooth_l1_loss(pred2[mask], gt_left[mask]) + \
-        #             F.smooth_l1_loss(pred3[mask], gt_left[mask])
-        #
-        #     gt_distribute = lf.disp2distribute(gt_left, self.maxdisp, b=2)
-        #     loss2 = 0.5 * lf.CEloss(gt_left, self.maxdisp, gt_distribute, distribute1) + \
-        #             0.7 * lf.CEloss(gt_left, self.maxdisp, gt_distribute, distribute2) + \
-        #             lf.CEloss(gt_left, self.maxdisp, gt_distribute, distribute3)
-        #     loss1 += F.smooth_l1_loss(predr[mask], gt_left[mask])
-        #     loss2 += lf.CEloss(gt_left, self.maxdisp, gt_distribute, distributer)
-        #
-        #     return loss1, loss2
-        # else:
-        #     return predr

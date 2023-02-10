@@ -40,11 +40,9 @@ class AffinityFeature(nn.Module):
             kernel_size=(self.win_h, self.win_w), dilation=self.dilation, padding=self.dilation)(feature)
         all_neighbor = unfold_feature.reshape(B, C, -1, H, W).transpose(1, 2)
         num = (self.win_h * self.win_w) // 2
-        neighbor = torch.cat((all_neighbor[:, :num], all_neighbor[:, num+1:]), dim=1)
+        neighbor = torch.cat((all_neighbor[:, :num], all_neighbor[:, num + 1:]), dim=1)
         feature = feature.unsqueeze(1)
         affinity = torch.sum(neighbor * feature, dim=2)
         affinity[affinity < self.cut] = self.cut
 
         return affinity
-
-

@@ -70,24 +70,24 @@ class U_Net(nn.Module):
         x1 = self.Conv1(x)
 
         x2 = self.Maxpool(x1)
-        x2 = self.Conv2(x2)         # 64, 1/2
+        x2 = self.Conv2(x2)  # 64, 1/2
 
         x3 = self.Maxpool(x2)
-        x3 = self.Conv3(x3)         # 128, 1/4
+        x3 = self.Conv3(x3)  # 128, 1/4
 
         x4 = self.Maxpool(x3)
-        x4 = self.Conv4(x4)         # 128, 1/8
+        x4 = self.Conv4(x4)  # 128, 1/8
 
         x5 = self.Maxpool(x4)
-        x5 = self.Conv5(x5)         # 128, 1/16
+        x5 = self.Conv5(x5)  # 128, 1/16
 
         d5 = self.Up5(x5)
         d5 = torch.cat((x4, d5), dim=1)
-        d5 = self.Up_conv5(d5)      # 128, 1/8
+        d5 = self.Up_conv5(d5)  # 128, 1/8
 
         d4 = self.Up4(d5)
         d4 = torch.cat((x3, d4), dim=1)
-        d4 = self.Up_conv4(d4)      # 64, 1/4
+        d4 = self.Up_conv4(d4)  # 64, 1/4
 
         d1 = self.Conv_1x1(d4)
         d1 = F.relu(d1)

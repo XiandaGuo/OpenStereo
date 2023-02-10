@@ -2,32 +2,24 @@ from __future__ import print_function
 import torch
 import torch.nn as nn
 import torch.utils.data
-from torch.autograd import Variable
-import torch.nn.functional as F
-from torchvision import models
-import math
-import numpy as np
-import torchvision.transforms as transforms
-import PIL
-import os
-import matplotlib.pyplot as plt
-from networks.affinity_feature import AffinityFeature
+from .affinity_feature import AffinityFeature
 
 
 def convbn(in_planes, out_planes, kernel_size, stride, pad, dilation):
-
-    return nn.Sequential(nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride, padding=dilation if dilation > 1 else pad, dilation = dilation, bias=False),
+    return nn.Sequential(nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride,
+                                   padding=dilation if dilation > 1 else pad, dilation=dilation, bias=False),
                          nn.BatchNorm2d(out_planes))
 
 
 def convbn_3d(in_planes, out_planes, kernel_size, stride, pad):
-
-    return nn.Sequential(nn.Conv3d(in_planes, out_planes, kernel_size=kernel_size, padding=pad, stride=stride,bias=False),
-                         nn.BatchNorm3d(out_planes))
+    return nn.Sequential(
+        nn.Conv3d(in_planes, out_planes, kernel_size=kernel_size, padding=pad, stride=stride, bias=False),
+        nn.BatchNorm3d(out_planes))
 
 
 class BasicBlock(nn.Module):
     expansion = 1
+
     def __init__(self, inplanes, planes, stride, downsample, pad, dilation):
         super(BasicBlock, self).__init__()
 
@@ -49,6 +41,7 @@ class BasicBlock(nn.Module):
         out += x
 
         return out
+
 
 # class matchshifted(nn.Module):
 #     def __init__(self):
@@ -138,7 +131,7 @@ class feature_extraction(nn.Module):
                 self.sfc_conv4 = nn.Sequential(convbn(in_c, self.sfc, 1, 1, 0, 1),
                                                nn.ReLU(inplace=True))
 
-                self.lastconv = nn.Sequential(convbn(4*self.sfc, 32, 3, 1, 1, 1),
+                self.lastconv = nn.Sequential(convbn(4 * self.sfc, 32, 3, 1, 1, 1),
                                               nn.ReLU(inplace=True),
                                               nn.Conv2d(32, 32, kernel_size=1, padding=0, stride=1, bias=False))
 
@@ -180,16 +173,16 @@ class feature_extraction(nn.Module):
     def _make_layer(self, block, planes, blocks, stride, pad, dilation):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
-           downsample = nn.Sequential(
+            downsample = nn.Sequential(
                 nn.Conv2d(self.inplanes, planes * block.expansion,
                           kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(planes * block.expansion),)
+                nn.BatchNorm2d(planes * block.expansion), )
 
         layers = []
         layers.append(block(self.inplanes, planes, stride, downsample, pad, dilation))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes,1,None,pad,dilation))
+            layers.append(block(self.inplanes, planes, 1, None, pad, dilation))
 
         return nn.Sequential(*layers)
 
@@ -261,7 +254,6 @@ class StructureFeature(nn.Module):
                                        nn.ReLU(inplace=True))
 
     def forward(self, x):
-
         affinity1 = AffinityFeature(self.win_h, self.win_w, self.dilation[0], 0)(x)
         affinity2 = AffinityFeature(self.win_h, self.win_w, self.dilation[1], 0)(x)
         affinity3 = AffinityFeature(self.win_h, self.win_w, self.dilation[2], 0)(x)

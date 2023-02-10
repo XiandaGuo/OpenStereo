@@ -68,7 +68,7 @@ trainer_cfg:
   with_test: true
   enable_float16: false
   sync_BN: true
-  save_iter: 7500
+  save_iter: 5000
   total_iter: 150000
   total_epoch: 20
   optimizer_reset: false
@@ -76,7 +76,7 @@ trainer_cfg:
 
   sampler:
     # type: BasicStereoSampler
-    batch_shuffle: false
+    batch_shuffle: true
     batch_size: 4
 
 
