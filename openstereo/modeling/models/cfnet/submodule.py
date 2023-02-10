@@ -99,7 +99,7 @@ class conv2DBatchNormRelu(nn.Module):
 class Mish(nn.Module):
     def __init__(self):
         super().__init__()
-        print("Mish activation loaded...")
+        # print("Mish activation loaded...")
 
     def forward(self, x):
         # save 1 second per epoch with no x= x*() and then return x...just inline it.

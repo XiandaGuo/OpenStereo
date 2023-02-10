@@ -9,7 +9,7 @@ class Smooth_l1_Loss(BaseLoss):
         super().__init__(loss_term_weight)
         self.reduction = reduction
 
-    @gather_and_scale_wrapper
+    # @gather_and_scale_wrapper
     def forward(self, disp_ests, disp_gt, mask=None):
         loss = F.smooth_l1_loss(
             disp_ests[mask] if mask is not None else disp_ests,
@@ -26,7 +26,7 @@ class Weighted_Smooth_l1_Loss(BaseLoss):
         self.weights = weights
         self.reduction = reduction
 
-    @gather_and_scale_wrapper
+    # @gather_and_scale_wrapper
     def forward(self, disp_ests, disp_gt, mask=None):
         weights = self.weights
         loss = 0.

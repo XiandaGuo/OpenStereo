@@ -21,4 +21,8 @@ cd /mnt/cfs/algorithm/youmin.zhang/juntao/OpenStereo
 #                 --nEpochs=800 2>&1 |tee logs/log_finetune2_kitti.txt
 
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 openstereo/main.py --cfgs ./configs/cfnet/CFNet_sceneflow.yaml --phase train
+# CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 openstereo/main.py \ 
+#                 --cfgs ./configs/ganet/GaNet_sceneflow.yaml --phase train \
+#                 2>&1 |tee logs/GaNet_sceneflow.txt
+
+CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 openstereo/main.py --cfgs ./configs/gwcnet/GwcNet_sceneflow.yaml --phase train 2>&1 |tee logs/GwcNet_sceneflow.txt
