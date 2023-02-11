@@ -280,8 +280,9 @@ class GetCostVolume(nn.Module):
         coords_y = cur_disp_coords_y / ((height - 1.0) / 2.0) - 1.0
         grid = torch.stack([coords_x, coords_y], dim=4) #(B, D, H, W, 2)
 
+        # grid_sample and affine_grid behavior has changed to align_corners=False since 1.3.0.
         y_warped = F.grid_sample(y, grid.view(bs, ndisp * height, width, 2), mode='bilinear',
-                               padding_mode='zeros').view(bs, channels, ndisp, height, width)  #(B, C, D, H, W)
+                               padding_mode='zeros', align_corners=True).view(bs, channels, ndisp, height, width)  #(B, C, D, H, W)
 
 
         # a littel difference, no zeros filling
