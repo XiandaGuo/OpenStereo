@@ -19,9 +19,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.distributed as dist
 from torch.cuda.amp import GradScaler
 from torch.cuda.amp import autocast
 from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
 
 from data.dataset import DataSet
@@ -170,7 +172,7 @@ class BaseModel(MetaModel, nn.Module):
         else:
             self.test_loader = self.get_loader(cfgs['data_cfg'], 'test')
 
-        self.device_rank = torch.distributed.get_rank()
+        self.device_rank = dist.get_rank()
         torch.cuda.set_device(self.device_rank)
         self.to(device=torch.device("cuda", self.device_rank))
 
@@ -267,9 +269,10 @@ class BaseModel(MetaModel, nn.Module):
         is_train = scope == 'train'
         dataset = DataSet(data_cfg, scope)
         sampler_cfg = self.cfgs['trainer_cfg']['sampler'] if is_train else self.cfgs['evaluator_cfg']['sampler']
-        sampler = torch.utils.data.distributed.DistributedSampler(
+        sampler = DistributedSampler(
             dataset,
             shuffle=sampler_cfg['batch_shuffle'] if is_train else False,
+            drop_last=False,
         )
         # Sampler = get_attr_from([Samplers], sampler_cfg['type'])
         # vaild_args = get_valid_args(Sampler, sampler_cfg, free_keys=[
@@ -281,7 +284,7 @@ class BaseModel(MetaModel, nn.Module):
 
         loader = DataLoader(
             dataset=dataset,
-            batch_size=sampler_cfg['batch_size'],
+            batch_size=sampler_cfg['batch_size'] * dist.get_world_size(),
             sampler=sampler,
             num_workers=data_cfg['num_workers'],
             drop_last=False,
@@ -523,7 +526,7 @@ class BaseModel(MetaModel, nn.Module):
     def run_val(model, *args, **kwargs):
         """Accept the instance object(model) here, and then run the test loop."""
 
-        dataloader =  model.val_loader
+        dataloader = model.val_loader
         eval_func = model.cfgs['evaluator_cfg']["eval_func"]
         eval_func = getattr(eval_functions, eval_func)
         valid_args = get_valid_args(eval_func, model.cfgs["evaluator_cfg"], ['metric'])
@@ -555,7 +558,7 @@ class BaseModel(MetaModel, nn.Module):
             pbar.update(update_size)
         pbar.close()
 
-        world_size = torch.distributed.get_world_size()
+        world_size = dist.get_world_size()
 
         # gather all the info from different processes
         output = [None for _ in range(world_size)]
