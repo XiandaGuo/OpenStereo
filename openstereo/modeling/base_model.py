@@ -556,7 +556,7 @@ class BaseModel(MetaModel, nn.Module):
             with autocast(enabled=self.engine_cfg['enable_float16']):
                 # print(ipts['ref_img'].device)
                 output = self.forward(ipts)
-                inference_disp = output['inference_disp']
+                inference_disp, visual_summary = output['inference_disp'], output['visual_summary']
                 inference_disp.update(ipts)
                 for k, v in inference_disp.items():
                     inference_disp[k] = ts2np(v)
@@ -585,7 +585,10 @@ class BaseModel(MetaModel, nn.Module):
                     res_dict[k].append(v)
             for k, v in res_dict.items():
                 res_dict[k] = np.mean(v)
+            visual_summary.update(res_dict)
+            self.msg_mgr.write_to_tensorboard(visual_summary)
             return res_dict
+
 
     @staticmethod
     def run_test(model, *args, **kwargs):

@@ -63,7 +63,7 @@ class LacGwcNet(BaseModel):
                 },
                 "visual_summary": {
                     'image/train/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
-                    'image/train/disp_c': torch.cat([inputs['disp_gt'][0], res[0][-1]], dim=0),
+                    'image/train/disp_c': torch.cat([inputs['disp_gt'][0], res[-1][0]], dim=0),
                 },
             }
         else:
@@ -73,9 +73,8 @@ class LacGwcNet(BaseModel):
                     "disp_est": res
                 },
                 "visual_summary": {
-                    # 'image/ref_img': ref_img,
-                    # 'image/disp_est': res,
-                    # 'image/disp_gt': inputs['disp_gt'],
+                    'image/val/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
+                    'image/val/disp_c': torch.cat([inputs['disp_gt'][0], res[0]], dim=0),
                 }
             }
         return output
