@@ -28,6 +28,7 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
 - ？？？
 - [Yiqi Wang (王仪琦)](), 邮箱
 - [Juntao Lu (陆俊陶)](), juntao.lu@student.unimelb.edu.au
+- [Yiqun Duan (段逸群)](https://github.com/duanyiqun), duanyiquncc@gmail.com
 
 
 ## Acknowledgement

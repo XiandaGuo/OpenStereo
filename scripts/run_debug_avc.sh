@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=1,2 python -m torch.distributed.launch --nproc_per_node=2 openstereo/main.py --cfgs ./configs/avcnet/AVCNet_SceneFlow.yaml --phase train 2>&1 |tee logs/avc.txt
