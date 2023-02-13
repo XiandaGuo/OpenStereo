@@ -77,7 +77,4 @@ if __name__ == '__main__':
     is_train = (opt.phase == 'train')
 
     initialization(cfgs, is_train)
-    print("Initialization Finished!")
-    print(cfgs)
-    print("Start Running Model!")
     run_model(cfgs, opt.phase.lower())
