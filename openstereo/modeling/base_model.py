@@ -251,8 +251,7 @@ class BaseModel(MetaModel, nn.Module):
         cost_out = self.CostProcessor(inputs)
         inputs.update(cost_out)
         disp_out = self.DispProcessor(inputs)
-        inputs.update(disp_out)
-        return inputs
+        return disp_out
 
     def init_parameters(self):
         for m in self.modules():
@@ -530,7 +529,7 @@ class BaseModel(MetaModel, nn.Module):
     #             print('Training finished!')
     #             return
     # @staticmethod
-    def run_val(self, *args, **kwargs):
+    def run_val(self):
         """Accept the instance object(model) here, and then run the test loop."""
         self.eval()
         dataloader = self.val_loader
@@ -550,21 +549,25 @@ class BaseModel(MetaModel, nn.Module):
         else:
             pbar = NoOp()
         self.msg_mgr.log_info(f"Total size: {total_size} | Total batch: {len(dataloader)}")
-        # print(self.device)
-        for inputs in dataloader:
-            ipts = self.inputs_pretreament(inputs)
-            with autocast(enabled=self.engine_cfg['enable_float16']):
-                # print(ipts['ref_img'].device)
-                output = self.forward(ipts)
-                inference_disp, visual_summary = output['inference_disp'], output['visual_summary']
-                inference_disp.update(ipts)
-                for k, v in inference_disp.items():
-                    inference_disp[k] = ts2np(v)
-                info = eval_func(inference_disp)
-                infoList.append(info)
-            rest_size -= batch_size
-            update_size = batch_size if rest_size >= 0 else total_size % batch_size
-            pbar.update(update_size)
+        with torch.no_grad():
+            for inputs in dataloader:
+                ipts = self.inputs_pretreament(inputs)
+                with autocast(enabled=self.engine_cfg['enable_float16']):
+                    # print(ipts['ref_img'].device)
+                    output = self.forward(ipts)
+                    inference_disp, visual_summary = output['inference_disp'], output['visual_summary']
+                    inference_disp.update(ipts)
+                    self.msg_mgr.write_to_tensorboard(visual_summary)
+                    for k, v in inference_disp.items():
+                        try:
+                            inference_disp[k] = ts2np(v)
+                        except:
+                            print(k, "is not tensor")
+                    info = eval_func(inference_disp)
+                    infoList.append(info)
+                rest_size -= batch_size
+                update_size = batch_size if rest_size >= 0 else total_size % batch_size
+                pbar.update(update_size)
         pbar.close()
 
         world_size = dist.get_world_size()
@@ -586,7 +589,6 @@ class BaseModel(MetaModel, nn.Module):
             for k, v in res_dict.items():
                 res_dict[k] = np.mean(v)
             visual_summary.update(res_dict)
-            self.msg_mgr.write_to_tensorboard(visual_summary)
             return res_dict
 
 
@@ -602,7 +604,7 @@ class BaseModel(MetaModel, nn.Module):
         return info_dict
 
     
-    def run_train(self, *args, **kwargs):
+    def run_train(self):
         """Accept the instance object(model) here, and then run the train loop."""
         self.train()
         while True:
