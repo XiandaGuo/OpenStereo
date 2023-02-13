@@ -291,6 +291,7 @@ class BaseModel(MetaModel, nn.Module):
             sampler=sampler,
             num_workers=data_cfg['num_workers'],
             drop_last=False,
+            # pin_memory=True,
             # batch_sampler=sampler,
             # collate_fn=collate_fn,
         )
