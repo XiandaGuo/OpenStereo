@@ -610,6 +610,7 @@ class BaseModel(MetaModel, nn.Module):
         while True:
             self.epoch += 1
             self.train_loader.sampler.set_epoch(self.epoch) # for distributed training shuffle
+            self.msg_mgr.log_info(f"Epoch {self.epoch} starts.")
             for inputs in self.train_loader:
                 ipts = self.inputs_pretreament(inputs)
                 # print(ipts['ref_img'].device)
@@ -645,10 +646,11 @@ class BaseModel(MetaModel, nn.Module):
                         #     model.fix_BN()
 
                 if self.engine_cfg['total_epoch'] is None and self.iteration >= self.engine_cfg['total_iter']:
+                    self.msg_mgr.log_info('Training finished! Reached the maximum iteration.')
                     self.save_ckpt()
                     return
 
             if self.epoch >= self.engine_cfg['total_epoch']:
                 self.save_ckpt()
-                print('Training finished!')
+                self.msg_mgr.log_info('Training finished! Reached the maximum epoch.')
                 return
