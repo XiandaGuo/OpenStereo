@@ -17,9 +17,9 @@ from functools import partial
 
 import numpy as np
 import torch
+import torch.distributed as dist
 import torch.nn as nn
 import torch.optim as optim
-import torch.distributed as dist
 from torch.cuda.amp import GradScaler
 from torch.cuda.amp import autocast
 from torch.utils.data import DataLoader
@@ -96,21 +96,18 @@ class MetaModel(metaclass=ABCMeta):
         """Do inference (calculate features.)."""
         raise NotImplementedError
 
-    @staticmethod
     @abstractmethod
-    def run_train(model, *args, **kwargs):
+    def run_train(self, *args, **kwargs):
         """Run a whole train schedule."""
         raise NotImplementedError
 
-    @staticmethod
     @abstractmethod
-    def run_val(model, *args, **kwargs):
+    def run_val(self, *args, **kwargs):
         """Run a whole test schedule."""
         raise NotImplementedError
 
-    @staticmethod
     @abstractmethod
-    def run_test(model, *args, **kwargs):
+    def run_test(self, *args, **kwargs):
         """Run a whole test schedule."""
         raise NotImplementedError
 
@@ -480,57 +477,8 @@ class BaseModel(MetaModel, nn.Module):
             info_dict[k] = v
         # the final output is a dict {'disp_est': np.array}
         return info_dict
-        
 
-    # @staticmethod
-    # def run_train(model, *args, **kwargs):
-    #     """Accept the instance object(model) here, and then run the train loop."""
-    #     model.train()
-    #     while True:
-    #         model.epoch += 1
-    #         model.train_loader.sampler.set_epoch(model.epoch) # for distributed training shuffle
-    #         for inputs in model.train_loader:
-    #             print(f'Rank:{dist.get_rank()} Shape:{inputs["left"].shape}')
-    #             ipts = model.inputs_pretreament(inputs)
-    #             with autocast(enabled=model.engine_cfg['enable_float16']):
-    #                 output = model(ipts)
-    #                 training_disp, visual_summary = output['training_disp'], output['visual_summary']
-    #                 del output
-    #             loss_sum, loss_info = model.loss_aggregator(training_disp)
-    #             ok = model.train_step(loss_sum)
-    #             if not ok:
-    #                 continue
-    #             visual_summary.update(loss_info)
-    #             visual_summary['scalar/learning_rate'] = model.optimizer.param_groups[0]['lr']
-    #             loss_info['scalar/learning_rate'] = model.optimizer.param_groups[0]['lr']
-
-    #             model.msg_mgr.train_step(loss_info, visual_summary)
-    #             if model.iteration % model.engine_cfg['save_iter'] == 0:
-    #                 # save the checkpoint
-    #                 model.save_ckpt()
-
-    #                 # run test if with_test = true
-    #                 if model.engine_cfg['with_test']:
-    #                     model.msg_mgr.log_info("Running test...")
-    #                     model.eval()
-    #                     result_dict = model.run_val(model)
-    #                     model.msg_mgr.log_info(result_dict)
-    #                     model.msg_mgr.write_to_tensorboard(result_dict)
-    #                     model.msg_mgr.reset_time()
-    #                     model.train()
-    #                     # if model.cfgs['trainer_cfg']['fix_BN']:
-    #                     #     model.fix_BN()
-
-    #             if model.engine_cfg['total_epoch'] is None and model.iteration >= model.engine_cfg['total_iter']:
-    #                 model.save_ckpt()
-    #                 return
-
-    #         if model.epoch >= model.engine_cfg['total_epoch']:
-    #             model.save_ckpt()
-    #             print('Training finished!')
-    #             return
-    # @staticmethod
-    def run_val(self):
+    def run_val(self, *args, **kwargs):
         """Accept the instance object(model) here, and then run the test loop."""
         self.eval()
         dataloader = self.val_loader
@@ -592,25 +540,22 @@ class BaseModel(MetaModel, nn.Module):
             visual_summary.update(res_dict)
             return res_dict
 
-
-    @staticmethod
-    def run_test(model, *args, **kwargs):
+    def run_test(self, *args, **kwargs):
         try:
-            model.resume_ckpt(model.cfgs['evaluator_cfg']['checkpoint'])
+            self.resume_ckpt(self.cfgs['evaluator_cfg']['checkpoint'])
         except Exception as e:
-            model.msg_mgr.log_warning("Failed to resume the checkpoint, got {}".format(e))
+            self.msg_mgr.log_warning("Failed to resume the checkpoint, got {}".format(e))
         with torch.no_grad():
-            loader = model.test_loader
-            info_dict = model.inference(model, loader)
+            loader = self.test_loader
+            info_dict = self.inference(self, loader)
         return info_dict
 
-    
-    def run_train(self):
+    def run_train(self, *args, **kwargs):
         """Accept the instance object(model) here, and then run the train loop."""
         self.train()
         while True:
             self.epoch += 1
-            self.train_loader.sampler.set_epoch(self.epoch) # for distributed training shuffle
+            self.train_loader.sampler.set_epoch(self.epoch)  # for distributed training shuffle
             self.msg_mgr.log_info(f"Epoch {self.epoch} starts.")
             for inputs in self.train_loader:
                 ipts = self.inputs_pretreament(inputs)
@@ -643,8 +588,8 @@ class BaseModel(MetaModel, nn.Module):
                         self.msg_mgr.write_to_tensorboard(result_dict)
                         self.msg_mgr.reset_time()
                         self.train()
-                        # if model.cfgs['trainer_cfg']['fix_BN']:
-                        #     model.fix_BN()
+                        if self.cfgs['trainer_cfg']['fix_BN']:
+                            self.fix_BN()
 
                 if self.engine_cfg['total_epoch'] is None and self.iteration >= self.engine_cfg['total_iter']:
                     self.msg_mgr.log_info('Training finished! Reached the maximum iteration.')

@@ -12,3 +12,9 @@ CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python -m torch.distributed.launch \
  --cfgs ./configs/lacgwcnet/LacGwcNet_sceneflow_g8.yaml \
  --phase train \
  2>&1 |tee logs/LacGwcNet_sceneflow_train_g8.txt
+
+#CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch \
+# --nproc_per_node=2 openstereo/main.py \
+# --cfgs ./configs/lacgwcnet/LacGwcNet_sceneflow_g1_debug.yaml \
+# --phase train \
+# 2>&1 |tee logs/LacGwcNet_sceneflow_train_g8.txt

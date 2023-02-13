@@ -47,8 +47,8 @@ def run_model(cfgs, scope):
     model = Model(cfgs, scope)
     if is_train and cfgs['trainer_cfg']['sync_BN']:
         model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
-    # if cfgs['trainer_cfg']['fix_BN']:
-    #     model.fix_BN()
+    if cfgs['trainer_cfg']['fix_BN']:
+        model.fix_BN()
     model = get_ddp_module(model, find_unused_parameters=model_cfg['find_unused_parameters'])
     msg_mgr.log_info(params_count(model))
     msg_mgr.log_info("Model Initialization Finished!")
@@ -58,7 +58,7 @@ def run_model(cfgs, scope):
         res = model.run_val()
         msg_mgr.log_info(res)
     elif scope == 'test':
-        model.run_test(model)
+        model.run_test()
     else:
         raise ValueError("Scope should be one of ['train', 'val', 'test'].")
 
