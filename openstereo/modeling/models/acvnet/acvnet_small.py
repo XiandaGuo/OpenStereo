@@ -51,6 +51,7 @@ class feature_extraction(nn.Module):
         gwc_feature = torch.cat((l2, l3, l4), dim=1)
         return {"gwc_feature": gwc_feature}
 
+
 class hourglass(nn.Module):
     def __init__(self, in_channels):
         super(hourglass, self).__init__()
@@ -66,7 +67,6 @@ class hourglass(nn.Module):
 
         self.conv4 = nn.Sequential(convbn_3d(in_channels * 4, in_channels * 4, 3, 1, 1),
                                    nn.ReLU(inplace=True))
-
         self.attention_block = attention_block(channels_3d=in_channels * 4, num_heads=16, block=(4, 4, 4))
 
         self.conv5 = nn.Sequential(
@@ -90,9 +90,9 @@ class hourglass(nn.Module):
         conv6 = F.relu(self.conv6(conv5) + self.redir1(x), inplace=True)
         return conv6
 
-class ACV_Net(nn.Module):
+class ACV_NetSmall(nn.Module):
     def __init__(self, maxdisp, attn_weights_only, freeze_attn_weights):
-        super(ACV_Net, self).__init__()
+        super(ACV_NetSmall, self).__init__()
         self.maxdisp = maxdisp
         self.attn_weights_only = attn_weights_only
         self.freeze_attn_weights = freeze_attn_weights
@@ -109,26 +109,23 @@ class ACV_Net(nn.Module):
         self.patch_l2 = nn.Conv3d(16, 16, kernel_size=(1,3,3), stride=1, dilation=2, groups=16, padding=(0,2,2), bias=False)
         self.patch_l3 = nn.Conv3d(16, 16, kernel_size=(1,3,3), stride=1, dilation=3, groups=16, padding=(0,3,3), bias=False)
 
-        self.dres1_att_ = nn.Sequential(convbn_3d(40, 32, 3, 1, 1),
+        self.dres1_att = nn.Sequential(convbn_3d(40, 16, 3, 1, 1),
                                    nn.ReLU(inplace=True),
-                                   convbn_3d(32, 32, 3, 1, 1)) 
-        self.dres2_att_ = hourglass(32)
-        self.classif_att_ = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
+                                   convbn_3d(16, 16, 3, 1, 1)) 
+        self.dres2_att = hourglass(16)
+        self.classif_att = nn.Sequential(convbn_3d(16, 16, 3, 1, 1),
                                       nn.ReLU(inplace=True),
-                                      nn.Conv3d(32, 1, kernel_size=3, padding=1, stride=1, bias=False))
+                                      nn.Conv3d(16, 1, kernel_size=3, padding=1, stride=1, bias=False))
 
         self.dres0 = nn.Sequential(convbn_3d(self.concat_channels * 2, 32, 3, 1, 1),
                                    nn.ReLU(inplace=True),
                                    convbn_3d(32, 32, 3, 1, 1),
                                    nn.ReLU(inplace=True))
-
         self.dres1 = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
                                    nn.ReLU(inplace=True),
                                    convbn_3d(32, 32, 3, 1, 1))        
         self.dres2 = hourglass(32)
-
         self.dres3 = hourglass(32)
-
         self.classif0 = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
                                       nn.ReLU(inplace=True),
                                       nn.Conv3d(32, 1, kernel_size=3, padding=1, stride=1, bias=False))
@@ -157,8 +154,8 @@ class ACV_Net(nn.Module):
             elif isinstance(m, nn.Linear):
                 m.bias.data.zero_()
 
-    def forward(self, left, right, training=True):
-        self.training = training
+    def forward(self, left, right):
+
         if self.freeze_attn_weights:
             with torch.no_grad():
                 features_left = self.feature_extraction(left)
@@ -169,9 +166,9 @@ class ACV_Net(nn.Module):
                 patch_l2 = self.patch_l2(gwc_volume[:, 8:24])
                 patch_l3 = self.patch_l3(gwc_volume[:, 24:40])
                 patch_volume = torch.cat((patch_l1,patch_l2,patch_l3), dim=1)
-                cost_attention = self.dres1_att_(patch_volume)
-                cost_attention = self.dres2_att_(cost_attention)
-                att_weights = self.classif_att_(cost_attention)
+                cost_attention = self.dres1_att(patch_volume)
+                cost_attention = self.dres2_att(cost_attention)
+                att_weights = self.classif_att(cost_attention)
 
         else:
 
@@ -183,9 +180,9 @@ class ACV_Net(nn.Module):
             patch_l2 = self.patch_l2(gwc_volume[:, 8:24])
             patch_l3 = self.patch_l3(gwc_volume[:, 24:40])
             patch_volume = torch.cat((patch_l1,patch_l2,patch_l3), dim=1)
-            cost_attention = self.dres1_att_(patch_volume)
-            cost_attention = self.dres2_att_(cost_attention)
-            att_weights = self.classif_att_(cost_attention)
+            cost_attention = self.dres1_att(patch_volume)
+            cost_attention = self.dres2_att(cost_attention)
+            att_weights = self.classif_att(cost_attention)
 
         if not self.attn_weights_only:
             concat_feature_left = self.concatconv(features_left["gwc_feature"])
@@ -247,5 +244,7 @@ class ACV_Net(nn.Module):
             cost2 = torch.squeeze(cost2, 1)
             pred2 = F.softmax(cost2, dim=1)
             pred2 = disparity_regression(pred2, self.maxdisp)
-
             return [pred2]
+
+def acv(d):
+    return ACVNet(d)

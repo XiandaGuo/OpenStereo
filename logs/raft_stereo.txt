@@ -1,0 +1,101 @@
+/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/distributed/launch.py:186: FutureWarning: The module torch.distributed.launch is deprecated
+and will be removed in future. Use torchrun.
+Note that --use_env is set by default in torchrun.
+If your script expects `--local_rank` argument to be set, please
+change it to read from `os.environ['LOCAL_RANK']` instead. See 
+https://pytorch.org/docs/stable/distributed.html#launch-utility for 
+further instructions
+
+  FutureWarning,
+WARNING:torch.distributed.run:
+*****************************************
+Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+*****************************************
+[2023-02-15 11:41:05] [INFO]: {'enable_float16': False, 'log_iter': 100, 'with_test': True, 'restore_ckpt_strict': True, 'restore_hint': 0, 'save_iter': 50000, 'save_name': 'RAFT-Stereo_SceneFlow_rein', 'sync_BN': True, 'total_iter': 150000, 'total_epoch': 20, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': True, 'batch_size': 4}, 'optimizer_reset': False, 'scheduler_reset': False}
+Initialization Finished!
+{'data_cfg': {'name': 'SceneFlow', 'root': 'data/SceneFlow', 'train_list': 'datasets/sceneflow/train_val.txt', 'val_list': 'datasets/sceneflow/val.txt', 'test_list': 'datasets/sceneflow/test.txt', 'num_workers': 8, 'transform': {'train': {'size': [256, 512], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}, 'test': {'size': [512, 960], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}}}, 'model_cfg': {'model': 'RAFT_Stereo', 'find_unused_parameters': False, 'base_config': {'max_disp': 700, 'downsample': 4, 'num_groups': 40, 'use_concat_volume': True, 'concat_channels': 12, 'hidden_dims': [128, 128, 128], 'n_downsample': 2, 'n_gru_layers': 3, 'slow_fast_gru': False, 'aug_params': [], 'train_iters': 12, 'corr_levels': 4, 'corr_radius': 4, 'shared_backbone': True, 'corr_implementation': 'reg'}, 'backbone_cfg': {'type': 'GwcNet'}, 'cost_processor_cfg': {'type': 'GwcVolumeCostProcessor'}, 'disp_processor_cfg': {'type': 'GwcDispProcessor'}}, 'loss_cfg': None, 'optimizer_cfg': {'solver': 'Adam', 'lr': 0.001, 'betas': [0.9, 0.999]}, 'scheduler_cfg': {'gamma': 0.1, 'milestones': [75000], 'scheduler': 'MultiStepLR'}, 'trainer_cfg': {'enable_float16': False, 'log_iter': 100, 'with_test': True, 'restore_ckpt_strict': True, 'restore_hint': 0, 'save_iter': 50000, 'save_name': 'RAFT-Stereo_SceneFlow_rein', 'sync_BN': True, 'total_iter': 150000, 'total_epoch': 20, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': True, 'batch_size': 4}, 'optimizer_reset': False, 'scheduler_reset': False}, 'evaluator_cfg': {'eval_func': 'OpenStereoEvaluator', 'save_name': 'RAFT-Stereo_SceneFlow_rein', 'restore_hint': 0, 'metric': ['d1_all', 'epe', 'thres_1', 'thres_2', 'thres_3'], 'enable_float16': False, 'restore_ckpt_strict': True, 'show_progress_bar': False, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': False, 'batch_size': 1}}}
+Start Running Model!
+Initialization Finished!
+{'data_cfg': {'name': 'SceneFlow', 'root': 'data/SceneFlow', 'train_list': 'datasets/sceneflow/train_val.txt', 'val_list': 'datasets/sceneflow/val.txt', 'test_list': 'datasets/sceneflow/test.txt', 'num_workers': 8, 'transform': {'train': {'size': [256, 512], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}, 'test': {'size': [512, 960], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}}}, 'model_cfg': {'model': 'RAFT_Stereo', 'find_unused_parameters': False, 'base_config': {'max_disp': 700, 'downsample': 4, 'num_groups': 40, 'use_concat_volume': True, 'concat_channels': 12, 'hidden_dims': [128, 128, 128], 'n_downsample': 2, 'n_gru_layers': 3, 'slow_fast_gru': False, 'aug_params': [], 'train_iters': 12, 'corr_levels': 4, 'corr_radius': 4, 'shared_backbone': True, 'corr_implementation': 'reg'}, 'backbone_cfg': {'type': 'GwcNet'}, 'cost_processor_cfg': {'type': 'GwcVolumeCostProcessor'}, 'disp_processor_cfg': {'type': 'GwcDispProcessor'}}, 'loss_cfg': None, 'optimizer_cfg': {'solver': 'Adam', 'lr': 0.001, 'betas': [0.9, 0.999]}, 'scheduler_cfg': {'gamma': 0.1, 'milestones': [75000], 'scheduler': 'MultiStepLR'}, 'trainer_cfg': {'enable_float16': False, 'log_iter': 100, 'with_test': True, 'restore_ckpt_strict': True, 'restore_hint': 0, 'save_iter': 50000, 'save_name': 'RAFT-Stereo_SceneFlow_rein', 'sync_BN': True, 'total_iter': 150000, 'total_epoch': 20, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': True, 'batch_size': 4}, 'optimizer_reset': False, 'scheduler_reset': False}, 'evaluator_cfg': {'eval_func': 'OpenStereoEvaluator', 'save_name': 'RAFT-Stereo_SceneFlow_rein', 'restore_hint': 0, 'metric': ['d1_all', 'epe', 'thres_1', 'thres_2', 'thres_3'], 'enable_float16': False, 'restore_ckpt_strict': True, 'show_progress_bar': False, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': False, 'batch_size': 1}}}
+Start Running Model!
+[2023-02-15 11:41:05] [INFO]: {'model': 'RAFT_Stereo', 'find_unused_parameters': False, 'base_config': {'max_disp': 700, 'downsample': 4, 'num_groups': 40, 'use_concat_volume': True, 'concat_channels': 12, 'hidden_dims': [128, 128, 128], 'n_downsample': 2, 'n_gru_layers': 3, 'slow_fast_gru': False, 'aug_params': [], 'train_iters': 12, 'corr_levels': 4, 'corr_radius': 4, 'shared_backbone': True, 'corr_implementation': 'reg'}, 'backbone_cfg': {'type': 'GwcNet'}, 'cost_processor_cfg': {'type': 'GwcVolumeCostProcessor'}, 'disp_processor_cfg': {'type': 'GwcDispProcessor'}}
+[2023-02-15 11:41:05] [INFO]: {'name': 'SceneFlow', 'root': 'data/SceneFlow', 'train_list': 'datasets/sceneflow/train_val.txt', 'val_list': 'datasets/sceneflow/val.txt', 'test_list': 'datasets/sceneflow/test.txt', 'num_workers': 8, 'transform': {'train': {'size': [256, 512], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}, 'test': {'size': [512, 960], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}}}
+[2023-02-15 11:41:15] [INFO]: {'solver': 'Adam', 'lr': 0.001, 'betas': [0.9, 0.999]}
+[2023-02-15 11:41:15] [INFO]: {'gamma': 0.1, 'milestones': [75000], 'scheduler': 'MultiStepLR'}
+[2023-02-15 11:41:15] [INFO]: Parameters Count: 10.63966M
+[2023-02-15 11:41:15] [INFO]: Model Initialization Finished!
+/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/functional.py:445: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at  /opt/conda/conda-bld/pytorch_1634272168290/work/aten/src/ATen/native/TensorShape.cpp:2157.)
+  return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
+Traceback (most recent call last):
+  File "openstereo/main.py", line 84, in <module>
+    run_model(cfgs, opt.phase.lower())
+  File "openstereo/main.py", line 58, in run_model
+    Model.run_train(model)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/base_model.py", line 486, in run_train
+    output = model(ipts)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/parallel/distributed.py", line 886, in forward
+    output = self.module(*inputs[0], **kwargs[0])
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/raftstereo/model.py", line 144, in forward
+    flow_predictions, cor_dis, flow = self.net(img1, img2, self.train_iters)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/raftstereo/raft_stereo.py", line 82, in forward
+    *cnet_list, x = self.cnet(torch.cat((image1, image2), dim=0), dual_inp=True, num_layers=self.args.n_gru_layers)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/raftstereo/extractor.py", line 280, in forward
+    x = self.layer1(x)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/container.py", line 141, in forward
+    input = module(input)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/raftstereo/extractor.py", line 50, in forward
+    y = self.conv1(y)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/conv.py", line 446, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/conv.py", line 443, in _conv_forward
+    self.padding, self.dilation, self.groups)
+RuntimeError: Unable to find a valid cuDNN algorithm to run convolution
+WARNING:torch.distributed.elastic.multiprocessing.api:Sending process 49892 closing signal SIGTERM
+ERROR:torch.distributed.elastic.multiprocessing.api:failed (exitcode: 1) local_rank: 0 (pid: 49891) of binary: /mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/bin/python
+Traceback (most recent call last):
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/distributed/launch.py", line 193, in <module>
+    main()
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/distributed/launch.py", line 189, in main
+    launch(args)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/distributed/launch.py", line 174, in launch
+    run(args)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/distributed/run.py", line 713, in run
+    )(*cmd_args)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/distributed/launcher/api.py", line 131, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/distributed/launcher/api.py", line 261, in launch_agent
+    failures=result.failures,
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+openstereo/main.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2023-02-15_11:41:22
+  host      : tcloud-3090-001.phigent.io
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 49891)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

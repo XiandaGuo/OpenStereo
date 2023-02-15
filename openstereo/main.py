@@ -49,6 +49,9 @@ def run_model(cfgs, scope):
     # if cfgs['trainer_cfg']['fix_BN']:
     #     model.fix_BN()
     model = get_ddp_module(model, find_unused_parameters=model_cfg['find_unused_parameters'])
+    if '_set_static_graph' in model_cfg.keys():
+        if model_cfg['_set_static_graph']:
+            model._set_static_graph()
     msg_mgr.log_info(params_count(model))
     msg_mgr.log_info("Model Initialization Finished!")
     if scope == 'train':

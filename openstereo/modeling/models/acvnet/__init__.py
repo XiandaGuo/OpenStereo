@@ -1,1 +1,1 @@
-from .model import class ACVNet
+from .model import ACVNet
