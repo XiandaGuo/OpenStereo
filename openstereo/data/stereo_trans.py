@@ -35,8 +35,8 @@ class ToTensor(object):
             if sample[k] is not None and isinstance(sample[k], np.ndarray):
                 sample[k] = torch.from_numpy(sample[k].copy())
 
-            sample['left'] = sample['left'].float() / 255.0
-            sample['right'] = sample['right'].float() / 255.0
+            # sample['left'] = sample['left'].float() / 255.0
+            # sample['right'] = sample['right'].float() / 255.0
         return sample
 
 
@@ -102,8 +102,8 @@ class Normalize(object):
         self.std = std
 
     def __call__(self, sample):
-        sample['left'] = TF.normalize(sample['left'], mean=self.mean, std=self.std)
-        sample['right'] = TF.normalize(sample['right'], mean=self.mean, std=self.std)
+        sample['left'] = TF.normalize(sample['left'] / 255.0, mean=self.mean, std=self.std)
+        sample['right'] = TF.normalize(sample['right'] / 255.0, mean=self.mean, std=self.std)
         return sample
 
 
