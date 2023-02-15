@@ -559,7 +559,6 @@ class BaseModel(MetaModel, nn.Module):
             self.msg_mgr.log_info(f"Epoch {self.epoch} starts.")
             for inputs in self.train_loader:
                 ipts = self.inputs_pretreament(inputs)
-                # print(ipts['ref_img'].device)
                 with autocast(enabled=self.engine_cfg['enable_float16']):
                     output = self.forward(ipts)
                     training_disp, visual_summary = output['training_disp'], output['visual_summary']

@@ -34,6 +34,8 @@ class ToTensor(object):
         for k in sample.keys():
             if sample[k] is not None and isinstance(sample[k], np.ndarray):
                 sample[k] = torch.from_numpy(sample[k].copy())
+            if sample[k] is not None and isinstance(sample[k], torch.Tensor):
+                sample[k] = sample[k].float() / 255.0
         return sample
 
 
