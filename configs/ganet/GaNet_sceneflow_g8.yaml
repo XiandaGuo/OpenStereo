@@ -4,7 +4,7 @@ data_cfg:
   train_list: datasets/sceneflow/train.txt
   val_list: datasets/sceneflow/val.txt
   test_list: datasets/sceneflow/test.txt
-  num_workers: 16
+  num_workers: 32
 
   transform:
     train:
@@ -43,21 +43,16 @@ optimizer_cfg:
 
 
 loss_cfg:
-  - log_prefix: disp0
-    type: Smooth_l1_Loss
-    loss_term_weight: 0.5
-  - log_prefix: disp1
-    type: Smooth_l1_Loss
-    loss_term_weight: 0.5
-  - log_prefix: disp2
-    type: Smooth_l1_Loss
+  - log_prefix: disp
+    type: Weighted_Smooth_l1_Loss
+    weights: [ 0.5, 0.5, 1 ]
     loss_term_weight: 1
 
 scheduler_cfg:
   gamma: 0.1
   milestones: # Learning Rate Reduction at each milestones
-    - 5000
     - 15000
+    - 24000
   scheduler: MultiStepLR
 
 
@@ -68,18 +63,17 @@ trainer_cfg:
   log_iter: 10
   with_test: true
   enable_float16: false
-  fix_BN: false
-  sync_BN: false
-  save_iter: 20
+  sync_BN: true
+  save_iter: 2000
   total_iter: 20000
-  total_epoch: 20
+  total_epoch: 15
   optimizer_reset: false
   scheduler_reset: false
 
   sampler:
     type: BasicStereoSampler
-    batch_shuffle: false
-    batch_size: 8
+    batch_shuffle: true
+    batch_size: 2
 
 
 evaluator_cfg:

@@ -27,7 +27,7 @@ class MessageManager:
 
     def init_logger(self, save_path, log_to_file):
         # init logger
-        self.logger = logging.getLogger('opengait')
+        self.logger = logging.getLogger('openstereo')
         self.logger.setLevel(logging.INFO)
         self.logger.propagate = False
         formatter = logging.Formatter(

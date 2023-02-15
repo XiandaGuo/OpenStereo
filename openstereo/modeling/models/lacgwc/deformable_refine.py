@@ -75,7 +75,8 @@ class GetValueV2(nn.Module):
         x_offset = []
 
         for i in range(N):
-            get_x = F.grid_sample(x, torch.stack((p_x[:, :, :, i], p_y[:, :, :, i]), dim=3), mode='bilinear')
+            # grid_sample and affine_grid behavior has changed to align_corners=False since 1.3.0.
+            get_x = F.grid_sample(x, torch.stack((p_x[:, :, :, i], p_y[:, :, :, i]), dim=3), mode='bilinear', align_corners=True)
             x_offset.append(get_x)
 
         x_offset = torch.stack(x_offset, dim=4)

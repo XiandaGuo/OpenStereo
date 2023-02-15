@@ -234,9 +234,11 @@ def warp(x, disp):
     vgrid[:, 1, :, :] = 2.0 * vgrid[:, 1, :, :].clone() / max(H - 1, 1) - 1.0
 
     vgrid = vgrid.permute(0, 2, 3, 1)
-    output = nn.functional.grid_sample(x, vgrid)
+    # grid_sample and affine_grid behavior has changed to align_corners=False since 1.3.0.
+    output = nn.functional.grid_sample(x, vgrid, align_corners=True)
     mask = torch.autograd.Variable(torch.ones(x.size())).cuda()
-    mask = nn.functional.grid_sample(mask, vgrid)
+    # grid_sample and affine_grid behavior has changed to align_corners=False since 1.3.0.
+    mask = nn.functional.grid_sample(mask, vgrid, align_corners=True)
 
     mask[mask < 0.999] = 0
     mask[mask > 0] = 1

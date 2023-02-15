@@ -1,15 +1,15 @@
 import torch
 import torch.nn as nn
-import torch.nn.init as init
+# import torch.nn.init as init
 from libs.GANet.modules.GANet import DisparityRegression, GetCostVolume
-from libs.GANet.modules.GANet import MyNormalize
+# from libs.GANet.modules.GANet import MyNormalize
 from libs.GANet.modules.GANet import SGA
 from libs.GANet.modules.GANet import LGA, LGA2, LGA3
 # from libs.sync_bn.modules.sync_bn import BatchNorm2d, BatchNorm3d
 from torch.nn import BatchNorm2d, BatchNorm3d
 import torch.nn.functional as F
-from torch.autograd import Variable
-import numpy as np
+# from torch.autograd import Variable
+# import numpy as np
 
 from modeling.base_model import BaseModel
 # from modeling.losses import Weighted_Smooth_l1_Loss
@@ -443,18 +443,8 @@ class GANet(BaseModel):
             [disp0, disp1, disp2] = res
             output = {
                 "training_disp": {
-                    "disp0": {
-                        "disp_ests": disp0,
-                        "disp_gt": inputs['disp_gt'],
-                        "mask": inputs['mask']
-                    },
-                    "disp1": {
-                        "disp_ests": disp1,
-                        "disp_gt": inputs['disp_gt'],
-                        "mask": inputs['mask']
-                    },
-                    "disp2": {
-                        "disp_ests": disp2,
+                    "disp": {
+                        "disp_ests": [disp0, disp1, disp2],
                         "disp_gt": inputs['disp_gt'],
                         "mask": inputs['mask']
                     },

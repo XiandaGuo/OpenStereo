@@ -96,21 +96,18 @@ class MetaModel(metaclass=ABCMeta):
         """Do inference (calculate features.)."""
         raise NotImplementedError
 
-    @staticmethod
     @abstractmethod
-    def run_train(model, *args, **kwargs):
+    def run_train(self, *args, **kwargs):
         """Run a whole train schedule."""
         raise NotImplementedError
 
-    @staticmethod
     @abstractmethod
-    def run_val(model, *args, **kwargs):
+    def run_val(self, *args, **kwargs):
         """Run a whole test schedule."""
         raise NotImplementedError
 
-    @staticmethod
     @abstractmethod
-    def run_test(model, *args, **kwargs):
+    def run_test(self, *args, **kwargs):
         """Run a whole test schedule."""
         raise NotImplementedError
 
@@ -172,9 +169,13 @@ class BaseModel(MetaModel, nn.Module):
         else:
             self.test_loader = self.get_loader(cfgs['data_cfg'], 'test')
 
-        self.device_rank = dist.get_rank()
-        torch.cuda.set_device(self.device_rank)
-        self.to(device=torch.device("cuda", self.device_rank))
+        self.rank = dist.get_rank()
+        self.world_size = dist.get_world_size()
+        self.local_rank = int(os.environ['LOCAL_RANK'])
+        self.device = torch.device(f"cuda:{self.local_rank}")
+        torch.cuda.set_device(self.device)
+        # self.to(device=torch.device("cuda", self.device_rank))
+        self.to(self.device)
 
         if is_train:
             self.loss_aggregator = self.get_loss_func(cfgs['loss_cfg'])
@@ -247,8 +248,7 @@ class BaseModel(MetaModel, nn.Module):
         cost_out = self.CostProcessor(inputs)
         inputs.update(cost_out)
         disp_out = self.DispProcessor(inputs)
-        inputs.update(disp_out)
-        return inputs
+        return disp_out
 
     def init_parameters(self):
         for m in self.modules():
@@ -284,10 +284,11 @@ class BaseModel(MetaModel, nn.Module):
 
         loader = DataLoader(
             dataset=dataset,
-            batch_size=sampler_cfg['batch_size'] * dist.get_world_size(),
+            batch_size=sampler_cfg['batch_size'],
             sampler=sampler,
             num_workers=data_cfg['num_workers'],
             drop_last=False,
+            # pin_memory=True,
             # batch_sampler=sampler,
             # collate_fn=collate_fn,
         )
@@ -308,7 +309,7 @@ class BaseModel(MetaModel, nn.Module):
         return scheduler
 
     def save_ckpt(self, iteration=None, epoch=None):
-        if torch.distributed.get_rank() == 0:
+        if dist.get_rank() == 0:
             mkdir(osp.join(self.save_path, "checkpoints/"))
             save_name = self.engine_cfg['save_name']
             checkpoint = {
@@ -391,10 +392,10 @@ class BaseModel(MetaModel, nn.Module):
         mask = (disp_gt < max_disp) & (disp_gt > 0)
 
         return {
-            'ref_img': inputs['left'],
-            'tgt_img': inputs['right'],
-            'disp_gt': disp_gt,
-            'mask': mask,
+            'ref_img': inputs['left'].to(self.rank),
+            'tgt_img': inputs['right'].to(self.rank),
+            'disp_gt': disp_gt.to(self.rank),
+            'mask': mask.to(self.rank),
         }
 
     def train_step(self, loss_sum) -> bool:
@@ -477,85 +478,45 @@ class BaseModel(MetaModel, nn.Module):
         # the final output is a dict {'disp_est': np.array}
         return info_dict
 
-    @staticmethod
-    def run_train(model, *args, **kwargs):
-        """Accept the instance object(model) here, and then run the train loop."""
-        model.train()
-        while True:
-            model.epoch += 1
-            for inputs in model.train_loader:
-                ipts = model.inputs_pretreament(inputs)
-                with autocast(enabled=model.engine_cfg['enable_float16']):
-                    output = model(ipts)
-                    training_disp, visual_summary = output['training_disp'], output['visual_summary']
-                    del output
-                loss_sum, loss_info = model.loss_aggregator(training_disp)
-                ok = model.train_step(loss_sum)
-                if not ok:
-                    continue
-                visual_summary.update(loss_info)
-                visual_summary['scalar/learning_rate'] = model.optimizer.param_groups[0]['lr']
-                loss_info['scalar/learning_rate'] = model.optimizer.param_groups[0]['lr']
-
-                model.msg_mgr.train_step(loss_info, visual_summary)
-                if model.iteration % model.engine_cfg['save_iter'] == 0:
-                    # save the checkpoint
-                    model.save_ckpt()
-
-                    # run test if with_test = true
-                    if model.engine_cfg['with_test']:
-                        model.msg_mgr.log_info("Running test...")
-                        model.eval()
-                        result_dict = model.run_val(model)
-                        model.msg_mgr.log_info(result_dict)
-                        model.msg_mgr.write_to_tensorboard(result_dict)
-                        model.msg_mgr.reset_time()
-                        model.train()
-                        # if model.cfgs['trainer_cfg']['fix_BN']:
-                        #     model.fix_BN()
-
-                if model.engine_cfg['total_epoch'] is None and model.iteration >= model.engine_cfg['total_iter']:
-                    model.save_ckpt()
-                    return
-
-            if hasattr(model.engine_cfg, 'total_epoch') and model.epoch >= model.engine_cfg['total_epoch']:
-                model.save_ckpt()
-                return
-
-    @staticmethod
-    def run_val(model, *args, **kwargs):
+    def run_val(self, *args, **kwargs):
         """Accept the instance object(model) here, and then run the test loop."""
-
-        dataloader = model.val_loader
-        eval_func = model.cfgs['evaluator_cfg']["eval_func"]
+        self.eval()
+        dataloader = self.val_loader
+        eval_func = self.cfgs['evaluator_cfg']["eval_func"]
         eval_func = getattr(eval_functions, eval_func)
-        valid_args = get_valid_args(eval_func, model.cfgs["evaluator_cfg"], ['metric'])
+        valid_args = get_valid_args(eval_func, self.cfgs["evaluator_cfg"], ['metric'])
         eval_func = partial(eval_func, **valid_args)
 
         infoList = []
 
-        total_size = len(dataloader)
+        total_size = len(dataloader) * dataloader.batch_sampler.batch_size * self.world_size
         rest_size = total_size
         batch_size = dataloader.batch_sampler.batch_size
-        show_progress_bar = model.cfgs['evaluator_cfg']['show_progress_bar']
-        if show_progress_bar and torch.distributed.get_rank() == 0:
+        show_progress_bar = self.cfgs['evaluator_cfg']['show_progress_bar']
+        if show_progress_bar and self.rank == 0:
             pbar = tqdm(total=total_size, desc='Evaluating')
         else:
             pbar = NoOp()
-        print(f"Total size: {total_size}. Start evaluating...")
-        for inputs in dataloader:
-            ipts = model.inputs_pretreament(inputs)
-            with autocast(enabled=model.engine_cfg['enable_float16']):
-                output = model(ipts)
-                inference_disp = output['inference_disp']
-                inference_disp.update(ipts)
-                for k, v in inference_disp.items():
-                    inference_disp[k] = ts2np(v)
-                info = eval_func(inference_disp)
-                infoList.append(info)
-            rest_size -= batch_size
-            update_size = batch_size if rest_size >= 0 else total_size % batch_size
-            pbar.update(update_size)
+        self.msg_mgr.log_info(f"Total size: {total_size} | Total batch: {len(dataloader)}")
+        with torch.no_grad():
+            for inputs in dataloader:
+                ipts = self.inputs_pretreament(inputs)
+                with autocast(enabled=self.engine_cfg['enable_float16']):
+                    # print(ipts['ref_img'].device)
+                    output = self.forward(ipts)
+                    inference_disp, visual_summary = output['inference_disp'], output['visual_summary']
+                    inference_disp.update(ipts)
+                    self.msg_mgr.write_to_tensorboard(visual_summary)
+                    for k, v in inference_disp.items():
+                        try:
+                            inference_disp[k] = ts2np(v)
+                        except:
+                            print(k, "is not tensor")
+                    info = eval_func(inference_disp)
+                    infoList.append(info)
+                rest_size -= batch_size
+                update_size = batch_size if rest_size >= 0 else total_size % batch_size
+                pbar.update(update_size)
         pbar.close()
 
         world_size = dist.get_world_size()
@@ -565,7 +526,7 @@ class BaseModel(MetaModel, nn.Module):
         torch.distributed.all_gather_object(output, infoList)
 
         # calculate the mean of the matric
-        if torch.distributed.get_rank() == 0:
+        if self.rank == 0:
             all_info = []
             for rank in range(world_size):
                 all_info.extend(output[rank])
@@ -576,15 +537,66 @@ class BaseModel(MetaModel, nn.Module):
                     res_dict[k].append(v)
             for k, v in res_dict.items():
                 res_dict[k] = np.nanmean(v)
+            visual_summary.update(res_dict)
             return res_dict
 
-    @staticmethod
-    def run_test(model, *args, **kwargs):
+    def run_test(self, *args, **kwargs):
         try:
-            model.resume_ckpt(model.cfgs['evaluator_cfg']['checkpoint'])
+            self.resume_ckpt(self.cfgs['evaluator_cfg']['checkpoint'])
         except Exception as e:
-            model.msg_mgr.log_warning("Failed to resume the checkpoint, got {}".format(e))
+            self.msg_mgr.log_warning("Failed to resume the checkpoint, got {}".format(e))
         with torch.no_grad():
-            loader = model.test_loader
-            info_dict = model.inference(model, loader)
+            loader = self.test_loader
+            info_dict = self.inference(self, loader)
         return info_dict
+
+    def run_train(self, *args, **kwargs):
+        """Accept the instance object(model) here, and then run the train loop."""
+        self.train()
+        while True:
+            self.epoch += 1
+            self.train_loader.sampler.set_epoch(self.epoch)  # for distributed training shuffle
+            self.msg_mgr.log_info(f"Epoch {self.epoch} starts.")
+            for inputs in self.train_loader:
+                ipts = self.inputs_pretreament(inputs)
+                # print(ipts['ref_img'].device)
+                with autocast(enabled=self.engine_cfg['enable_float16']):
+                    output = self.forward(ipts)
+                    training_disp, visual_summary = output['training_disp'], output['visual_summary']
+                    del output
+                loss_sum, loss_info = self.loss_aggregator(training_disp)
+                ok = self.train_step(loss_sum)
+                if not ok:
+                    self.msg_mgr.log_warning("Loss is NaN or Inf. Skip this iter.")
+                    continue
+                visual_summary.update(loss_info)
+                current_lr = self.optimizer.param_groups[0]['lr']
+                visual_summary['scalar/learning_rate'] = current_lr
+                loss_info['scalar/learning_rate'] = current_lr
+
+                self.msg_mgr.train_step(loss_info, visual_summary)
+
+                if self.iteration % self.engine_cfg['save_iter'] == 0:
+                    # save the checkpoint
+                    self.save_ckpt()
+                    # run test if with_test is true
+                    if self.engine_cfg['with_test']:
+                        self.msg_mgr.log_info("Running test...")
+                        self.eval()
+                        result_dict = self.run_val()
+                        self.msg_mgr.log_info(result_dict)
+                        self.msg_mgr.write_to_tensorboard(result_dict)
+                        self.msg_mgr.reset_time()
+                        self.train()
+                        if self.cfgs['trainer_cfg']['fix_BN']:
+                            self.fix_BN()
+
+                if self.engine_cfg['total_epoch'] is None and self.iteration >= self.engine_cfg['total_iter']:
+                    self.msg_mgr.log_info('Training finished! Reached the maximum iteration.')
+                    self.save_ckpt()
+                    return
+
+            if self.epoch >= self.engine_cfg['total_epoch']:
+                self.save_ckpt()
+                self.msg_mgr.log_info('Training finished! Reached the maximum epoch.')
+                return

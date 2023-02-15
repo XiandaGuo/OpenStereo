@@ -74,6 +74,7 @@ trainer_cfg:
   restore_hint: 0
   save_iter: 100
   sync_BN: true
+  fix_BN: false
   total_iter: 20000
   total_epoch: 30
 
