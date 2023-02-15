@@ -294,3 +294,4 @@ output/
 /datasets/kitti12/testing/
 /datasets/kitti12/training/
 /datasets/sceneflow/frames_finalpass/
+/data/
