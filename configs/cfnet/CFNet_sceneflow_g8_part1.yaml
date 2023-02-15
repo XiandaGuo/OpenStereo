@@ -1,10 +1,10 @@
 data_cfg:
-  name: KITTI2015
-  root: data/kitti15
-  train_list: datasets/kitti15/kitti15_train165.txt
-  val_list: datasets/kitti15/kitti15_val35.txt
-  test_list: datasets/kitti15/kitti15_test.txt
-  num_workers: 16
+  name: SceneFlow
+  root: data/SceneFlow
+  train_list: datasets/sceneflow/train.txt
+  val_list: datasets/sceneflow/test.txt
+  test_list: datasets/sceneflow/test.txt
+  num_workers: 32
 
   transform:
     train:
@@ -12,30 +12,17 @@ data_cfg:
       mean: [ 0.485, 0.456, 0.406 ]
       std: [ 0.229, 0.224, 0.225 ]
     test:
-      size: [ 384, 1248 ]
+      size: [ 512, 960 ]
       mean: [ 0.485, 0.456, 0.406 ]
       std: [ 0.229, 0.224, 0.225 ]
 
 
 model_cfg:
   model: CFNet
-  find_unused_parameters: true
-  replace_mish: false # Replace Mish with ReLU in the first 20 epochs
+  replace_mish: true # replace mish with relu in the first 10 epochs
 
   base_config:
     max_disp: 256
-
-#  # Backbone
-#  backbone_cfg:
-#    type: GwcNet
-#
-#  # VolumeCostProcessor
-#  cost_processor_cfg:
-#    type: GwcVolumeCostProcessor
-#
-#  # DispProcessor
-#  disp_processor_cfg:
-#    type: GwcDispProcessor
 
 
 optimizer_cfg:
@@ -52,25 +39,28 @@ loss_cfg:
 
 
 scheduler_cfg:
-  scheduler: MultiStepLR
-  gamma: 0.1
+  gamma: 0.5
   milestones: # Learning Rate Reduction at each milestones
-    - 6500
-    - 8500
+    - 12500
+    - 17500
+    - 20000
+    - 22500
+  scheduler: MultiStepLR
+
 
 trainer_cfg:
-  save_name: CFNet_KITTI15
-  restore_hint: './checkpoints/CFNet_SceneFlow-150000.pt'
+  save_name: CFNet_SceneFlow
+  restore_hint: 0
   restore_ckpt_strict: true
   log_iter: 10
   with_test: true
   enable_float16: false
   sync_BN: true
   save_iter: 1000
-  total_iter: 150000
-  total_epoch: 400
-  optimizer_reset: true
-  scheduler_reset: true
+  total_iter: 20000
+  total_epoch: 10
+  optimizer_reset: false
+  scheduler_reset: false
 
   sampler:
     # type: BasicStereoSampler
@@ -80,8 +70,8 @@ trainer_cfg:
 
 evaluator_cfg:
   eval_func: OpenStereoEvaluator
-  save_name: CFNet_KITTI15
-  restore_hint: 8400
+  save_name: CFNet_SceneFlow
+  restore_hint: 0
   metric:
     - d1_all
     - epe
@@ -90,6 +80,7 @@ evaluator_cfg:
     - thres_3
   restore_ckpt_strict: true
   enable_float16: false
+
   sampler:
     type: BasicStereoSampler
     batch_shuffle: false

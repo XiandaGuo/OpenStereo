@@ -1,9 +1,9 @@
 data_cfg:
   name: KITTI2012
   root: data/kitti12
-  train_list: datasets/kitti12/train.txt
-  val_list: datasets/kitti12/val.txt
-  test_list: datasets/kitti1/test.txt
+  train_list: datasets/kitti12/kitti12_train165.txt
+  val_list: datasets/kitti12/kitti12_val29.txt
+  test_list: datasets/kitti1/kitti12_test.txt
   num_workers: 16
 
   transform:
@@ -20,7 +20,7 @@ data_cfg:
 model_cfg:
   model: CFNet
   find_unused_parameters: true
-  replace_mish: true # Replace Mish with ReLU in the first 20 epochs
+  replace_mish: false # Replace Mish with ReLU in the first 20 epochs
 
   base_config:
     max_disp: 256
@@ -81,7 +81,7 @@ trainer_cfg:
 evaluator_cfg:
   eval_func: OpenStereoEvaluator
   save_name: CFNet_KITTI12
-  restore_hint: 0
+  restore_hint: 10400
   metric:
     - d1_all
     - epe

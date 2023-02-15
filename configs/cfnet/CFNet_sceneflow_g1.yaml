@@ -1,9 +1,9 @@
 data_cfg:
   name: SceneFlow
   root: data/SceneFlow
-  train_list: datasets/sceneflow/train.txt
-  val_list: datasets/sceneflow/val.txt
-  test_list: datasets/sceneflow/test.txt
+  train_list: datasets/sceneflow/debug_train.txt
+  val_list: datasets/sceneflow/debug_val.txt
+  test_list: datasets/sceneflow/kitti12_test.txt
   num_workers: 4
 
   transform:
@@ -20,6 +20,7 @@ data_cfg:
 model_cfg:
   model: CFNet
   find_unused_parameters: true
+  replace_mish: true # Replace Mish with ReLU in the first 20 epochs
 
   base_config:
     max_disp: 256

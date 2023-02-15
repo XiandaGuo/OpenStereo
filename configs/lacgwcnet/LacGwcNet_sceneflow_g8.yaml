@@ -2,7 +2,7 @@ data_cfg:
   name: SceneFlow
   root: data/SceneFlow
   train_list: datasets/sceneflow/train.txt
-  val_list: datasets/sceneflow/val.txt
+  val_list: datasets/sceneflow/test.txt
   test_list: datasets/sceneflow/test.txt
   num_workers: 32
 
@@ -19,7 +19,6 @@ data_cfg:
 
 model_cfg:
   model: LacGwcNet
-#  find_unused_parameters: true
   base_config:
     max_disp: 192
 
@@ -37,8 +36,8 @@ scheduler_cfg:
   scheduler: MultiStepLR
   gamma: 0.1
   milestones:
-    - 10000
-    - 18000
+    - 12000
+    - 15000
 
 
 trainer_cfg:
@@ -49,14 +48,14 @@ trainer_cfg:
   with_test: true
   enable_float16: false
   sync_BN: true
-  save_iter: 2500
+  save_iter: 1000
   total_iter: 150000
-  total_epoch: 25
+  total_epoch: 12
   optimizer_reset: false
   scheduler_reset: false
   sampler:
     batch_shuffle: true
-    batch_size: 4
+    batch_size: 3
 
 
 evaluator_cfg:
