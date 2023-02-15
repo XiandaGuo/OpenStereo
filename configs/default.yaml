@@ -2,7 +2,7 @@ data_cfg:
   name: SceneFlow
   root: data/SceneFlow
   train_list: datasets/sceneflow/train.txt
-  val_list: datasets/sceneflow/val.txt
+  val_list: datasets/sceneflow/test.txt
   test_list: datasets/sceneflow/test.txt
   num_workers: 4
 
@@ -23,10 +23,6 @@ model_cfg:
 
   base_config:
     max_disp: 192
-    downsample: 4
-    num_groups: 40
-    use_concat_volume: True
-    concat_channels: 12
 
   # Backbone
   backbone_cfg:
@@ -70,21 +66,22 @@ scheduler_cfg:
 
 
 trainer_cfg:
+  save_name: GwcNet_kitti12
   enable_float16: false
   log_iter: 1
   with_test: true
   restore_ckpt_strict: true
   restore_hint: 0
   save_iter: 100
-  save_name: GwcNet_kitti12
   sync_BN: true
+  fix_BN: false
   total_iter: 20000
-  total_epoch: 300
+  total_epoch: 30
 
   sampler:
     type: BasicStereoSampler
     batch_shuffle: false
-    batch_size: 4
+    batch_size: 2
 
 
 evaluator_cfg:

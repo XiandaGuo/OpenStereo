@@ -1,22 +1,7 @@
+import torch
+
 from modeling.base_model import BaseModel
-from utils import Odict
 from .cfnet import CFNet as cfnet
-from .loss import model_loss
-
-
-#
-# class CFLoss:
-#     def __init__(self, **kwargs):
-#         super().__init__(**kwargs)
-#         self.loss_func = model_loss
-#
-#     def __call__(self, training_output, disp_gt, mask):
-#         training_disp = training_output['training_disp']
-#         loss_info = Odict()
-#         pred_disp = training_disp['disp_est']
-#         loss = self.loss_func(pred_disp, disp_gt, mask)
-#         loss_info['scalar/CFLoss'] = loss
-#         return loss, loss_info
 
 
 class CFNet(BaseModel):
@@ -24,7 +9,10 @@ class CFNet(BaseModel):
         super().__init__(*args, **kwargs)
 
     def build_network(self, model_cfg):
-        self.net = cfnet(model_cfg['base_config']['max_disp'])
+        self.net = cfnet(
+            model_cfg['base_config']['max_disp'],
+            model_cfg['replace_mish'],
+        )
 
     def forward(self, inputs):
         """Forward the network."""
@@ -40,7 +28,10 @@ class CFNet(BaseModel):
                         "mask": inputs['mask']
                     },
                 },
-                "visual_summary": {},
+                "visual_summary": {
+                    'image/train/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
+                    'image/train/disp_c': torch.cat([inputs['disp_gt'][0], res[-1][0]], dim=0),
+                },
             }
 
         else:
@@ -49,6 +40,9 @@ class CFNet(BaseModel):
                 "inference_disp": {
                     "disp_est": res[0][0]
                 },
-                "visual_summary": {}
+                "visual_summary": {
+                    'image/val/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
+                    'image/val/disp_c': torch.cat([inputs['disp_gt'][0], res[0][0][0]], dim=0),
+                }
             }
         return output

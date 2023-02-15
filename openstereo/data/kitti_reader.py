@@ -28,7 +28,7 @@ class KittiReader(BaseReader):
 
 
 if __name__ == '__main__':
-    dataset = KittiReader(root='../../data/kitti12', list_file='../../datasets/kitti12/train.txt')
+    dataset = KittiReader(root='../../data/kitti12', list_file='../../datasets/kitti12/kitti12_train165.txt')
     print(dataset)
     sample = dataset[0]
     print(sample['left'].shape, sample['right'].shape, sample['disp'].shape)

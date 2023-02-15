@@ -19,8 +19,15 @@ class DataSet(Dataset):
         elif self.data_cfg['name'] == 'SceneFlow':
             from data.sceneflow_reader import SceneFlowReader
             self.dataset = SceneFlowReader(self.data_cfg['root'], self.data_cfg[f'{self.scope}_list'])
+        elif self.data_cfg['name'] == 'Middlebury':
+            from data.middlebury_reader import MiddleburyReader
+            self.dataset = MiddleburyReader(self.data_cfg['root'], self.data_cfg[f'{self.scope}_list'])
+        elif self.data_cfg['name'] == 'ETH3D':
+            from data.eth3d_reader import ETH3DReader
+            self.dataset = ETH3DReader(self.data_cfg['root'], self.data_cfg[f'{self.scope}_list'])
         else:
-            raise NotImplementedError
+            name = self.data_cfg['name']
+            raise NotImplementedError(f'{name} dataset is not supported yet.')
         self.build_transform()
 
     def build_transform(self):

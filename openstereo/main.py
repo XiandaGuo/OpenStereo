@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser(description='Main program for opengait.')
 parser.add_argument('--local_rank', type=int, default=0,
                     help="passed by torch.distributed.launch module")
 parser.add_argument('--cfgs', type=str,
-                    default='config/default.yaml', help="path of config file")
+                    default='configs/default.yaml', help="path of config file")
 parser.add_argument('--phase', default='train',
                     choices=['train', 'test', 'val'], help="choose train or test phase")
 parser.add_argument('--log_to_file', action='store_true',
@@ -29,7 +29,8 @@ def initialization(cfgs, training):
         msg_mgr.init_manager(output_path, opt.log_to_file, engine_cfg['log_iter'],
                              engine_cfg['restore_hint'] if isinstance(engine_cfg['restore_hint'], (int)) else 0)
     else:
-        msg_mgr.init_logger(output_path, opt.log_to_file)
+        msg_mgr.init_manager(output_path, opt.log_to_file, 1,
+                             engine_cfg['restore_hint'] if isinstance(engine_cfg['restore_hint'], (int)) else 0)
 
     msg_mgr.log_info(engine_cfg)
 
@@ -46,8 +47,8 @@ def run_model(cfgs, scope):
     model = Model(cfgs, scope)
     if is_train and cfgs['trainer_cfg']['sync_BN']:
         model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
-    # if cfgs['trainer_cfg']['fix_BN']:
-    #     model.fix_BN()
+    if cfgs['trainer_cfg']['fix_BN']:
+        model.fix_BN()
     model = get_ddp_module(model, find_unused_parameters=model_cfg['find_unused_parameters'])
     if '_set_static_graph' in model_cfg.keys():
         if model_cfg['_set_static_graph']:
@@ -55,11 +56,12 @@ def run_model(cfgs, scope):
     msg_mgr.log_info(params_count(model))
     msg_mgr.log_info("Model Initialization Finished!")
     if scope == 'train':
-        Model.run_train(model)
+        model.run_train()
     elif scope == 'val':
-        Model.run_val(model)
+        res = model.run_val()
+        msg_mgr.log_info(res)
     elif scope == 'test':
-        Model.run_test(model)
+        model.run_test()
     else:
         raise ValueError("Scope should be one of ['train', 'val', 'test'].")
 
@@ -78,7 +80,4 @@ if __name__ == '__main__':
     is_train = (opt.phase == 'train')
 
     initialization(cfgs, is_train)
-    print("Initialization Finished!")
-    print(cfgs)
-    print("Start Running Model!")
     run_model(cfgs, opt.phase.lower())

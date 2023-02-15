@@ -1,0 +1,15 @@
+MiddEval3/trainingF/Adirondack/im0.png MiddEval3/trainingF/Adirondack/im1.png MiddEval3/trainingF/Adirondack/disp0GT.pfm
+MiddEval3/trainingF/ArtL/im0.png MiddEval3/trainingF/ArtL/im1.png MiddEval3/trainingF/ArtL/disp0GT.pfm
+MiddEval3/trainingF/Jadeplant/im0.png MiddEval3/trainingF/Jadeplant/im1.png MiddEval3/trainingF/Jadeplant/disp0GT.pfm
+MiddEval3/trainingF/Motorcycle/im0.png MiddEval3/trainingF/Motorcycle/im1.png MiddEval3/trainingF/Motorcycle/disp0GT.pfm
+MiddEval3/trainingF/MotorcycleE/im0.png MiddEval3/trainingF/MotorcycleE/im1.png MiddEval3/trainingF/MotorcycleE/disp0GT.pfm
+MiddEval3/trainingF/Piano/im0.png MiddEval3/trainingF/Piano/im1.png MiddEval3/trainingF/Piano/disp0GT.pfm
+MiddEval3/trainingF/PianoL/im0.png MiddEval3/trainingF/PianoL/im1.png MiddEval3/trainingF/PianoL/disp0GT.pfm
+MiddEval3/trainingF/Pipes/im0.png MiddEval3/trainingF/Pipes/im1.png MiddEval3/trainingF/Pipes/disp0GT.pfm
+MiddEval3/trainingF/Playroom/im0.png MiddEval3/trainingF/Playroom/im1.png MiddEval3/trainingF/Playroom/disp0GT.pfm
+MiddEval3/trainingF/Playtable/im0.png MiddEval3/trainingF/Playtable/im1.png MiddEval3/trainingF/Playtable/disp0GT.pfm
+MiddEval3/trainingF/PlaytableP/im0.png MiddEval3/trainingF/PlaytableP/im1.png MiddEval3/trainingF/PlaytableP/disp0GT.pfm
+MiddEval3/trainingF/Recycle/im0.png MiddEval3/trainingF/Recycle/im1.png MiddEval3/trainingF/Recycle/disp0GT.pfm
+MiddEval3/trainingF/Shelves/im0.png MiddEval3/trainingF/Shelves/im1.png MiddEval3/trainingF/Shelves/disp0GT.pfm
+MiddEval3/trainingF/Teddy/im0.png MiddEval3/trainingF/Teddy/im1.png MiddEval3/trainingF/Teddy/disp0GT.pfm
+MiddEval3/trainingF/Vintage/im0.png MiddEval3/trainingF/Vintage/im1.png MiddEval3/trainingF/Vintage/disp0GT.pfm

@@ -1,6 +1,7 @@
-import torch.utils.data
-from .submodule import *
 import math
+import torch.utils.data
+
+from .submodule import *
 
 
 class feature_extraction(nn.Module):
@@ -53,9 +54,9 @@ class feature_extraction(nn.Module):
         #                                    bias=False))
 
         self.gw2 = nn.Sequential(convbn(64, 80, 3, 1, 1, 1),
-                                          Mish(),
-                                          nn.Conv2d(80, 80, kernel_size=1, padding=0, stride=1,
-                                                    bias=False))
+                                 Mish(),
+                                 nn.Conv2d(80, 80, kernel_size=1, padding=0, stride=1,
+                                           bias=False))
 
         self.gw3 = nn.Sequential(convbn(128, 160, 3, 1, 1, 1),
                                  Mish(),
@@ -84,18 +85,18 @@ class feature_extraction(nn.Module):
             #                                        bias=False))
 
             self.concat2 = nn.Sequential(convbn(64, 32, 3, 1, 1, 1),
-                                          Mish(),
-                                          nn.Conv2d(32, concat_feature_channel // 2, kernel_size=1, padding=0, stride=1,
-                                                    bias=False))
+                                         Mish(),
+                                         nn.Conv2d(32, concat_feature_channel // 2, kernel_size=1, padding=0, stride=1,
+                                                   bias=False))
             self.concat3 = nn.Sequential(convbn(128, 128, 3, 1, 1, 1),
-                                          Mish(),
-                                          nn.Conv2d(128, concat_feature_channel, kernel_size=1, padding=0, stride=1,
-                                                    bias=False))
+                                         Mish(),
+                                         nn.Conv2d(128, concat_feature_channel, kernel_size=1, padding=0, stride=1,
+                                                   bias=False))
 
             self.concat4 = nn.Sequential(convbn(192, 128, 3, 1, 1, 1),
-                                          Mish(),
-                                          nn.Conv2d(128, concat_feature_channel, kernel_size=1, padding=0, stride=1,
-                                                    bias=False))
+                                         Mish(),
+                                         nn.Conv2d(128, concat_feature_channel, kernel_size=1, padding=0, stride=1,
+                                                   bias=False))
 
             self.concat5 = nn.Sequential(convbn(256, 128, 3, 1, 1, 1),
                                          Mish(),
@@ -106,10 +107,6 @@ class feature_extraction(nn.Module):
                                          Mish(),
                                          nn.Conv2d(128, concat_feature_channel, kernel_size=1, padding=0, stride=1,
                                                    bias=False))
-
-
-
-
 
     def _make_layer(self, block, planes, blocks, stride, pad, dilation):
         downsample = None
@@ -130,11 +127,11 @@ class feature_extraction(nn.Module):
     def forward(self, x):
         x = self.firstconv(x)
         # x = self.layer1(x)
-        l2 = self.layer2(x)     #1/2
-        l3 = self.layer3(l2)    #1/4
-        l4 = self.layer4(l3)    #1/8
-        l5 = self.layer5(l4)    #1/16
-        l6 = self.layer6(l5)    #1/32
+        l2 = self.layer2(x)  # 1/2
+        l3 = self.layer3(l2)  # 1/4
+        l4 = self.layer4(l3)  # 1/8
+        l5 = self.layer5(l4)  # 1/16
+        l6 = self.layer6(l5)  # 1/32
         l6 = self.pyramid_pooling(l6)
 
         concat5 = torch.cat((l5, self.upconv6(l6)), dim=1)
@@ -147,7 +144,6 @@ class feature_extraction(nn.Module):
         concat2 = torch.cat((l2, self.upconv3(decov_3)), dim=1)
         decov_2 = self.iconv2(concat2)
         # decov_1 = self.upconv2(decov_2)
-
 
         # gw1 = self.gw1(decov_1)
         gw2 = self.gw2(decov_2)
@@ -166,15 +162,17 @@ class feature_extraction(nn.Module):
             concat_feature5 = self.concat5(decov_5)
             concat_feature6 = self.concat6(l6)
             return {"gw2": gw2, "gw3": gw3, "gw4": gw4, "gw5": gw5, "gw6": gw6,
-                    "concat_feature2": concat_feature2, "concat_feature3": concat_feature3, "concat_feature4": concat_feature4,
+                    "concat_feature2": concat_feature2, "concat_feature3": concat_feature3,
+                    "concat_feature4": concat_feature4,
                     "concat_feature5": concat_feature5, "concat_feature6": concat_feature6}
+
 
 class hourglassup(nn.Module):
     def __init__(self, in_channels):
         super(hourglassup, self).__init__()
 
         self.conv1 = nn.Conv3d(in_channels, in_channels * 2, kernel_size=3, stride=2,
-                                   padding=1, bias=False)
+                               padding=1, bias=False)
 
         self.conv2 = nn.Sequential(convbn_3d(in_channels * 2, in_channels * 2, 3, 1, 1),
                                    Mish())
@@ -194,7 +192,7 @@ class hourglassup(nn.Module):
             nn.BatchNorm3d(in_channels))
 
         self.combine1 = nn.Sequential(convbn_3d(in_channels * 4, in_channels * 2, 3, 1, 1),
-                                   Mish())
+                                      Mish())
         self.combine2 = nn.Sequential(convbn_3d(in_channels * 6, in_channels * 4, 3, 1, 1),
                                       Mish())
         self.combine3 = nn.Sequential(convbn_3d(in_channels * 6, in_channels * 4, 3, 1, 1),
@@ -204,23 +202,22 @@ class hourglassup(nn.Module):
         self.redir2 = convbn_3d(in_channels * 2, in_channels * 2, kernel_size=1, stride=1, pad=0)
         self.redir3 = convbn_3d(in_channels * 4, in_channels * 4, kernel_size=1, stride=1, pad=0)
 
-
     def forward(self, x, feature4, feature5):
-        conv1 = self.conv1(x)          #1/8
-        conv1 = torch.cat((conv1, feature4), dim=1)   #1/8
-        conv1 = self.combine1(conv1)   #1/8
-        conv2 = self.conv2(conv1)      #1/8
+        conv1 = self.conv1(x)  # 1/8
+        conv1 = torch.cat((conv1, feature4), dim=1)  # 1/8
+        conv1 = self.combine1(conv1)  # 1/8
+        conv2 = self.conv2(conv1)  # 1/8
 
-        conv3 = self.conv3(conv2)      #1/16
-        conv3 = torch.cat((conv3, feature5), dim=1)   #1/16
-        conv3 = self.combine2(conv3)   #1/16
-        conv4 = self.conv4(conv3)      #1/16
+        conv3 = self.conv3(conv2)  # 1/16
+        conv3 = torch.cat((conv3, feature5), dim=1)  # 1/16
+        conv3 = self.combine2(conv3)  # 1/16
+        conv4 = self.conv4(conv3)  # 1/16
 
         conv8 = FMish(self.conv8(conv4) + self.redir2(conv2))
         conv9 = FMish(self.conv9(conv8) + self.redir1(x))
 
-
         return conv9
+
 
 class hourglass(nn.Module):
     def __init__(self, in_channels):
@@ -264,6 +261,7 @@ class hourglass(nn.Module):
 
         return conv6
 
+
 class cfnet(nn.Module):
     def __init__(self, maxdisp, use_concat_volume=False):
         super(cfnet, self).__init__()
@@ -279,7 +277,6 @@ class cfnet(nn.Module):
         self.uniform_sampler = UniformSampler()
         self.spatial_transformer = SpatialTransformer()
 
-
         if self.use_concat_volume:
             self.concat_channels = 12
             self.feature_extraction = feature_extraction(concat_feature=True,
@@ -288,7 +285,7 @@ class cfnet(nn.Module):
             self.concat_channels = 0
             self.feature_extraction = feature_extraction(concat_feature=False)
 
-        self.dres0 = nn.Sequential(convbn_3d(self.num_groups + self.concat_channels*2, 32, 3, 1, 1),
+        self.dres0 = nn.Sequential(convbn_3d(self.num_groups + self.concat_channels * 2, 32, 3, 1, 1),
                                    Mish(),
                                    convbn_3d(32, 32, 3, 1, 1),
                                    Mish())
@@ -297,24 +294,23 @@ class cfnet(nn.Module):
                                    Mish(),
                                    convbn_3d(32, 32, 3, 1, 1))
 
-
-        self.dres0_5 = nn.Sequential(convbn_3d(self.num_groups + self.concat_channels*2, 64, 3, 1, 1),
-                                   Mish(),
-                                   convbn_3d(64, 64, 3, 1, 1),
-                                   Mish())
+        self.dres0_5 = nn.Sequential(convbn_3d(self.num_groups + self.concat_channels * 2, 64, 3, 1, 1),
+                                     Mish(),
+                                     convbn_3d(64, 64, 3, 1, 1),
+                                     Mish())
 
         self.dres1_5 = nn.Sequential(convbn_3d(64, 64, 3, 1, 1),
-                                   Mish(),
-                                   convbn_3d(64, 64, 3, 1, 1))
+                                     Mish(),
+                                     convbn_3d(64, 64, 3, 1, 1))
 
-        self.dres0_6 = nn.Sequential(convbn_3d(self.num_groups + self.concat_channels*2, 64, 3, 1, 1),
-                                   Mish(),
-                                   convbn_3d(64, 64, 3, 1, 1),
-                                   Mish())
+        self.dres0_6 = nn.Sequential(convbn_3d(self.num_groups + self.concat_channels * 2, 64, 3, 1, 1),
+                                     Mish(),
+                                     convbn_3d(64, 64, 3, 1, 1),
+                                     Mish())
 
         self.dres1_6 = nn.Sequential(convbn_3d(64, 64, 3, 1, 1),
-                                   Mish(),
-                                   convbn_3d(64, 64, 3, 1, 1))
+                                     Mish(),
+                                     convbn_3d(64, 64, 3, 1, 1))
 
         self.combine1 = hourglassup(32)
 
@@ -324,32 +320,31 @@ class cfnet(nn.Module):
 
         # self.dres4 = hourglass(32)
 
-        self.confidence0_s3 = nn.Sequential(convbn_3d(self.num_groups + self.concat_channels*2 + 1 , 32, 3, 1, 1),
-                                   Mish(),
-                                   convbn_3d(32, 32, 3, 1, 1),
-                                   Mish())
+        self.confidence0_s3 = nn.Sequential(convbn_3d(self.num_groups + self.concat_channels * 2 + 1, 32, 3, 1, 1),
+                                            Mish(),
+                                            convbn_3d(32, 32, 3, 1, 1),
+                                            Mish())
 
         self.confidence1_s3 = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
-                                   Mish(),
-                                   convbn_3d(32, 32, 3, 1, 1))
+                                            Mish(),
+                                            convbn_3d(32, 32, 3, 1, 1))
 
         self.confidence2_s3 = hourglass(32)
 
         self.confidence3_s3 = hourglass(32)
 
-        self.confidence0_s2 = nn.Sequential(convbn_3d(self.num_groups//2 + self.concat_channels + 1, 16, 3, 1, 1),
-                                   Mish(),
-                                   convbn_3d(16, 16, 3, 1, 1),
-                                   Mish())
+        self.confidence0_s2 = nn.Sequential(convbn_3d(self.num_groups // 2 + self.concat_channels + 1, 16, 3, 1, 1),
+                                            Mish(),
+                                            convbn_3d(16, 16, 3, 1, 1),
+                                            Mish())
 
         self.confidence1_s2 = nn.Sequential(convbn_3d(16, 16, 3, 1, 1),
-                                   Mish(),
-                                   convbn_3d(16, 16, 3, 1, 1))
+                                            Mish(),
+                                            convbn_3d(16, 16, 3, 1, 1))
 
         self.confidence2_s2 = hourglass(16)
 
         self.confidence3_s2 = hourglass(16)
-
 
         # self.confidence0_s1 = nn.Sequential(convbn_3d(self.num_groups // 4 + self.concat_channels // 2 + 1, 16, 3, 1, 1),
         #                                     nn.ReLU(inplace=True),
@@ -371,25 +366,24 @@ class cfnet(nn.Module):
                                                     nn.Conv3d(32, 1, kernel_size=3, padding=1, stride=1, bias=False))
 
         self.confidence_classif1_s3 = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
-                                      Mish(),
-                                      nn.Conv3d(32, 1, kernel_size=3, padding=1, stride=1, bias=False))
-
-        self.confidence_classifmid_s3 = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
                                                     Mish(),
                                                     nn.Conv3d(32, 1, kernel_size=3, padding=1, stride=1, bias=False))
+
+        self.confidence_classifmid_s3 = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
+                                                      Mish(),
+                                                      nn.Conv3d(32, 1, kernel_size=3, padding=1, stride=1, bias=False))
 
         self.confidence_classif0_s2 = nn.Sequential(convbn_3d(16, 16, 3, 1, 1),
                                                     Mish(),
                                                     nn.Conv3d(16, 1, kernel_size=3, padding=1, stride=1, bias=False))
-
 
         self.confidence_classif1_s2 = nn.Sequential(convbn_3d(16, 16, 3, 1, 1),
                                                     Mish(),
                                                     nn.Conv3d(16, 1, kernel_size=3, padding=1, stride=1, bias=False))
 
         self.confidence_classifmid_s2 = nn.Sequential(convbn_3d(16, 16, 3, 1, 1),
-                                                    Mish(),
-                                                    nn.Conv3d(16, 1, kernel_size=3, padding=1, stride=1, bias=False))
+                                                      Mish(),
+                                                      nn.Conv3d(16, 1, kernel_size=3, padding=1, stride=1, bias=False))
 
         # self.confidence_classif1_s1 = nn.Sequential(convbn_3d(16, 16, 3, 1, 1),
         #                                             nn.ReLU(inplace=True),
@@ -426,7 +420,7 @@ class cfnet(nn.Module):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
             # elif isinstance(m, nn.Linear):
-                # m.bias.data.zero_()
+            # m.bias.data.zero_()
 
     def generate_search_range(self, sample_count, input_min_disparity, input_max_disparity, scale):
         """
@@ -438,9 +432,11 @@ class cfnet(nn.Module):
         """
 
         min_disparity = torch.clamp(input_min_disparity - torch.clamp((
-                sample_count - input_max_disparity + input_min_disparity), min=0) / 2.0, min=0, max=self.maxdisp // (2**scale) - 1)
+                sample_count - input_max_disparity + input_min_disparity), min=0) / 2.0, min=0,
+                                    max=self.maxdisp // (2 ** scale) - 1)
         max_disparity = torch.clamp(input_max_disparity + torch.clamp(
-                sample_count - input_max_disparity + input_min_disparity, min=0) / 2.0, min=0, max=self.maxdisp // (2**scale) - 1)
+            sample_count - input_max_disparity + input_min_disparity, min=0) / 2.0, min=0,
+                                    max=self.maxdisp // (2 ** scale) - 1)
 
         return min_disparity, max_disparity
 
@@ -461,10 +457,10 @@ class cfnet(nn.Module):
         disparity_samples = self.uniform_sampler(min_disparity, max_disparity, sample_count)
 
         disparity_samples = torch.cat((torch.floor(min_disparity), disparity_samples, torch.ceil(max_disparity)),
-                                      dim=1).long()                   # disparity level = sample_count + 2
+                                      dim=1).long()  # disparity level = sample_count + 2
         return disparity_samples
 
-    def cost_volume_generator(self, left_input, right_input, disparity_samples, model = 'concat', num_groups = 40):
+    def cost_volume_generator(self, left_input, right_input, disparity_samples, model='concat', num_groups=40):
         """
         Description: Generates cost-volume using left image features, disaprity samples
                                                             and warped right image features.
@@ -483,9 +479,9 @@ class cfnet(nn.Module):
                                                                        right_input, disparity_samples)
         disparity_samples = disparity_samples.unsqueeze(1).float()
         if model == 'concat':
-             cost_volume = torch.cat((left_feature_map, right_feature_map), dim=1)
+            cost_volume = torch.cat((left_feature_map, right_feature_map), dim=1)
         else:
-             cost_volume = groupwise_correlation_4D(left_feature_map, right_feature_map, num_groups)
+            cost_volume = groupwise_correlation_4D(left_feature_map, right_feature_map, num_groups)
 
         return cost_volume, disparity_samples
 
@@ -525,7 +521,6 @@ class cfnet(nn.Module):
         out1_4 = self.combine1(cost0_4, cost0_5, cost0_6)
         out2_4 = self.dres3(out1_4)
 
-
         cost2_s4 = self.classif2(out2_4)
         cost2_s4 = torch.squeeze(cost2_s4, 1)
         pred2_possibility_s4 = F.softmax(cost2_s4, dim=1)
@@ -535,16 +530,22 @@ class cfnet(nn.Module):
         pred2_v_s4 = pred2_v_s4.sqrt()
         mindisparity_s3 = pred2_s4_cur - (self.gamma_s3 + 1) * pred2_v_s4 - self.beta_s3
         maxdisparity_s3 = pred2_s4_cur + (self.gamma_s3 + 1) * pred2_v_s4 + self.beta_s3
-        maxdisparity_s3 = F.upsample(maxdisparity_s3 * 2, [left.size()[2] // 4, left.size()[3] // 4], mode='bilinear', align_corners=True)
+        maxdisparity_s3 = F.upsample(maxdisparity_s3 * 2, [left.size()[2] // 4, left.size()[3] // 4], mode='bilinear',
+                                     align_corners=True)
         mindisparity_s3 = F.upsample(mindisparity_s3 * 2, [left.size()[2] // 4, left.size()[3] // 4], mode='bilinear',
-                                    align_corners=True)
+                                     align_corners=True)
 
-        mindisparity_s3_1, maxdisparity_s3_1 = self.generate_search_range(self.sample_count_s3 + 1, mindisparity_s3, maxdisparity_s3, scale = 2)
-        disparity_samples_s3 = self.generate_disparity_samples(mindisparity_s3_1, maxdisparity_s3_1, self.sample_count_s3).float()
+        mindisparity_s3_1, maxdisparity_s3_1 = self.generate_search_range(self.sample_count_s3 + 1, mindisparity_s3,
+                                                                          maxdisparity_s3, scale=2)
+        disparity_samples_s3 = self.generate_disparity_samples(mindisparity_s3_1, maxdisparity_s3_1,
+                                                               self.sample_count_s3).float()
         confidence_v_concat_s3, _ = self.cost_volume_generator(features_left["concat_feature3"],
-                                                            features_right["concat_feature3"], disparity_samples_s3, 'concat')
-        confidence_v_gwc_s3, disparity_samples_s3 = self.cost_volume_generator(features_left["gw3"], features_right["gw3"],
-                                                                         disparity_samples_s3, 'gwc', self.num_groups)
+                                                               features_right["concat_feature3"], disparity_samples_s3,
+                                                               'concat')
+        confidence_v_gwc_s3, disparity_samples_s3 = self.cost_volume_generator(features_left["gw3"],
+                                                                               features_right["gw3"],
+                                                                               disparity_samples_s3, 'gwc',
+                                                                               self.num_groups)
         confidence_v_s3 = torch.cat((confidence_v_gwc_s3, confidence_v_concat_s3, disparity_samples_s3), dim=1)
 
         disparity_samples_s3 = torch.squeeze(disparity_samples_s3, dim=1)
@@ -568,13 +569,17 @@ class cfnet(nn.Module):
         mindisparity_s2 = F.upsample(mindisparity_s2 * 2, [left.size()[2] // 2, left.size()[3] // 2], mode='bilinear',
                                      align_corners=True)
 
-
-        mindisparity_s2_1, maxdisparity_s2_1 = self.generate_search_range(self.sample_count_s2 + 1, mindisparity_s2, maxdisparity_s2, scale = 1)
-        disparity_samples_s2 = self.generate_disparity_samples(mindisparity_s2_1, maxdisparity_s2_1, self.sample_count_s2).float()
+        mindisparity_s2_1, maxdisparity_s2_1 = self.generate_search_range(self.sample_count_s2 + 1, mindisparity_s2,
+                                                                          maxdisparity_s2, scale=1)
+        disparity_samples_s2 = self.generate_disparity_samples(mindisparity_s2_1, maxdisparity_s2_1,
+                                                               self.sample_count_s2).float()
         confidence_v_concat_s2, _ = self.cost_volume_generator(features_left["concat_feature2"],
-                                                            features_right["concat_feature2"], disparity_samples_s2, 'concat')
-        confidence_v_gwc_s2, disparity_samples_s2 = self.cost_volume_generator(features_left["gw2"], features_right["gw2"],
-                                                                         disparity_samples_s2, 'gwc', self.num_groups // 2)
+                                                               features_right["concat_feature2"], disparity_samples_s2,
+                                                               'concat')
+        confidence_v_gwc_s2, disparity_samples_s2 = self.cost_volume_generator(features_left["gw2"],
+                                                                               features_right["gw2"],
+                                                                               disparity_samples_s2, 'gwc',
+                                                                               self.num_groups // 2)
         confidence_v_s2 = torch.cat((confidence_v_gwc_s2, confidence_v_concat_s2, disparity_samples_s2), dim=1)
 
         disparity_samples_s2 = torch.squeeze(disparity_samples_s2, dim=1)
@@ -596,12 +601,14 @@ class cfnet(nn.Module):
             cost0_4 = self.classif0(cost0_4)
             cost1_4 = self.classif1(out1_4)
 
-            cost0_4 = F.upsample(cost0_4, [self.maxdisp, left.size()[2], left.size()[3]], mode='trilinear', align_corners=True)
+            cost0_4 = F.upsample(cost0_4, [self.maxdisp, left.size()[2], left.size()[3]], mode='trilinear',
+                                 align_corners=True)
             cost0_4 = torch.squeeze(cost0_4, 1)
             pred0_4 = F.softmax(cost0_4, dim=1)
             pred0_4 = disparity_regression(pred0_4, self.maxdisp)
 
-            cost1_4 = F.upsample(cost1_4, [self.maxdisp, left.size()[2], left.size()[3]], mode='trilinear', align_corners=True)
+            cost1_4 = F.upsample(cost1_4, [self.maxdisp, left.size()[2], left.size()[3]], mode='trilinear',
+                                 align_corners=True)
             cost1_4 = torch.squeeze(cost1_4, 1)
             pred1_4 = F.softmax(cost1_4, dim=1)
             pred1_4 = disparity_regression(pred1_4, self.maxdisp)
@@ -613,17 +620,18 @@ class cfnet(nn.Module):
             cost0_s3 = F.softmax(cost0_s3, dim=1)
             pred0_s3 = torch.sum(cost0_s3 * disparity_samples_s3, dim=1, keepdim=True)
             pred0_s3 = F.upsample(pred0_s3 * 4, [left.size()[2], left.size()[3]], mode='bilinear',
-                                     align_corners=True)
+                                  align_corners=True)
             pred0_s3 = torch.squeeze(pred0_s3, 1)
 
             costmid_s3 = self.confidence_classifmid_s3(out1_s3).squeeze(1)
             costmid_s3 = F.softmax(costmid_s3, dim=1)
             predmid_s3 = torch.sum(costmid_s3 * disparity_samples_s3, dim=1, keepdim=True)
             predmid_s3 = F.upsample(predmid_s3 * 4, [left.size()[2], left.size()[3]], mode='bilinear',
-                                     align_corners=True)
+                                    align_corners=True)
             predmid_s3 = torch.squeeze(predmid_s3, 1)
 
-            pred1_s3_up = F.upsample(pred1_s3 * 4, [left.size()[2], left.size()[3]], mode='bilinear', align_corners=True)
+            pred1_s3_up = F.upsample(pred1_s3 * 4, [left.size()[2], left.size()[3]], mode='bilinear',
+                                     align_corners=True)
             pred1_s3_up = torch.squeeze(pred1_s3_up, 1)
 
             cost0_s2 = self.confidence_classif0_s2(cost0_s2).squeeze(1)
@@ -636,7 +644,7 @@ class cfnet(nn.Module):
             costmid_s2 = F.softmax(costmid_s2, dim=1)
             predmid_s2 = torch.sum(costmid_s2 * disparity_samples_s2, dim=1, keepdim=True)
             predmid_s2 = F.upsample(predmid_s2 * 2, [left.size()[2], left.size()[3]], mode='bilinear',
-                                     align_corners=True)
+                                    align_corners=True)
             predmid_s2 = torch.squeeze(predmid_s2, 1)
 
             pred1_s2 = F.upsample(pred1_s2 * 2, [left.size()[2], left.size()[3]], mode='bilinear', align_corners=True)
@@ -658,5 +666,20 @@ class cfnet(nn.Module):
             return [pred1_s2], [pred1_s3_up], [pred2_s4]
 
 
-def CFNet(d):
-    return cfnet(d, use_concat_volume=True)
+def CFNet(d, replace_mish=False):
+    net = cfnet(d, use_concat_volume=True)
+    if replace_mish:
+        replace_layers(net, Mish, nn.ReLU(inplace=True))
+    return net
+
+
+def replace_layers(model, old, new):
+    for n, module in model.named_children():
+        if len(list(module.children())) > 0:
+            ## compound module, go inside it
+            replace_layers(module, old, new)
+
+        if isinstance(module, old):
+            ## simple module
+            print('replacing', old(), '->', new)
+            setattr(model, n, new)

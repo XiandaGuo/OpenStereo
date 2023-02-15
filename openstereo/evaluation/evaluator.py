@@ -89,12 +89,13 @@ def OpenStereoEvaluator(data, metric=None):
         metric = ['epe', 'd1_all']
     disp_est = data['disp_est']
     disp_gt = data['disp_gt']
+    mask = data['mask']
     res = {}
     for m in metric:
         if m not in METRICS:
             raise ValueError("Unknown metric: {}".format(m))
         else:
             metric_func = METRICS[m]
-            res[f"scalar/val/{m}"] = metric_func(disp_est, disp_gt, disp_gt > 0)
+            res[f"scalar/val/{m}"] = metric_func(disp_est, disp_gt, mask)
     # print(res)
     return res

@@ -27,7 +27,7 @@ def disparity_regression(x, maxdisp):
 
 
 class GwcDispProcessor(nn.Module):
-    def __init__(self, maxdisp=80, downsample=4, num_groups=40, use_concat_volume=True, concat_channels=12, *args,
+    def __init__(self, maxdisp=192, downsample=4, num_groups=40, use_concat_volume=True, concat_channels=12, *args,
                  **kwargs):
         super().__init__()
 
