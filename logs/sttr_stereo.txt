@@ -1,0 +1,218 @@
+/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/distributed/launch.py:186: FutureWarning: The module torch.distributed.launch is deprecated
+and will be removed in future. Use torchrun.
+Note that --use_env is set by default in torchrun.
+If your script expects `--local_rank` argument to be set, please
+change it to read from `os.environ['LOCAL_RANK']` instead. See 
+https://pytorch.org/docs/stable/distributed.html#launch-utility for 
+further instructions
+
+  FutureWarning,
+WARNING:torch.distributed.run:
+*****************************************
+Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+*****************************************
+[2023-02-15 14:02:47] [INFO]: {'enable_float16': False, 'log_iter': 100, 'with_test': True, 'restore_ckpt_strict': True, 'restore_hint': 0, 'save_iter': 50000, 'save_name': 'STTR-Stereo_SceneFlow', 'sync_BN': True, 'total_iter': 150000, 'total_epoch': 20, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': True, 'batch_size': 1}, 'optimizer_reset': False, 'scheduler_reset': False}
+Initialization Finished!
+{'data_cfg': {'name': 'SceneFlow', 'root': 'data/SceneFlow', 'train_list': 'datasets/sceneflow/train_val.txt', 'val_list': 'datasets/sceneflow/val.txt', 'test_list': 'datasets/sceneflow/test.txt', 'num_workers': 4, 'transform': {'train': {'size': [128, 256], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}, 'test': {'size': [512, 960], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}}}, 'model_cfg': {'model': 'STTRNet', 'find_unused_parameters': False, 'base_config': {'max_disp': 192, 'downsample': 3, 'num_groups': 40, 'use_concat_volume': True, 'concat_channels': 12, 'channel_dim': 128, 'position_encoding': 'sine1d_rel', 'num_attn_layers': 6, 'nheads': 8, 'regression_head': 'ot', 'context_adjustment_layer': 'cal', 'cal_num_blocks': 8, 'cal_feat_dim': 16, 'cal_expansion_ratio': 4}, 'backbone_cfg': {'type': 'GwcNet'}, 'cost_processor_cfg': {'type': 'GwcVolumeCostProcessor'}, 'disp_processor_cfg': {'type': 'GwcDispProcessor'}, '_set_static_graph': True, 'loss_config': {'px_error_threshold': 3, 'validation_max_disp': -1, 'loss_weight': 'rr:1.0, l1_raw:1.0, l1:1.0, occ_be:1.0'}}, 'loss_cfg': {'px_error_threshold': 3, 'validation_max_disp': 192, 'loss_weight': 'rr:1.0, l1_raw:1.0, l1:1.0, occ_be:1.0'}, 'optimizer_cfg': {'solver': 'Adam', 'lr': 0.0008, 'betas': [0.9, 0.999], 'lr_backbone': 0.0008, 'lr_regression': 0.0016}, 'scheduler_cfg': {'gamma': 0.1, 'milestones': [75000], 'scheduler': 'MultiStepLR'}, 'trainer_cfg': {'enable_float16': False, 'log_iter': 100, 'with_test': True, 'restore_ckpt_strict': True, 'restore_hint': 0, 'save_iter': 50000, 'save_name': 'STTR-Stereo_SceneFlow', 'sync_BN': True, 'total_iter': 150000, 'total_epoch': 20, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': True, 'batch_size': 1}, 'optimizer_reset': False, 'scheduler_reset': False}, 'evaluator_cfg': {'eval_func': 'OpenStereoEvaluator', 'save_name': 'STTR-Stereo_SceneFlow', 'restore_hint': 0, 'metric': ['d1_all', 'epe', 'thres_1', 'thres_2', 'thres_3'], 'enable_float16': False, 'restore_ckpt_strict': True, 'show_progress_bar': False, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': False, 'batch_size': 1}}}
+Start Running Model!
+[2023-02-15 14:02:47] [INFO]: {'model': 'STTRNet', 'find_unused_parameters': False, 'base_config': {'max_disp': 192, 'downsample': 3, 'num_groups': 40, 'use_concat_volume': True, 'concat_channels': 12, 'channel_dim': 128, 'position_encoding': 'sine1d_rel', 'num_attn_layers': 6, 'nheads': 8, 'regression_head': 'ot', 'context_adjustment_layer': 'cal', 'cal_num_blocks': 8, 'cal_feat_dim': 16, 'cal_expansion_ratio': 4}, 'backbone_cfg': {'type': 'GwcNet'}, 'cost_processor_cfg': {'type': 'GwcVolumeCostProcessor'}, 'disp_processor_cfg': {'type': 'GwcDispProcessor'}, '_set_static_graph': True, 'loss_config': {'px_error_threshold': 3, 'validation_max_disp': -1, 'loss_weight': 'rr:1.0, l1_raw:1.0, l1:1.0, occ_be:1.0'}}
+Initialization Finished!
+{'data_cfg': {'name': 'SceneFlow', 'root': 'data/SceneFlow', 'train_list': 'datasets/sceneflow/train_val.txt', 'val_list': 'datasets/sceneflow/val.txt', 'test_list': 'datasets/sceneflow/test.txt', 'num_workers': 4, 'transform': {'train': {'size': [128, 256], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}, 'test': {'size': [512, 960], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}}}, 'model_cfg': {'model': 'STTRNet', 'find_unused_parameters': False, 'base_config': {'max_disp': 192, 'downsample': 3, 'num_groups': 40, 'use_concat_volume': True, 'concat_channels': 12, 'channel_dim': 128, 'position_encoding': 'sine1d_rel', 'num_attn_layers': 6, 'nheads': 8, 'regression_head': 'ot', 'context_adjustment_layer': 'cal', 'cal_num_blocks': 8, 'cal_feat_dim': 16, 'cal_expansion_ratio': 4}, 'backbone_cfg': {'type': 'GwcNet'}, 'cost_processor_cfg': {'type': 'GwcVolumeCostProcessor'}, 'disp_processor_cfg': {'type': 'GwcDispProcessor'}, '_set_static_graph': True, 'loss_config': {'px_error_threshold': 3, 'validation_max_disp': -1, 'loss_weight': 'rr:1.0, l1_raw:1.0, l1:1.0, occ_be:1.0'}}, 'loss_cfg': {'px_error_threshold': 3, 'validation_max_disp': 192, 'loss_weight': 'rr:1.0, l1_raw:1.0, l1:1.0, occ_be:1.0'}, 'optimizer_cfg': {'solver': 'Adam', 'lr': 0.0008, 'betas': [0.9, 0.999], 'lr_backbone': 0.0008, 'lr_regression': 0.0016}, 'scheduler_cfg': {'gamma': 0.1, 'milestones': [75000], 'scheduler': 'MultiStepLR'}, 'trainer_cfg': {'enable_float16': False, 'log_iter': 100, 'with_test': True, 'restore_ckpt_strict': True, 'restore_hint': 0, 'save_iter': 50000, 'save_name': 'STTR-Stereo_SceneFlow', 'sync_BN': True, 'total_iter': 150000, 'total_epoch': 20, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': True, 'batch_size': 1}, 'optimizer_reset': False, 'scheduler_reset': False}, 'evaluator_cfg': {'eval_func': 'OpenStereoEvaluator', 'save_name': 'STTR-Stereo_SceneFlow', 'restore_hint': 0, 'metric': ['d1_all', 'epe', 'thres_1', 'thres_2', 'thres_3'], 'enable_float16': False, 'restore_ckpt_strict': True, 'show_progress_bar': False, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': False, 'batch_size': 1}}}
+Start Running Model!
+[2023-02-15 14:02:47] [INFO]: {'name': 'SceneFlow', 'root': 'data/SceneFlow', 'train_list': 'datasets/sceneflow/train_val.txt', 'val_list': 'datasets/sceneflow/val.txt', 'test_list': 'datasets/sceneflow/test.txt', 'num_workers': 4, 'transform': {'train': {'size': [128, 256], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}, 'test': {'size': [512, 960], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}}}
+[2023-02-15 14:02:52] [INFO]: {'solver': 'Adam', 'lr': 0.0008, 'betas': [0.9, 0.999], 'lr_backbone': 0.0008, 'lr_regression': 0.0016}
+[2023-02-15 14:02:52] [INFO]: {'gamma': 0.1, 'milestones': [75000], 'scheduler': 'MultiStepLR'}
+[2023-02-15 14:02:52] [INFO]: Parameters Count: 2.50663M
+[2023-02-15 14:02:52] [INFO]: Model Initialization Finished!
+/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/sttr/pos_encoder.py:56: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
+  dim_t = self.temperature ** (2 * (dim_t // 2) / self.num_pos_feats)
+/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/sttr/pos_encoder.py:56: UserWarning: __floordiv__ is deprecated, and its behavior will change in a future version of pytorch. It currently rounds toward 0 (like the 'trunc' function NOT 'floor'). This results in incorrect rounding for negative values. To keep the current behavior, use torch.div(a, b, rounding_mode='trunc'), or for actual floor division, use torch.div(a, b, rounding_mode='floor').
+  dim_t = self.temperature ** (2 * (dim_t // 2) / self.num_pos_feats)
+[2023-02-15 14:03:12] [INFO]: Iteration 00100, Cost 24.99s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=30113.70000, total_px=31678.42000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:03:30] [INFO]: Iteration 00200, Cost 18.03s, aggregated=216.52513, rr=4.29184, l1_raw=48.63028, l1=162.90868, occ_be=0.69433, error_px=28146.00000, total_px=31524.19000, epe=163.40854, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:03:47] [INFO]: Iteration 00300, Cost 16.81s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=28348.70000, total_px=31740.52000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:04:04] [INFO]: Iteration 00400, Cost 17.18s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=30543.20000, total_px=32010.57000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:04:21] [INFO]: Iteration 00500, Cost 17.71s, aggregated=77.00409, rr=2.86544, l1_raw=39.22553, l1=34.21969, occ_be=0.69343, error_px=30004.67000, total_px=32420.80000, epe=34.71559, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:04:39] [INFO]: Iteration 00600, Cost 17.15s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=28791.21000, total_px=31191.16000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:04:55] [INFO]: Iteration 00700, Cost 16.77s, aggregated=73.13223, rr=3.25871, l1_raw=37.89488, l1=31.28534, occ_be=0.69330, error_px=28941.61000, total_px=31670.24000, epe=31.78024, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:05:12] [INFO]: Iteration 00800, Cost 17.00s, aggregated=80.96219, rr=3.62871, l1_raw=41.03918, l1=35.60098, occ_be=0.69332, error_px=29301.06000, total_px=31491.21000, epe=36.09718, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:05:29] [INFO]: Iteration 00900, Cost 17.04s, aggregated=68.91940, rr=3.55792, l1_raw=34.64599, l1=30.02220, occ_be=0.69329, error_px=29740.55000, total_px=32561.86000, epe=30.51760, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:05:46] [INFO]: Iteration 01000, Cost 16.67s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=28380.40000, total_px=31347.97000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:06:03] [INFO]: Iteration 01100, Cost 17.09s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=29251.02000, total_px=31866.33000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:06:21] [INFO]: Iteration 01200, Cost 17.56s, aggregated=60.44457, rr=3.47776, l1_raw=30.35742, l1=25.91613, occ_be=0.69326, error_px=28644.37000, total_px=31584.67000, epe=26.41100, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:06:38] [INFO]: Iteration 01300, Cost 17.34s, aggregated=65.36214, rr=3.59017, l1_raw=33.37127, l1=27.70749, occ_be=0.69321, error_px=28475.32000, total_px=31690.10000, epe=28.20218, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:06:55] [INFO]: Iteration 01400, Cost 17.39s, aggregated=64.17376, rr=3.85690, l1_raw=32.83281, l1=26.79085, occ_be=0.69320, error_px=28999.03000, total_px=31983.15000, epe=27.28577, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:07:13] [INFO]: Iteration 01500, Cost 17.24s, aggregated=65.64617, rr=3.67029, l1_raw=33.93189, l1=27.35078, occ_be=0.69322, error_px=29306.91000, total_px=32073.95000, epe=27.84594, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:07:30] [INFO]: Iteration 01600, Cost 17.20s, aggregated=62.98040, rr=3.44150, l1_raw=31.52094, l1=27.32477, occ_be=0.69320, error_px=29321.47000, total_px=32316.71000, epe=27.81973, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:07:47] [INFO]: Iteration 01700, Cost 17.16s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=29317.42000, total_px=32116.61000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:08:04] [INFO]: Iteration 01800, Cost 17.27s, aggregated=70.69478, rr=3.59365, l1_raw=34.61253, l1=31.79540, occ_be=0.69319, error_px=28989.37000, total_px=31770.20000, epe=32.29092, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:08:22] [INFO]: Iteration 01900, Cost 17.76s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=28611.67000, total_px=31440.23000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:08:39] [INFO]: Iteration 02000, Cost 17.11s, aggregated=76.09183, rr=3.73825, l1_raw=37.84197, l1=33.81842, occ_be=0.69319, error_px=29830.49000, total_px=32095.41000, epe=34.31462, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:08:56] [INFO]: Iteration 02100, Cost 17.25s, aggregated=72.26450, rr=3.77722, l1_raw=36.93927, l1=30.85484, occ_be=0.69317, error_px=29214.36000, total_px=31975.86000, epe=31.35021, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:09:14] [INFO]: Iteration 02200, Cost 17.42s, aggregated=81.11208, rr=3.76632, l1_raw=40.58476, l1=36.06783, occ_be=0.69318, error_px=28838.91000, total_px=31265.92000, epe=36.56416, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:09:32] [INFO]: Iteration 02300, Cost 17.96s, aggregated=63.37113, rr=3.77873, l1_raw=31.66124, l1=27.23799, occ_be=0.69317, error_px=29384.90000, total_px=32083.40000, epe=27.73334, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:09:50] [INFO]: Iteration 02400, Cost 18.17s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=29564.73000, total_px=31984.00000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:10:08] [INFO]: Iteration 02500, Cost 18.11s, aggregated=69.94281, rr=3.60514, l1_raw=36.29678, l1=29.34771, occ_be=0.69317, error_px=29143.92000, total_px=31998.26000, epe=29.84283, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:10:27] [INFO]: Iteration 02600, Cost 18.42s, aggregated=60.92398, rr=3.55511, l1_raw=30.89680, l1=25.77890, occ_be=0.69316, error_px=28633.05000, total_px=31787.32000, epe=26.27365, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:10:44] [INFO]: Iteration 02700, Cost 17.27s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=29384.86000, total_px=32013.60000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:11:02] [INFO]: Iteration 02800, Cost 17.70s, aggregated=62.86175, rr=3.54652, l1_raw=31.02115, l1=27.60093, occ_be=0.69316, error_px=29366.67000, total_px=31982.95000, epe=28.09661, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:11:19] [INFO]: Iteration 02900, Cost 17.96s, aggregated=65.19638, rr=3.39666, l1_raw=32.18262, l1=28.92394, occ_be=0.69316, error_px=29258.36000, total_px=32053.89000, epe=29.41930, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:11:39] [INFO]: Iteration 03000, Cost 19.21s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=29060.09000, total_px=32011.80000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:12:11] [INFO]: Iteration 03100, Cost 32.58s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=28748.04000, total_px=30790.37000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:12:46] [INFO]: Iteration 03200, Cost 34.83s, aggregated=72.21555, rr=3.59621, l1_raw=35.57857, l1=32.34761, occ_be=0.69315, error_px=29009.99000, total_px=31858.60000, epe=32.84280, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:13:21] [INFO]: Iteration 03300, Cost 34.98s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=29163.80000, total_px=31853.05000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:13:56] [INFO]: Iteration 03400, Cost 34.51s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=29099.82000, total_px=31919.43000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:14:31] [INFO]: Iteration 03500, Cost 35.43s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=29232.27000, total_px=31506.40000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:15:06] [INFO]: Iteration 03600, Cost 34.97s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=29543.83000, total_px=32136.95000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:15:41] [INFO]: Iteration 03700, Cost 35.09s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=29145.67000, total_px=31712.12000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:16:16] [INFO]: Iteration 03800, Cost 34.89s, aggregated=59.16425, rr=3.34025, l1_raw=29.10574, l1=26.02512, occ_be=0.69315, error_px=29617.47000, total_px=32697.10000, epe=26.52017, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:16:51] [INFO]: Iteration 03900, Cost 35.18s, aggregated=73.41857, rr=3.63205, l1_raw=37.54332, l1=31.55005, occ_be=0.69315, error_px=29212.69000, total_px=31528.46000, epe=32.04599, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:17:27] [INFO]: Iteration 04000, Cost 35.48s, aggregated=63.24732, rr=3.69837, l1_raw=31.63354, l1=27.22227, occ_be=0.69315, error_px=29184.46000, total_px=31820.10000, epe=27.71764, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:18:02] [INFO]: Iteration 04100, Cost 35.12s, aggregated=72.23630, rr=3.83203, l1_raw=35.97951, l1=31.73162, occ_be=0.69315, error_px=28553.34000, total_px=31447.49000, epe=32.22512, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:18:37] [INFO]: Iteration 04200, Cost 35.01s, aggregated=67.77836, rr=3.64212, l1_raw=33.42058, l1=30.02251, occ_be=0.69315, error_px=28811.18000, total_px=31716.15000, epe=30.51851, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:19:12] [INFO]: Iteration 04300, Cost 35.05s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=28123.90000, total_px=31882.16000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:19:47] [INFO]: Iteration 04400, Cost 35.02s, aggregated=67.15361, rr=3.22327, l1_raw=32.50810, l1=30.72909, occ_be=0.69315, error_px=29814.41000, total_px=31915.00000, epe=31.22558, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:20:22] [INFO]: Iteration 04500, Cost 34.69s, aggregated=69.47426, rr=3.42298, l1_raw=36.10884, l1=29.24930, occ_be=0.69315, error_px=29746.32000, total_px=32274.64000, epe=29.74472, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:20:56] [INFO]: Iteration 04600, Cost 34.76s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=28093.69000, total_px=31408.26000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:21:32] [INFO]: Iteration 04700, Cost 35.72s, aggregated=65.44488, rr=3.29020, l1_raw=32.54683, l1=28.91470, occ_be=0.69315, error_px=28518.25000, total_px=31878.22000, epe=29.41014, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:22:07] [INFO]: Iteration 04800, Cost 34.73s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=28765.58000, total_px=31695.49000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:22:43] [INFO]: Iteration 04900, Cost 35.74s, aggregated=59.18155, rr=3.25276, l1_raw=28.85792, l1=26.37772, occ_be=0.69315, error_px=27927.93000, total_px=31424.61000, epe=26.86977, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:23:20] [INFO]: Iteration 05000, Cost 37.01s, aggregated=58.83185, rr=3.18895, l1_raw=29.24582, l1=25.70393, occ_be=0.69315, error_px=29268.84000, total_px=32465.18000, epe=26.19885, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:23:57] [INFO]: Iteration 05100, Cost 37.47s, aggregated=63.05872, rr=3.41866, l1_raw=30.67901, l1=28.26791, occ_be=0.69315, error_px=29515.15000, total_px=31832.64000, epe=28.76406, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:24:34] [INFO]: Iteration 05200, Cost 37.02s, aggregated=59.47023, rr=3.47183, l1_raw=29.40787, l1=25.89739, occ_be=0.69315, error_px=28973.56000, total_px=32151.16000, epe=26.39203, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:25:11] [INFO]: Iteration 05300, Cost 37.13s, aggregated=62.83171, rr=3.48402, l1_raw=31.09583, l1=27.55872, occ_be=0.69315, error_px=29723.34000, total_px=32158.91000, epe=28.05462, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:25:47] [INFO]: Iteration 05400, Cost 36.15s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=28698.91000, total_px=31635.31000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:26:22] [INFO]: Iteration 05500, Cost 34.74s, aggregated=59.49977, rr=3.17837, l1_raw=29.46144, l1=26.16681, occ_be=0.69315, error_px=28633.47000, total_px=32115.05000, epe=26.66223, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:26:57] [INFO]: Iteration 05600, Cost 35.28s, aggregated=67.30568, rr=3.60383, l1_raw=33.00201, l1=30.00670, occ_be=0.69315, error_px=28653.93000, total_px=31423.50000, epe=30.50244, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:27:32] [INFO]: Iteration 05700, Cost 35.11s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=28864.24000, total_px=31194.61000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:28:07] [INFO]: Iteration 05800, Cost 35.04s, aggregated=55.30249, rr=3.07404, l1_raw=26.89674, l1=24.63855, occ_be=0.69315, error_px=29590.88000, total_px=32211.90000, epe=25.13428, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:28:42] [INFO]: Iteration 05900, Cost 34.91s, aggregated=65.37213, rr=3.49888, l1_raw=32.11658, l1=29.06352, occ_be=0.69315, error_px=28948.26000, total_px=31507.12000, epe=29.55891, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:29:17] [INFO]: Iteration 06000, Cost 34.63s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=28678.46000, total_px=31136.61000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:29:52] [INFO]: Iteration 06100, Cost 35.07s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=28418.85000, total_px=31460.87000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:30:27] [INFO]: Iteration 06200, Cost 35.23s, aggregated=59.22239, rr=3.23210, l1_raw=28.98326, l1=26.31389, occ_be=0.69315, error_px=28749.56000, total_px=32024.07000, epe=26.80738, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:31:02] [INFO]: Iteration 06300, Cost 35.05s, aggregated=nan, rr=nan, l1_raw=nan, l1=31.84475, occ_be=0.69315, error_px=28710.27000, total_px=31481.45000, epe=32.34019, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:31:38] [INFO]: Iteration 06400, Cost 35.86s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=27836.06000, total_px=31847.87000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:32:15] [INFO]: Iteration 06500, Cost 37.05s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=28798.49000, total_px=31817.42000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:32:53] [INFO]: Iteration 06600, Cost 37.37s, aggregated=nan, rr=nan, l1_raw=nan, l1=nan, occ_be=nan, error_px=28557.85000, total_px=31417.23000, epe=nan, iou=nan, learning_rate=0.00080
+[2023-02-15 14:33:30] [INFO]: Iteration 06700, Cost 37.21s, aggregated=66.96905, rr=3.33907, l1_raw=32.77441, l1=30.16242, occ_be=0.69315, error_px=28922.89000, total_px=32021.88000, epe=30.65709, iou=0.50000, learning_rate=0.00080
+[2023-02-15 14:34:06] [INFO]: Iteration 06800, Cost 35.89s, aggregated=80.10247, rr=2.89964, l1_raw=31.48804, l1=45.02165, occ_be=0.69315, error_px=29941.84000, total_px=32454.78000, epe=45.51728, iou=0.50000, learning_rate=0.00080
+Traceback (most recent call last):
+  File "openstereo/main.py", line 84, in <module>
+Traceback (most recent call last):
+  File "openstereo/main.py", line 84, in <module>
+    run_model(cfgs, opt.phase.lower())
+  File "openstereo/main.py", line 58, in run_model
+    run_model(cfgs, opt.phase.lower())
+  File "openstereo/main.py", line 58, in run_model
+    Model.run_train(model)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/base_model.py", line 486, in run_train
+    Model.run_train(model)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/base_model.py", line 486, in run_train
+    output = model(ipts)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    output = model(ipts)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/parallel/distributed.py", line 886, in forward
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/parallel/distributed.py", line 886, in forward
+    output = self.module(*inputs[0], **kwargs[0])
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    output = self.module(*inputs[0], **kwargs[0])
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/sttr/model.py", line 141, in forward
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/sttr/model.py", line 141, in forward
+    outputs = self.net(inputs_tensor)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    outputs = self.net(inputs_tensor)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/sttr/sttr.py", line 100, in forward
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/sttr/sttr.py", line 100, in forward
+    attn_weight = self.transformer(feat_left, feat_right, pos_enc)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    attn_weight = self.transformer(feat_left, feat_right, pos_enc)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/sttr/transformer.py", line 110, in forward
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/sttr/transformer.py", line 110, in forward
+    attn_weight = self._alternating_attn(feat, pos_enc, pos_indexes, hn*bs)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/sttr/transformer.py", line 60, in _alternating_attn
+    attn_weight = self._alternating_attn(feat, pos_enc, pos_indexes, hn*bs)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/sttr/transformer.py", line 60, in _alternating_attn
+    feat = checkpoint(create_custom_self_attn(self_attn), feat, pos_enc, pos_indexes)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/utils/checkpoint.py", line 211, in checkpoint
+    feat = checkpoint(create_custom_self_attn(self_attn), feat, pos_enc, pos_indexes)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/utils/checkpoint.py", line 211, in checkpoint
+    return CheckpointFunction.apply(function, preserve, *args)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/utils/checkpoint.py", line 90, in forward
+    return CheckpointFunction.apply(function, preserve, *args)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/utils/checkpoint.py", line 90, in forward
+    outputs = run_function(*args)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/sttr/transformer.py", line 56, in custom_self_attn
+    outputs = run_function(*args)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/sttr/transformer.py", line 56, in custom_self_attn
+    return module(*inputs)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return module(*inputs)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/sttr/transformer.py", line 141, in forward
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/sttr/transformer.py", line 141, in forward
+    pos_indexes=pos_indexes)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    pos_indexes=pos_indexes)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/sttr/attention.py", line 82, in forward
+    return forward_call(*input, **kwargs)
+  File "/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/openstereo/modeling/models/sttr/attention.py", line 82, in forward
+    q = q * scaling
+UnboundLocalError: local variable 'q' referenced before assignment
+    q = q * scaling
+UnboundLocalError: local variable 'q' referenced before assignment
+ERROR:torch.distributed.elastic.multiprocessing.api:failed (exitcode: 1) local_rank: 0 (pid: 254914) of binary: /mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/bin/python
+Traceback (most recent call last):
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/runpy.py", line 193, in _run_module_as_main
+    "__main__", mod_spec)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/runpy.py", line 85, in _run_code
+    exec(code, run_globals)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/distributed/launch.py", line 193, in <module>
+    main()
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/distributed/launch.py", line 189, in main
+    launch(args)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/distributed/launch.py", line 174, in launch
+    run(args)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/distributed/run.py", line 713, in run
+    )(*cmd_args)
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/distributed/launcher/api.py", line 131, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/distributed/launcher/api.py", line 261, in launch_agent
+    failures=result.failures,
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+openstereo/main.py FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2023-02-15_14:34:26
+  host      : tcloud-3090-001.phigent.io
+  rank      : 1 (local_rank: 1)
+  exitcode  : 1 (pid: 254915)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2023-02-15_14:34:26
+  host      : tcloud-3090-001.phigent.io
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 254914)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

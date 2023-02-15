@@ -1,0 +1,100 @@
+nohup: ignoring input
+/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/distributed/launch.py:186: FutureWarning: The module torch.distributed.launch is deprecated
+and will be removed in future. Use torchrun.
+Note that --use_env is set by default in torchrun.
+If your script expects `--local_rank` argument to be set, please
+change it to read from `os.environ['LOCAL_RANK']` instead. See 
+https://pytorch.org/docs/stable/distributed.html#launch-utility for 
+further instructions
+
+  FutureWarning,
+WARNING:torch.distributed.run:
+*****************************************
+Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+*****************************************
+Initialization Finished!
+{'data_cfg': {'name': 'SceneFlow', 'root': 'data/SceneFlow', 'train_list': 'datasets/sceneflow/train.txt', 'val_list': 'datasets/sceneflow/val.txt', 'test_list': 'datasets/sceneflow/test.txt', 'num_workers': 4, 'transform': {'train': {'size': [256, 512], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}, 'test': {'size': [512, 960], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}}}, 'model_cfg': {'model': 'ACVNet', 'find_unused_parameters': False, 'base_config': {'max_disp': 192, 'downsample': 4, 'num_groups': 40, 'use_concat_volume': True, 'concat_channels': 12, 'attn_weights_only': False, 'freeze_attn_weights': False}, 'backbone_cfg': {'type': 'GwcNet'}, 'cost_processor_cfg': {'type': 'GwcVolumeCostProcessor'}, 'disp_processor_cfg': {'type': 'GwcDispProcessor'}}, 'loss_cfg': None, 'optimizer_cfg': {'solver': 'Adam', 'lr': 0.001, 'betas': [0.9, 0.999]}, 'scheduler_cfg': {'gamma': 0.1, 'milestones': [75000], 'scheduler': 'MultiStepLR'}, 'trainer_cfg': {'enable_float16': False, 'log_iter': 100, 'with_test': True, 'restore_ckpt_strict': True, 'restore_hint': 0, 'save_iter': 50000, 'save_name': 'ACV-Stereo_SceneFlow', 'sync_BN': True, 'total_iter': 150000, 'total_epoch': 20, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': True, 'batch_size': 2}, 'optimizer_reset': False, 'scheduler_reset': False}, 'evaluator_cfg': {'eval_func': 'OpenStereoEvaluator', 'save_name': 'ACV-Stereo_SceneFlow', 'restore_hint': 0, 'metric': ['d1_all', 'epe', 'thres_1', 'thres_2', 'thres_3'], 'enable_float16': False, 'restore_ckpt_strict': True, 'show_progress_bar': False, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': False, 'batch_size': 1}}}
+Start Running Model!
+Initialization Finished!
+{'data_cfg': {'name': 'SceneFlow', 'root': 'data/SceneFlow', 'train_list': 'datasets/sceneflow/train.txt', 'val_list': 'datasets/sceneflow/val.txt', 'test_list': 'datasets/sceneflow/test.txt', 'num_workers': 4, 'transform': {'train': {'size': [256, 512], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}, 'test': {'size': [512, 960], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}}}, 'model_cfg': {'model': 'ACVNet', 'find_unused_parameters': False, 'base_config': {'max_disp': 192, 'downsample': 4, 'num_groups': 40, 'use_concat_volume': True, 'concat_channels': 12, 'attn_weights_only': False, 'freeze_attn_weights': False}, 'backbone_cfg': {'type': 'GwcNet'}, 'cost_processor_cfg': {'type': 'GwcVolumeCostProcessor'}, 'disp_processor_cfg': {'type': 'GwcDispProcessor'}}, 'loss_cfg': None, 'optimizer_cfg': {'solver': 'Adam', 'lr': 0.001, 'betas': [0.9, 0.999]}, 'scheduler_cfg': {'gamma': 0.1, 'milestones': [75000], 'scheduler': 'MultiStepLR'}, 'trainer_cfg': {'enable_float16': False, 'log_iter': 100, 'with_test': True, 'restore_ckpt_strict': True, 'restore_hint': 0, 'save_iter': 50000, 'save_name': 'ACV-Stereo_SceneFlow', 'sync_BN': True, 'total_iter': 150000, 'total_epoch': 20, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': True, 'batch_size': 2}, 'optimizer_reset': False, 'scheduler_reset': False}, 'evaluator_cfg': {'eval_func': 'OpenStereoEvaluator', 'save_name': 'ACV-Stereo_SceneFlow', 'restore_hint': 0, 'metric': ['d1_all', 'epe', 'thres_1', 'thres_2', 'thres_3'], 'enable_float16': False, 'restore_ckpt_strict': True, 'show_progress_bar': False, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': False, 'batch_size': 1}}}
+Start Running Model!
+Initialization Finished!
+{'data_cfg': {'name': 'SceneFlow', 'root': 'data/SceneFlow', 'train_list': 'datasets/sceneflow/train.txt', 'val_list': 'datasets/sceneflow/val.txt', 'test_list': 'datasets/sceneflow/test.txt', 'num_workers': 4, 'transform': {'train': {'size': [256, 512], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}, 'test': {'size': [512, 960], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}}}, 'model_cfg': {'model': 'ACVNet', 'find_unused_parameters': False, 'base_config': {'max_disp': 192, 'downsample': 4, 'num_groups': 40, 'use_concat_volume': True, 'concat_channels': 12, 'attn_weights_only': False, 'freeze_attn_weights': False}, 'backbone_cfg': {'type': 'GwcNet'}, 'cost_processor_cfg': {'type': 'GwcVolumeCostProcessor'}, 'disp_processor_cfg': {'type': 'GwcDispProcessor'}}, 'loss_cfg': None, 'optimizer_cfg': {'solver': 'Adam', 'lr': 0.001, 'betas': [0.9, 0.999]}, 'scheduler_cfg': {'gamma': 0.1, 'milestones': [75000], 'scheduler': 'MultiStepLR'}, 'trainer_cfg': {'enable_float16': False, 'log_iter': 100, 'with_test': True, 'restore_ckpt_strict': True, 'restore_hint': 0, 'save_iter': 50000, 'save_name': 'ACV-Stereo_SceneFlow', 'sync_BN': True, 'total_iter': 150000, 'total_epoch': 20, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': True, 'batch_size': 2}, 'optimizer_reset': False, 'scheduler_reset': False}, 'evaluator_cfg': {'eval_func': 'OpenStereoEvaluator', 'save_name': 'ACV-Stereo_SceneFlow', 'restore_hint': 0, 'metric': ['d1_all', 'epe', 'thres_1', 'thres_2', 'thres_3'], 'enable_float16': False, 'restore_ckpt_strict': True, 'show_progress_bar': False, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': False, 'batch_size': 1}}}
+Start Running Model!
+[2023-02-14 18:32:56] [INFO]: {'enable_float16': False, 'log_iter': 100, 'with_test': True, 'restore_ckpt_strict': True, 'restore_hint': 0, 'save_iter': 50000, 'save_name': 'ACV-Stereo_SceneFlow', 'sync_BN': True, 'total_iter': 150000, 'total_epoch': 20, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': True, 'batch_size': 2}, 'optimizer_reset': False, 'scheduler_reset': False}
+Initialization Finished!
+{'data_cfg': {'name': 'SceneFlow', 'root': 'data/SceneFlow', 'train_list': 'datasets/sceneflow/train.txt', 'val_list': 'datasets/sceneflow/val.txt', 'test_list': 'datasets/sceneflow/test.txt', 'num_workers': 4, 'transform': {'train': {'size': [256, 512], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}, 'test': {'size': [512, 960], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}}}, 'model_cfg': {'model': 'ACVNet', 'find_unused_parameters': False, 'base_config': {'max_disp': 192, 'downsample': 4, 'num_groups': 40, 'use_concat_volume': True, 'concat_channels': 12, 'attn_weights_only': False, 'freeze_attn_weights': False}, 'backbone_cfg': {'type': 'GwcNet'}, 'cost_processor_cfg': {'type': 'GwcVolumeCostProcessor'}, 'disp_processor_cfg': {'type': 'GwcDispProcessor'}}, 'loss_cfg': None, 'optimizer_cfg': {'solver': 'Adam', 'lr': 0.001, 'betas': [0.9, 0.999]}, 'scheduler_cfg': {'gamma': 0.1, 'milestones': [75000], 'scheduler': 'MultiStepLR'}, 'trainer_cfg': {'enable_float16': False, 'log_iter': 100, 'with_test': True, 'restore_ckpt_strict': True, 'restore_hint': 0, 'save_iter': 50000, 'save_name': 'ACV-Stereo_SceneFlow', 'sync_BN': True, 'total_iter': 150000, 'total_epoch': 20, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': True, 'batch_size': 2}, 'optimizer_reset': False, 'scheduler_reset': False}, 'evaluator_cfg': {'eval_func': 'OpenStereoEvaluator', 'save_name': 'ACV-Stereo_SceneFlow', 'restore_hint': 0, 'metric': ['d1_all', 'epe', 'thres_1', 'thres_2', 'thres_3'], 'enable_float16': False, 'restore_ckpt_strict': True, 'show_progress_bar': False, 'sampler': {'type': 'BasicStereoSampler', 'batch_shuffle': False, 'batch_size': 1}}}
+Start Running Model!
+[2023-02-14 18:32:56] [INFO]: {'model': 'ACVNet', 'find_unused_parameters': False, 'base_config': {'max_disp': 192, 'downsample': 4, 'num_groups': 40, 'use_concat_volume': True, 'concat_channels': 12, 'attn_weights_only': False, 'freeze_attn_weights': False}, 'backbone_cfg': {'type': 'GwcNet'}, 'cost_processor_cfg': {'type': 'GwcVolumeCostProcessor'}, 'disp_processor_cfg': {'type': 'GwcDispProcessor'}}
+[2023-02-14 18:32:56] [INFO]: {'name': 'SceneFlow', 'root': 'data/SceneFlow', 'train_list': 'datasets/sceneflow/train.txt', 'val_list': 'datasets/sceneflow/val.txt', 'test_list': 'datasets/sceneflow/test.txt', 'num_workers': 4, 'transform': {'train': {'size': [256, 512], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}, 'test': {'size': [512, 960], 'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}}}
+[2023-02-14 18:33:01] [INFO]: {'solver': 'Adam', 'lr': 0.001, 'betas': [0.9, 0.999]}
+[2023-02-14 18:33:01] [INFO]: {'gamma': 0.1, 'milestones': [75000], 'scheduler': 'MultiStepLR'}
+[2023-02-14 18:33:02] [INFO]: Parameters Count: 7.17349M
+[2023-02-14 18:33:02] [INFO]: Model Initialization Finished!
+/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/functional.py:3509: UserWarning: nn.functional.upsample is deprecated. Use nn.functional.interpolate instead.
+  warnings.warn("nn.functional.upsample is deprecated. Use nn.functional.interpolate instead.")
+/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/functional.py:3635: UserWarning: Default upsampling behavior when mode=trilinear is changed to align_corners=False since 0.4.0. Please specify align_corners=True if the old behavior is desired. See the documentation of nn.Upsample for details.
+  "See the documentation of nn.Upsample for details.".format(mode)
+/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/functional.py:3509: UserWarning: nn.functional.upsample is deprecated. Use nn.functional.interpolate instead.
+  warnings.warn("nn.functional.upsample is deprecated. Use nn.functional.interpolate instead.")
+/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/functional.py:3635: UserWarning: Default upsampling behavior when mode=trilinear is changed to align_corners=False since 0.4.0. Please specify align_corners=True if the old behavior is desired. See the documentation of nn.Upsample for details.
+  "See the documentation of nn.Upsample for details.".format(mode)
+/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/functional.py:3509: UserWarning: nn.functional.upsample is deprecated. Use nn.functional.interpolate instead.
+  warnings.warn("nn.functional.upsample is deprecated. Use nn.functional.interpolate instead.")
+/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/functional.py:3635: UserWarning: Default upsampling behavior when mode=trilinear is changed to align_corners=False since 0.4.0. Please specify align_corners=True if the old behavior is desired. See the documentation of nn.Upsample for details.
+  "See the documentation of nn.Upsample for details.".format(mode)
+/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/functional.py:3509: UserWarning: nn.functional.upsample is deprecated. Use nn.functional.interpolate instead.
+  warnings.warn("nn.functional.upsample is deprecated. Use nn.functional.interpolate instead.")
+/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/functional.py:3635: UserWarning: Default upsampling behavior when mode=trilinear is changed to align_corners=False since 0.4.0. Please specify align_corners=True if the old behavior is desired. See the documentation of nn.Upsample for details.
+  "See the documentation of nn.Upsample for details.".format(mode)
+/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/_reduction.py:42: UserWarning: size_average and reduce args will be deprecated, please use reduction='mean' instead.
+  warnings.warn(warning.format(ret))
+/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/_reduction.py:42: UserWarning: size_average and reduce args will be deprecated, please use reduction='mean' instead.
+  warnings.warn(warning.format(ret))
+/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/_reduction.py:42: UserWarning: size_average and reduce args will be deprecated, please use reduction='mean' instead.
+  warnings.warn(warning.format(ret))
+/mnt/cfs/algorithm/yiqun.duan/install/anaconda3/envs/bevdet/lib/python3.7/site-packages/torch/nn/_reduction.py:42: UserWarning: size_average and reduce args will be deprecated, please use reduction='mean' instead.
+  warnings.warn(warning.format(ret))
+[2023-02-14 18:36:14] [INFO]: Iteration 00100, Cost 198.34s, total_loss=43.85350, learning_rate=0.00100
+[2023-02-14 18:39:22] [INFO]: Iteration 00200, Cost 188.27s, total_loss=27.26881, learning_rate=0.00100
+[2023-02-14 18:42:31] [INFO]: Iteration 00300, Cost 188.97s, total_loss=22.99383, learning_rate=0.00100
+[2023-02-14 18:45:38] [INFO]: Iteration 00400, Cost 187.14s, total_loss=23.40258, learning_rate=0.00100
+[2023-02-14 18:48:48] [INFO]: Iteration 00500, Cost 190.32s, total_loss=19.36661, learning_rate=0.00100
+[2023-02-14 18:51:56] [INFO]: Iteration 00600, Cost 187.33s, total_loss=16.72031, learning_rate=0.00100
+[2023-02-14 18:55:02] [INFO]: Iteration 00700, Cost 186.49s, total_loss=20.10142, learning_rate=0.00100
+[2023-02-14 18:58:10] [INFO]: Iteration 00800, Cost 187.85s, total_loss=16.11528, learning_rate=0.00100
+[2023-02-14 19:01:17] [INFO]: Iteration 00900, Cost 187.33s, total_loss=15.56637, learning_rate=0.00100
+[2023-02-14 19:04:24] [INFO]: Iteration 01000, Cost 186.97s, total_loss=15.39939, learning_rate=0.00100
+[2023-02-14 19:07:32] [INFO]: Iteration 01100, Cost 187.67s, total_loss=16.78068, learning_rate=0.00100
+[2023-02-14 19:10:38] [INFO]: Iteration 01200, Cost 185.54s, total_loss=14.68957, learning_rate=0.00100
+[2023-02-14 19:13:44] [INFO]: Iteration 01300, Cost 185.93s, total_loss=13.88872, learning_rate=0.00100
+[2023-02-14 19:16:52] [INFO]: Iteration 01400, Cost 188.45s, total_loss=12.88005, learning_rate=0.00100
+[2023-02-14 19:20:00] [INFO]: Iteration 01500, Cost 187.59s, total_loss=14.85418, learning_rate=0.00100
+[2023-02-14 19:23:09] [INFO]: Iteration 01600, Cost 189.32s, total_loss=11.33944, learning_rate=0.00100
+[2023-02-14 19:26:19] [INFO]: Iteration 01700, Cost 189.84s, total_loss=13.66162, learning_rate=0.00100
+[2023-02-14 19:29:27] [INFO]: Iteration 01800, Cost 187.86s, total_loss=13.40456, learning_rate=0.00100
+[2023-02-14 19:32:33] [INFO]: Iteration 01900, Cost 185.85s, total_loss=12.31985, learning_rate=0.00100
+[2023-02-14 19:35:42] [INFO]: Iteration 02000, Cost 189.84s, total_loss=12.07841, learning_rate=0.00100
+[2023-02-14 19:38:49] [INFO]: Iteration 02100, Cost 186.87s, total_loss=14.58126, learning_rate=0.00100
+[2023-02-14 19:41:55] [INFO]: Iteration 02200, Cost 186.15s, total_loss=12.96552, learning_rate=0.00100
+[2023-02-14 19:45:01] [INFO]: Iteration 02300, Cost 185.49s, total_loss=12.09552, learning_rate=0.00100
+[2023-02-14 19:48:08] [INFO]: Iteration 02400, Cost 187.46s, total_loss=11.91510, learning_rate=0.00100
+[2023-02-14 19:51:16] [INFO]: Iteration 02500, Cost 187.34s, total_loss=14.57294, learning_rate=0.00100
+[2023-02-14 19:54:23] [INFO]: Iteration 02600, Cost 186.97s, total_loss=11.69525, learning_rate=0.00100
+[2023-02-14 19:57:30] [INFO]: Iteration 02700, Cost 187.83s, total_loss=10.78375, learning_rate=0.00100
+[2023-02-14 20:00:37] [INFO]: Iteration 02800, Cost 186.64s, total_loss=13.67574, learning_rate=0.00100
+[2023-02-14 20:03:45] [INFO]: Iteration 02900, Cost 187.81s, total_loss=11.18641, learning_rate=0.00100
+[2023-02-14 20:06:53] [INFO]: Iteration 03000, Cost 187.89s, total_loss=11.07189, learning_rate=0.00100
+[2023-02-14 20:09:59] [INFO]: Iteration 03100, Cost 185.88s, total_loss=12.37430, learning_rate=0.00100
+[2023-02-14 20:13:05] [INFO]: Iteration 03200, Cost 186.20s, total_loss=11.01205, learning_rate=0.00100
+[2023-02-14 20:16:14] [INFO]: Iteration 03300, Cost 188.73s, total_loss=12.69457, learning_rate=0.00100
+[2023-02-14 20:19:25] [INFO]: Iteration 03400, Cost 191.16s, total_loss=11.09360, learning_rate=0.00100
+[2023-02-14 20:22:29] [INFO]: Iteration 03500, Cost 184.39s, total_loss=10.59919, learning_rate=0.00100
+[2023-02-14 20:25:37] [INFO]: Iteration 03600, Cost 187.79s, total_loss=10.46113, learning_rate=0.00100
+[2023-02-14 20:28:49] [INFO]: Iteration 03700, Cost 191.75s, total_loss=9.72096, learning_rate=0.00100
+[2023-02-14 20:31:57] [INFO]: Iteration 03800, Cost 188.09s, total_loss=9.92739, learning_rate=0.00100
+[2023-02-14 20:35:03] [INFO]: Iteration 03900, Cost 186.36s, total_loss=10.79625, learning_rate=0.00100
+[2023-02-14 20:38:12] [INFO]: Iteration 04000, Cost 189.04s, total_loss=9.81026, learning_rate=0.00100
+[2023-02-14 20:41:20] [INFO]: Iteration 04100, Cost 187.49s, total_loss=11.07984, learning_rate=0.00100
+[2023-02-14 20:44:26] [INFO]: Iteration 04200, Cost 186.58s, total_loss=9.25318, learning_rate=0.00100
+[2023-02-14 20:47:34] [INFO]: Iteration 04300, Cost 187.59s, total_loss=9.88413, learning_rate=0.00100
