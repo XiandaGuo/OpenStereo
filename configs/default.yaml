@@ -2,7 +2,7 @@ data_cfg:
   name: SceneFlow
   root: data/SceneFlow
   train_list: datasets/sceneflow/train.txt
-  val_list: datasets/sceneflow/val.txt
+  val_list: datasets/sceneflow/test.txt
   test_list: datasets/sceneflow/test.txt
   num_workers: 4
 

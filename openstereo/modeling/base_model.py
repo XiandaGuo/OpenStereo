@@ -575,7 +575,7 @@ class BaseModel(MetaModel, nn.Module):
                 for k, v in info.items():
                     res_dict[k].append(v)
             for k, v in res_dict.items():
-                res_dict[k] = np.mean(v)
+                res_dict[k] = np.nanmean(v)
             return res_dict
 
     @staticmethod

@@ -2,7 +2,7 @@ import os
 import tqdm
 import random
 
-lines = open('datasets/sceneflow/train_val.txt').readlines()
+lines = open('datasets/sceneflow/train.txt').readlines()
 
 random.shuffle(lines)
 

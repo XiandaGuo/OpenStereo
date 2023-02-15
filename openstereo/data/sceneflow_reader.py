@@ -27,10 +27,3 @@ class SceneFlowReader(BaseReader):
             'original_size': left_img.shape[-2:],
         }
         return sample
-
-
-if __name__ == '__main__':
-    dataset = SceneFlowReader(root='../../data/sceneflow', list_file='../../datasets/sceneflow/train_val.txt')
-    print(dataset)
-    sample = dataset[0]
-    print(sample['left'].shape, sample['right'].shape, sample['disp'].shape)
