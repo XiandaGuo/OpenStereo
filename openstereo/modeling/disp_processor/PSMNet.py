@@ -124,11 +124,14 @@ class PSMDispProcessor(nn.Module):
                     "disp_est": disp3,
                 },
                 "visual_summary": {
-                    'image/train/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
-                    'image/train/disp_c': disp3[0]
+                    'image/test/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
+                    'image/test/disp_c': disp3[0]
                 }
             }
             if 'disp_gt' in inputs:
                 disp_gt = inputs['disp_gt']
-                output['visual_summary']['image/train/disp_c'] = torch.cat([disp_gt[0], disp3[0]], dim=0)
+                output['visual_summary'] = {
+                    'image/val/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
+                    'image/val/disp_c': torch.cat([disp_gt[0], disp3[0]], dim=0),
+                }
         return output
