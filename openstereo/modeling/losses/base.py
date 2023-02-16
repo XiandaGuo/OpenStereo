@@ -16,7 +16,12 @@ def gather_and_scale_wrapper(func):
     def inner(*args, **kwds):
         try:
             for k, v in kwds.items():
-                kwds[k] = ddp_all_gather(v) if is_tensor(v) else v
+                if is_tensor(v):
+                    kwds[k] = ddp_all_gather(v)
+                if isinstance(v, list):
+                    for i, item in enumerate(v):
+                        if is_tensor(item):
+                            kwds[k][i] = ddp_all_gather(item)
             loss, loss_info = func(*args, **kwds)
             loss *= torch.distributed.get_world_size()
             return loss, loss_info
