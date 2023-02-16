@@ -340,6 +340,8 @@ class BaseModel(MetaModel, nn.Module):
 
         self.load_state_dict(model_state_dict, strict=load_ckpt_strict)
         if self.training:
+            if 'epoch' in checkpoint:
+                self.epoch = checkpoint['epoch']
             if not self.engine_cfg["optimizer_reset"] and 'optimizer' in checkpoint:
                 self.optimizer.load_state_dict(checkpoint['optimizer'])
             else:
