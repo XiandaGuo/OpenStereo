@@ -7,6 +7,7 @@ from .lacgwc import LacGwcNet
 from .raftstereo import RAFT_Stereo
 from .acvnet import ACVNet
 from .sttr import STTRNet
+from .psmnet import PSMNet
 
 try:
     from .ganet import GANet
