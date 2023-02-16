@@ -557,6 +557,7 @@ class BaseModel(MetaModel, nn.Module):
             self.epoch += 1
             self.train_loader.sampler.set_epoch(self.epoch)  # for distributed training shuffle
             self.msg_mgr.log_info(f"Epoch {self.epoch} starts.")
+            torch.cuda.empty_cache()
             for inputs in self.train_loader:
                 ipts = self.inputs_pretreament(inputs)
                 with autocast(enabled=self.engine_cfg['enable_float16']):
@@ -583,6 +584,7 @@ class BaseModel(MetaModel, nn.Module):
                         self.msg_mgr.log_info("Running test...")
                         self.eval()
                         result_dict = self.run_val()
+                        torch.cuda.empty_cache()
                         self.msg_mgr.log_info(result_dict)
                         self.msg_mgr.write_to_tensorboard(result_dict)
                         self.msg_mgr.reset_time()
