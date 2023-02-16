@@ -70,8 +70,7 @@ class FasterSoftArgmin(nn.Module):
 
         disp_map = self.disp_regression(prob_volume)
         # [B, 1, 1, W, H] -> [B, 1, W, H]
-        disp_map = disp_map.squeeze(1)
-
+        disp_map = disp_map.squeeze(1).squeeze(1)
         return disp_map
 
     def __repr__(self):
@@ -92,7 +91,7 @@ class FasterSoftArgmin(nn.Module):
 class PSMDispProcessor(nn.Module):
     def __init__(self, max_disp=192):
         super().__init__()
-        self.disp_processor = FasterSoftArgmin(max_disp, 0, 1, 1.0, True)
+        self.disp_processor = FasterSoftArgmin(max_disp, 0, 1, 1.0, False)
 
     def forward(self, inputs):
         cost1 = inputs['cost1']
@@ -104,10 +103,6 @@ class PSMDispProcessor(nn.Module):
         disp1 = self.disp_processor(cost1)
         disp2 = self.disp_processor(cost2)
         disp3 = self.disp_processor(cost3)
-        disp1 = disp1.squeeze(1)
-        disp2 = disp2.squeeze(1)
-        disp3 = disp3.squeeze(1)
-
         if self.training:
             disp_gt = inputs['disp_gt']
             output = {
