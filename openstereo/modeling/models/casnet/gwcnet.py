@@ -1,11 +1,7 @@
-from __future__ import print_function
-import torch
-import torch.nn as nn
 import torch.utils.data
-from torch.autograd import Variable
-import torch.nn.functional as F
 import math
-from models.submodule import *
+from .submodule import *
+
 
 class hourglass(nn.Module):
     def __init__(self, in_channels):
@@ -46,6 +42,7 @@ class hourglass(nn.Module):
 
         return conv6
 
+
 class feature_extraction(nn.Module):
     def __init__(self, arch_mode="nospp", num_stage=None, concat_feature_channel=12):
         super(feature_extraction, self).__init__()
@@ -54,21 +51,20 @@ class feature_extraction(nn.Module):
         self.num_stage = num_stage
         self.inplanes = 32
         self.concat_feature_channel = concat_feature_channel
-        #strid 1
+        # strid 1
         self.firstconv_a = nn.Sequential(convbn(3, 32, 3, 1, 1, 1),
-                                       nn.ReLU(inplace=True),
-                                       convbn(32, 32, 3, 1, 1, 1),
-                                       nn.ReLU(inplace=True))
-        #strid 2
+                                         nn.ReLU(inplace=True),
+                                         convbn(32, 32, 3, 1, 1, 1),
+                                         nn.ReLU(inplace=True))
+        # strid 2
         self.firstconv_b = nn.Sequential(convbn(32, 32, 3, 2, 1, 1),
-                                       nn.ReLU(inplace=True))
+                                         nn.ReLU(inplace=True))
         self.layer1 = self._make_layer(BasicBlock, 32, 3, 1, 1, 1)
 
-        #strid 4
+        # strid 4
         self.layer2 = self._make_layer(BasicBlock, 64, 16, 2, 1, 1)
         self.layer3 = self._make_layer(BasicBlock, 128, 3, 1, 1, 1)
         self.layer4 = self._make_layer(BasicBlock, 128, 3, 1, 1, 2)
-
 
         self.out1_cat = nn.Sequential(convbn(320, 128, 3, 1, 1, 1),
                                       nn.ReLU(inplace=True),
@@ -87,23 +83,24 @@ class feature_extraction(nn.Module):
                 self.inner2 = nn.Conv2d(32, final_chs, 1, bias=True)
 
                 self.out2 = nn.Conv2d(final_chs, 160, 3, padding=1, bias=False)
-                self.out2_cat = nn.Conv2d(160, self.concat_feature_channel//2, kernel_size=1, padding=0, stride=1, bias=False)
+                self.out2_cat = nn.Conv2d(160, self.concat_feature_channel // 2, kernel_size=1, padding=0, stride=1,
+                                          bias=False)
 
                 self.out3 = nn.Conv2d(final_chs, 80, 3, padding=1, bias=False)
-                self.out3_cat = nn.Conv2d(80, self.concat_feature_channel//4, kernel_size=1, padding=0, stride=1, bias=False)
+                self.out3_cat = nn.Conv2d(80, self.concat_feature_channel // 4, kernel_size=1, padding=0, stride=1,
+                                          bias=False)
 
-                self.out_channels.append((160, self.concat_feature_channel//2))
-                self.out_channels.append((80, self.concat_feature_channel//4))
+                self.out_channels.append((160, self.concat_feature_channel // 2))
+                self.out_channels.append((80, self.concat_feature_channel // 4))
 
             elif num_stage == 2:
                 self.inner1 = nn.Conv2d(32, final_chs, 1, bias=True)
 
                 self.out2 = nn.Conv2d(final_chs, 160, 3, padding=1, bias=False)
-                self.out2_cat = nn.Conv2d(160, self.concat_feature_channel//2, kernel_size=1, padding=0, stride=1, bias=False)
+                self.out2_cat = nn.Conv2d(160, self.concat_feature_channel // 2, kernel_size=1, padding=0, stride=1,
+                                          bias=False)
 
-                self.out_channels.append((160, self.concat_feature_channel//2))
-
-
+                self.out_channels.append((160, self.concat_feature_channel // 2))
 
     def _make_layer(self, block, planes, blocks, stride, pad, dilation):
         downsample = None
@@ -122,12 +119,12 @@ class feature_extraction(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        output_s1   = self.firstconv_a(x)
-        output      = self.firstconv_b(output_s1)
-        output_s2   = self.layer1(output)
-        l2          = self.layer2(output_s2)
-        l3          = self.layer3(l2)
-        l4          = self.layer4(l3)
+        output_s1 = self.firstconv_a(x)
+        output = self.firstconv_b(output_s1)
+        output_s2 = self.layer1(output)
+        l2 = self.layer2(output_s2)
+        l3 = self.layer3(l2)
+        l4 = self.layer4(l3)
 
         output_msfeat = {}
 
@@ -154,9 +151,10 @@ class feature_extraction(nn.Module):
                 intra_feat = F.interpolate(intra_feat, scale_factor=2, mode="nearest") + self.inner1(output_s2)
                 out = self.out2(intra_feat)
                 out_cat = self.out2_cat(out)
-                output_msfeat["stage2"] =  {"gwc_feature": out, "concat_feature": out_cat}
+                output_msfeat["stage2"] = {"gwc_feature": out, "concat_feature": out_cat}
 
         return output_msfeat
+
 
 class CostAggregation(nn.Module):
     def __init__(self, in_channels, base_channels=32):
@@ -278,19 +276,18 @@ class GetCostVolume(nn.Module):
 
         coords_x = cur_disp_coords_x / ((width - 1.0) / 2.0) - 1.0  # trans to -1 - 1
         coords_y = cur_disp_coords_y / ((height - 1.0) / 2.0) - 1.0
-        grid = torch.stack([coords_x, coords_y], dim=4) #(B, D, H, W, 2)
+        grid = torch.stack([coords_x, coords_y], dim=4)  # (B, D, H, W, 2)
 
-        # grid_sample and affine_grid behavior has changed to align_corners=False since 1.3.0.
         y_warped = F.grid_sample(y, grid.view(bs, ndisp * height, width, 2), mode='bilinear',
-                               padding_mode='zeros', align_corners=True).view(bs, channels, ndisp, height, width)  #(B, C, D, H, W)
-
+                                 padding_mode='zeros', align_corners=True).view(bs, channels, ndisp, height,
+                                                                                width)  # (B, C, D, H, W)
 
         # a littel difference, no zeros filling
-        x_warped = x.unsqueeze(2).repeat(1, 1, ndisp, 1, 1) #(B, C, D, H, W)
-        x_warped = x_warped.transpose(0, 1) #(C, B, D, H, W)
-        #x1 = x2 + d >= d
+        x_warped = x.unsqueeze(2).repeat(1, 1, ndisp, 1, 1)  # (B, C, D, H, W)
+        x_warped = x_warped.transpose(0, 1)  # (C, B, D, H, W)
+        # x1 = x2 + d >= d
         x_warped[:, mw < disp_range_samples] = 0
-        x_warped = x_warped.transpose(0, 1) #(B, C, D, H, W)
+        x_warped = x_warped.transpose(0, 1)  # (B, C, D, H, W)
 
         return x_warped, y_warped
 
@@ -310,11 +307,12 @@ class GetCostVolume(nn.Module):
         assert (x.is_contiguous() == True)
         bs, channels, height, width = x.size()
 
-        x_warped, y_warped = self.get_warped_feats(x, y, disp_range_samples, ndisp) #(B, C, D, H, W)
+        x_warped, y_warped = self.get_warped_feats(x, y, disp_range_samples, ndisp)  # (B, C, D, H, W)
 
         assert channels % num_groups == 0
         channels_per_group = channels // num_groups
-        gwc_cost = (x_warped * y_warped).view([bs, num_groups, channels_per_group, ndisp, height, width]).mean(dim=2)  #(B, G, D, H, W)
+        gwc_cost = (x_warped * y_warped).view([bs, num_groups, channels_per_group, ndisp, height, width]).mean(
+            dim=2)  # (B, G, D, H, W)
 
         return gwc_cost
 
@@ -326,7 +324,7 @@ class GetCostVolume(nn.Module):
         concat_volume = self.build_concat_volume(features_left["concat_feature"], features_right["concat_feature"],
                                                  disp_range_samples, ndisp)
 
-        volume = torch.cat((gwc_volume, concat_volume), 1)   #(B, C+G, D, H, W)
+        volume = torch.cat((gwc_volume, concat_volume), 1)  # (B, C+G, D, H, W)
 
         return volume
 
@@ -349,7 +347,7 @@ class GwcNet(nn.Module):
         assert self.grad_method in ["detach", "undetach"]
 
         self.stage_infos = {
-            "stage1":{
+            "stage1": {
                 "scale": 4.0,
             },
             "stage2": {
@@ -360,8 +358,9 @@ class GwcNet(nn.Module):
             }
         }
 
-        print("***********ndisps:{}  disp_interval_pixel:{} grad:{} ns:{} ns_size:{} cr_base_chs:{} ************".format(
-            self.ndisps, self.disp_interval_pixel, self.grad_method, self.using_ns, self.ns_size, self.cr_base_chs))
+        print(
+            "***********ndisps:{}  disp_interval_pixel:{} grad:{} ns:{} ns_size:{} cr_base_chs:{} ************".format(
+                self.ndisps, self.disp_interval_pixel, self.grad_method, self.using_ns, self.ns_size, self.cr_base_chs))
 
         self.feature_extraction = feature_extraction(num_stage=self.num_stage, arch_mode="nospp",
                                                      concat_feature_channel=self.concat_channels)
@@ -389,7 +388,6 @@ class GwcNet(nn.Module):
                 m.bias.data.zero_()
             elif isinstance(m, nn.Linear):
                 m.bias.data.zero_()
-
 
     def forward(self, left, right):
 
@@ -422,10 +420,12 @@ class GwcNet(nn.Module):
             # matching
             cost = self.get_cv(refimg_fea, targetimg_fea,
                                disp_range_samples=F.interpolate((disp_range_samples / stage_scale).unsqueeze(1),
-                                                                [self.ndisps[stage_idx]//int(stage_scale), left.size()[2]//int(stage_scale), left.size()[3]//int(stage_scale)],
+                                                                [self.ndisps[stage_idx] // int(stage_scale),
+                                                                 left.size()[2] // int(stage_scale),
+                                                                 left.size()[3] // int(stage_scale)],
                                                                 mode='trilinear',
                                                                 align_corners=Align_Corners_Range).squeeze(1),
-                               ndisp=self.ndisps[stage_idx]//int(stage_scale),
+                               ndisp=self.ndisps[stage_idx] // int(stage_scale),
                                num_groups=self.num_groups[stage_idx])
 
             if self.training:
@@ -457,5 +457,3 @@ class GwcNet(nn.Module):
                 outputs["stage{}".format(stage_idx + 1)] = outputs_stage
 
         return outputs
-
-

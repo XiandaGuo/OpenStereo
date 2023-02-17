@@ -1,3 +1,4 @@
+import torch
 from functools import partial
 
 from modeling.base_model import BaseModel
@@ -44,6 +45,15 @@ class CasStereoNet(BaseModel):
             grad_method=self.grad_method,
             cr_base_chs=self.cr_base_chs
         )
+        # self.net = GwcNet(
+        #     maxdisp=self.maxdisp,
+        #     ndisps=self.ndisps,
+        #     disp_interval_pixel=self.disp_interval_pixel,
+        #     using_ns=self.using_ns,
+        #     ns_size=self.ns_size,
+        #     grad_method=self.grad_method,
+        #     cr_base_chs=self.cr_base_chs
+        # )
 
     def get_loss_func(self, loss_cfg):
         """Build the loss."""
@@ -64,14 +74,26 @@ class CasStereoNet(BaseModel):
                         "mask": inputs["mask"]
                     }
                 },
-                "visual_summary": {}
+                "visual_summary": {
+                    "image/train/image_c": torch.cat([ref_img[0], tgt_img[0]], dim=1),
+                    "image/train/disp_c": torch.cat([inputs["disp_gt"][0], res['stage2']["pred"][0]], dim=0)
+                }
             }
         else:
             output = {
                 "inference_disp": {
-                    "disp_est": res[f"stage{(len(self.ndisps) - 1)}"]['pred']
+                    "disp_est": res[f"stage{len(self.ndisps)}"]['pred']
                 },
-                "visual_summary": {}
+                "visual_summary": {
+                    "image/test/image_c": torch.cat([ref_img[0], tgt_img[0]], dim=1),
+                    "image/test/disp_c": res['stage2']["pred"][0]
+                }
             }
+            if 'disp_gt' in inputs:
+                disp_gt = inputs['disp_gt']
+                output['visual_summary'] = {
+                    "image/val/image_c": torch.cat([ref_img[0], tgt_img[0]], dim=1),
+                    "image/val/disp_c": torch.cat([disp_gt[0], res['stage2']["pred"][0]], dim=0)
+                }
 
         return output
