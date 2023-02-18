@@ -289,9 +289,5 @@ cython_debug/
 .idea/
 output/
 
-/datasets/kitti15/testing/
-/datasets/kitti15/training/
-/datasets/kitti12/testing/
-/datasets/kitti12/training/
-/datasets/sceneflow/frames_finalpass/
 /data/
+/weights/
