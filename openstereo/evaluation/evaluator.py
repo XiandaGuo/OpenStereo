@@ -1,6 +1,6 @@
 from functools import partial
 
-from evaluation.metric import threshold_metric, epe_metric, d1_metric
+from evaluation.metric import *
 
 
 def evaluate_kitti_2012(data, conf=None):
@@ -71,19 +71,30 @@ def evaluate_openstereo(data, conf=None):
     return metric
 
 
+METRICS_NP = {
+    'epe': epe_metric_np,
+    'd1_all': d1_metric_np,
+    'thres_1': partial(threshold_metric_np, threshold=1),
+    'thres_2': partial(threshold_metric_np, threshold=2),
+    'thres_3': partial(threshold_metric_np, threshold=3),
+    # 'kitti_2012': evaluate_kitti_2012,
+    # 'kitti_2015': evaluate_kitti_2015,
+    # 'sceneflow': evaluate_sceneflow,
+}
+
 METRICS = {
     'epe': epe_metric,
     'd1_all': d1_metric,
     'thres_1': partial(threshold_metric, threshold=1),
     'thres_2': partial(threshold_metric, threshold=2),
     'thres_3': partial(threshold_metric, threshold=3),
-    'kitti_2012': evaluate_kitti_2012,
-    'kitti_2015': evaluate_kitti_2015,
-    'sceneflow': evaluate_sceneflow,
+    # 'kitti_2012': evaluate_kitti_2012,
+    # 'kitti_2015': evaluate_kitti_2015,
+    # 'sceneflow': evaluate_sceneflow,
 }
 
 
-def OpenStereoEvaluator(data, metric=None):
+def OpenStereoEvaluator(data, metric=None, use_np=False):
     """compute the error metrics for SceneFlow dataset"""
     if metric is None:
         metric = ['epe', 'd1_all']
@@ -95,7 +106,6 @@ def OpenStereoEvaluator(data, metric=None):
         if m not in METRICS:
             raise ValueError("Unknown metric: {}".format(m))
         else:
-            metric_func = METRICS[m]
+            metric_func = METRICS[m] if not use_np else METRICS_NP[m]
             res[f"scalar/val/{m}"] = metric_func(disp_est, disp_gt, mask)
-    # print(res)
     return res

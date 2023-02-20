@@ -118,32 +118,15 @@ class GwcDispProcessor(nn.Module):
 
             output = {
                 "training_disp": {
-                    "pred0": {
-                        "disp_ests": pred0,
+                    "disp": {
+                        "disp_ests": [pred0,pred1,pred2,pred3],
                         "disp_gt": inputs['disp_gt'],
                         "mask": inputs['mask']
                     },
-                    "pred1": {
-                        "disp_ests": pred1,
-                        "disp_gt": inputs['disp_gt'],
-                        "mask": inputs['mask']
-                    },
-                    "pred2": {
-                        "disp_ests": pred2,
-                        "disp_gt": inputs['disp_gt'],
-                        "mask": inputs['mask']
-                    },
-                    "pred3": {
-                        "disp_ests": pred3,
-                        "disp_gt": inputs['disp_gt'],
-                        "mask": inputs['mask']
-                    },
-                },
-                "inference_disp": {
-                    None
                 },
                 "visual_summary": {
-
+                    'image/train/image_c': torch.cat([inputs['ref_img'][0], inputs['tgt_img'][0]], dim=1),
+                    'image/train/disp_c': torch.cat([inputs['disp_gt'][0], pred3[0]], dim=0),
                 }
             }
             return output
@@ -154,14 +137,21 @@ class GwcDispProcessor(nn.Module):
             cost3 = torch.squeeze(cost3, 1)
             pred3 = F.softmax(cost3, dim=1)
             pred3 = disparity_regression(pred3, self.maxdisp)
+
             output = {
                 "inference_disp": {
                     "disp_est": pred3,
                 },
                 "visual_summary": {
-
+                    'image/test/image_c': torch.cat([inputs['ref_img'][0], inputs['tgt_img'][0]], dim=1),
+                    'image/test/disp_c': pred3[0]
                 }
             }
+            if 'disp_gt' in inputs:
+                output['visual_summary']={
+                    'image/val/image_c': torch.cat([inputs['ref_img'][0], inputs['tgt_img'][0]], dim=1),
+                    'image/val/disp_c': torch.cat([inputs['disp_gt'][0], pred3[0]], dim=0),
+                }
             return output
 
     def input_output(self):
