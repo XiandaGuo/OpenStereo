@@ -561,6 +561,8 @@ class BaseModel(MetaModel, nn.Module):
             torch.cuda.empty_cache()
             for inputs in self.train_loader:
                 ipts = self.inputs_pretreament(inputs)
+                if ipts['disp_gt'].sum() <= 1:
+                    continue
                 with autocast(enabled=self.engine_cfg['enable_float16']):
                     output = self.forward(ipts)
                     training_disp, visual_summary = output['training_disp'], output['visual_summary']

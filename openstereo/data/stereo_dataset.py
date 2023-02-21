@@ -36,7 +36,7 @@ class StereoDataset(Dataset):
         size, mean, std = config['size'], config['mean'], config['std']
         if self.is_train:
             transform = ST.Compose([
-                ST.RandomHorizontalFlip(),
+                # ST.RandomHorizontalFlip(),
                 ST.RandomCrop(size),
                 # ST.GetValidDispNOcc(),
                 ST.GetValidDisp(192),
@@ -59,7 +59,6 @@ class StereoDataset(Dataset):
     def __getitem__(self, index):
         sample = self.dataset[index]
         sample = self.transform(sample)
-        print(sample['left'].shape, sample['disp'].shape)
         return sample
 
     def __len__(self):
