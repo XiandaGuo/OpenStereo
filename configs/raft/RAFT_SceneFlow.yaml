@@ -3,7 +3,7 @@ data_cfg:
   root: data/SceneFlow
   train_list: datasets/sceneflow/train_val.txt
   val_list: datasets/sceneflow/val.txt
-  test_list: datasets/sceneflow/test.txt
+  test_list: datasets/sceneflow/sceneflow_test.txt
   num_workers: 8
 
   transform:

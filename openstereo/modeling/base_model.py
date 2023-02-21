@@ -26,7 +26,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
 
-from data.dataset import DataSet
+from data.stereo_dataset import StereoDataset
 from evaluation import evaluator as eval_functions
 from utils import NoOp
 from utils import Odict, mkdir, ddp_all_gather
@@ -267,7 +267,7 @@ class BaseModel(MetaModel, nn.Module):
 
     def get_loader(self, data_cfg, scope):
         is_train = scope == 'train'
-        dataset = DataSet(data_cfg, scope)
+        dataset = StereoDataset(data_cfg, scope)
         sampler_cfg = self.cfgs['trainer_cfg']['sampler'] if is_train else self.cfgs['evaluator_cfg']['sampler']
         sampler = DistributedSampler(
             dataset,
@@ -386,8 +386,8 @@ class BaseModel(MetaModel, nn.Module):
         """
         # asure the disp_gt has the shape of [B, H, W]
         disp_gt = inputs['disp']
-        if len(disp_gt.shape) == 4:
-            disp_gt = disp_gt.squeeze(1)
+        # if len(disp_gt.shape) == 4:
+        #     disp_gt = disp_gt.squeeze(1)
 
         # compute the mask of valid disp_gt
         max_disp = self.cfgs['model_cfg']['base_config']['max_disp']
