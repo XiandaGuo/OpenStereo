@@ -17,9 +17,9 @@ from functools import partial
 
 import numpy as np
 import torch
+import torch.distributed as dist
 import torch.nn as nn
 import torch.optim as optim
-import torch.distributed as dist
 from torch.cuda.amp import GradScaler
 from torch.cuda.amp import autocast
 from torch.utils.data import DataLoader
@@ -493,7 +493,7 @@ class BaseModel(MetaModel, nn.Module):
 
         total_size = len(dataloader) * dataloader.batch_sampler.batch_size * self.world_size
         rest_size = total_size
-        batch_size = dataloader.batch_sampler.batch_size
+        batch_size = dataloader.batch_sampler.batch_size * self.world_size
         show_progress_bar = self.cfgs['evaluator_cfg']['show_progress_bar']
         if show_progress_bar and self.rank == 0:
             pbar = tqdm(total=total_size, desc='Evaluating')
@@ -504,40 +504,39 @@ class BaseModel(MetaModel, nn.Module):
             for inputs in dataloader:
                 ipts = self.inputs_pretreament(inputs)
                 with autocast(enabled=self.engine_cfg['enable_float16']):
-                    # print(ipts['ref_img'].device)
                     output = self.forward(ipts)
-                    inference_disp, visual_summary = output['inference_disp'], output['visual_summary']
-                    inference_disp.update(ipts)
-                    self.msg_mgr.write_to_tensorboard(visual_summary)
-                    for k, v in inference_disp.items():
-                        try:
-                            inference_disp[k] = ts2np(v)
-                        except:
-                            print(k, "is not tensor")
-                    info = eval_func(inference_disp)
-                    infoList.append(info)
+                inference_disp, visual_summary = output['inference_disp'], output['visual_summary']
+                inference_disp.update(ipts)
+                self.msg_mgr.write_to_tensorboard(visual_summary)
+                info = eval_func(inference_disp)
+                for k, v in info.items():
+                    v = v.unsqueeze(0)
+                    info[k] = ddp_all_gather(v, requires_grad=False)
+                    info[k] = torch.mean(info[k]).item()
+                infoList.append(info)
                 rest_size -= batch_size
                 update_size = batch_size if rest_size >= 0 else total_size % batch_size
                 pbar.update(update_size)
         pbar.close()
 
-        world_size = dist.get_world_size()
+        # world_size = dist.get_world_size()
 
         # gather all the info from different processes
-        output = [None for _ in range(world_size)]
-        torch.distributed.all_gather_object(output, infoList)
+        # output = [None for _ in range(world_size)]
+        # torch.distributed.all_gather_object(output, infoList)
 
         # calculate the mean of the matric
         if self.rank == 0:
-            all_info = []
-            for rank in range(world_size):
-                all_info.extend(output[rank])
+            all_info = infoList
+            # for rank in range(world_size):
+            #     all_info.extend(output[rank])
             res_dict_keys = all_info[0].keys()
             res_dict = {k: [] for k in res_dict_keys}
             for info in all_info:
                 for k, v in info.items():
                     res_dict[k].append(v)
             for k, v in res_dict.items():
+                # print(k,len(v))
                 res_dict[k] = np.nanmean(v)
             visual_summary.update(res_dict)
             return res_dict
