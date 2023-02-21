@@ -69,7 +69,7 @@ class FasterSoftArgmin(nn.Module):
         prob_volume = prob_volume.unsqueeze(1)
 
         disp_map = self.disp_regression(prob_volume)
-        # [B, 1, 1, W, H] -> [B, 1, W, H]
+        # [B, 1, 1, W, H] -> [B, W, H]
         disp_map = disp_map.squeeze(1).squeeze(1)
         return disp_map
 
@@ -91,7 +91,18 @@ class FasterSoftArgmin(nn.Module):
 class PSMDispProcessor(nn.Module):
     def __init__(self, max_disp=192):
         super().__init__()
-        self.disp_processor = FasterSoftArgmin(max_disp, 0, 1, 1.0, False)
+        self.disp_processor = FasterSoftArgmin(
+            # the maximum disparity of disparity search range
+            max_disp=max_disp,
+            # the start disparity of disparity search range
+            start_disp=0,
+            # the step between near disparity sample
+            dilation=1,
+            # the temperature coefficient of soft argmin
+            alpha=1.0,
+            # whether normalize the estimated cost volume
+            normalize=True
+        )
 
     def forward(self, inputs):
         cost1 = inputs['cost1']

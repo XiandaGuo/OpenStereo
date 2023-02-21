@@ -7,7 +7,7 @@ from .sttr import STTR
 from .utilities import Map
 from .utilities.misc import NestedTensor
 from .loss import build_criterion
-from data.dataset import DataSet
+# from data.dataset import DataSet
 from evaluation import evaluator as eval_functions
 from utils import NoOp
 from utils import Odict, mkdir, ddp_all_gather

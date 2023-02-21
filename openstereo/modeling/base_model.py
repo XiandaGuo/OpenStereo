@@ -156,7 +156,7 @@ class BaseModel(MetaModel, nn.Module):
                                   cfgs['model_cfg']['model'], self.engine_cfg['save_name'])
 
         self.build_network(cfgs['model_cfg'])
-        self.init_parameters()
+        # self.init_parameters()
 
         self.msg_mgr.log_info(cfgs['data_cfg'])
 
