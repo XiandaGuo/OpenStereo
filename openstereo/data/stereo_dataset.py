@@ -46,7 +46,7 @@ class StereoDataset(Dataset):
             ])
         else:
             transform = ST.Compose([
-                ST.CenterCrop(size),
+                ST.StereoPad(size),
                 # ST.GetValidDispNOcc(),
                 ST.GetValidDisp(192),
                 ST.TransposeImage(),
