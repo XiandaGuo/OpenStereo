@@ -1,20 +1,34 @@
 data_cfg:
   name: SceneFlow
   root: data/SceneFlow
-  train_list: datasets/sceneflow/debug_train.txt
-  val_list: datasets/sceneflow/debug_val.txt
-  test_list: datasets/sceneflow/test.txt
+  train_list: datasets/sceneflow/sceneflow_finalpass_train.txt
+  val_list: datasets/sceneflow/sceneflow_finalpass_test.txt
+  test_list: datasets/sceneflow/sceneflow_finalpass_test.txt
   num_workers: 16
 
   transform:
     train:
-      size: [ 256, 512 ]
-      mean: [ 0.485, 0.456, 0.406 ]
-      std: [ 0.229, 0.224, 0.225 ]
+      - type: RandomCrop
+        size: [ 256, 512 ]
+      #- type: RandomHorizontalFlip
+      #  prob: 0.5
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
     test:
-      size: [ 544, 960 ]
-      mean: [ 0.485, 0.456, 0.406 ]
-      std: [ 0.229, 0.224, 0.225 ]
+      - type: StereoPad
+        size: [ 544, 960 ]
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
 
 
 model_cfg:
@@ -24,8 +38,8 @@ model_cfg:
 
 
 optimizer_cfg:
-  solver: Adam
-  lr: 0.001
+  solver: AdamW
+  lr: 0.0001
   betas: [ 0.9, 0.999 ]
 
 
@@ -41,7 +55,7 @@ scheduler_cfg:
 
 trainer_cfg:
   save_name: LacGwcNet_SceneFlow
-  restore_hint: 0
+  restore_hint: weights/LacGwcNet_SceneFlow-00100.pt
   restore_ckpt_strict: true
   log_iter: 1
   with_test: true
@@ -50,18 +64,19 @@ trainer_cfg:
   save_iter: 200
   total_iter: 150000
   total_epoch: 20000
-  optimizer_reset: false
-  scheduler_reset: false
+  optimizer_reset: true
+  scheduler_reset: true
   sampler:
     # type: BasicStereoSampler
     batch_shuffle: true
-    batch_size: 4
+    batch_size: 1
 
 
 evaluator_cfg:
   eval_func: OpenStereoEvaluator
   save_name: LacGwcNet_SceneFlow
-  restore_hint: 0
+  restore_hint: 21800
+  show_progress_bar: true
   metric:
     - d1_all
     - epe

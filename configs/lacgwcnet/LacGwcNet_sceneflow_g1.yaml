@@ -4,17 +4,31 @@ data_cfg:
   train_list: datasets/sceneflow/sceneflow_finalpass_train.txt
   val_list: datasets/sceneflow/sceneflow_finalpass_test.txt
   test_list: datasets/sceneflow/sceneflow_finalpass_test.txt
-  num_workers: 4
+  num_workers: 16
 
   transform:
     train:
-      size: [ 256, 512 ]
-      mean: [ 0.485, 0.456, 0.406 ]
-      std: [ 0.229, 0.224, 0.225 ]
+      - type: RandomCrop
+        size: [ 256, 512 ]
+      #- type: RandomHorizontalFlip
+      #  prob: 0.5
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
     test:
-      size: [ 512, 960 ]
-      mean: [ 0.485, 0.456, 0.406 ]
-      std: [ 0.229, 0.224, 0.225 ]
+      - type: StereoPad
+        size: [ 544, 960 ]
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]]
 
 
 model_cfg:

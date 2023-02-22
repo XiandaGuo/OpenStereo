@@ -4,17 +4,32 @@ data_cfg:
   train_list: datasets/kitti12/kitti12_train165.txt
   val_list: datasets/kitti12/kitti12_val29.txt
   test_list: datasets/kitti1/kitti12_test.txt
-  num_workers: 16
+  num_workers: 4
+
 
   transform:
     train:
-      size: [ 256, 512 ]
-      mean: [ 0.485, 0.456, 0.406 ]
-      std: [ 0.229, 0.224, 0.225 ]
+      - type: RandomCrop
+        size: [ 256, 512 ]
+      #- type: RandomHorizontalFlip
+      #  prob: 0.5
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
     test:
-      size: [ 384, 1248 ]
-      mean: [ 0.485, 0.456, 0.406 ]
-      std: [ 0.229, 0.224, 0.225 ]
+      - type: StereoPad
+        size: [ 384, 1248 ]
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
 
 
 model_cfg:
@@ -81,7 +96,7 @@ trainer_cfg:
 evaluator_cfg:
   eval_func: OpenStereoEvaluator
   save_name: CFNet_KITTI12
-  restore_hint: 10400
+  restore_hint: 0
   metric:
     - d1_all
     - epe

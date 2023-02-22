@@ -14,15 +14,17 @@ class KittiReader(BaseReader):
     def item_loader(self, item):
         full_paths = [os.path.join(self.root, x) for x in item]
         left_img_path, right_img_path, disp_img_path = full_paths
-        left_img = np.asarray(Image.open(left_img_path), dtype=np.float32).transpose(2, 0, 1)
-        right_img = np.asarray(Image.open(right_img_path), dtype=np.float32).transpose(2, 0, 1)
+        disp_img_right_path = disp_img_path.replace('disp_occ_0', 'disp_occ_1')
+        left_img = np.asarray(Image.open(left_img_path), dtype=np.float32)
+        right_img = np.asarray(Image.open(right_img_path), dtype=np.float32)
         disp_img = np.asarray(Image.open(disp_img_path), dtype=np.float32) / 256.0
-        disp_img = disp_img[np.newaxis, ...]
+        disp_img_right = np.asarray(Image.open(disp_img_right_path), dtype=np.float32) / 256.0
+        # disp_img = disp_img[np.newaxis, ...]
         sample = {
-            'left': torch.from_numpy(left_img),
-            'right': torch.from_numpy(right_img),
-            'disp': torch.from_numpy(disp_img),
-            'original_size': left_img.shape[-2:],
+            'left': left_img,
+            'right': right_img,
+            'disp': disp_img,
+            'disp_right': disp_img_right,
         }
         return sample
 

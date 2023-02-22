@@ -22,11 +22,12 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.cuda.amp import GradScaler
 from torch.cuda.amp import autocast
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, BatchSampler
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
 
-from data.stereo_dataset import StereoDataset
+from data.stereo_dataset_batch import StereoBatchDataset
+# from data.stereo_dataset import StereoDataset
 from evaluation import evaluator as eval_functions
 from utils import NoOp
 from utils import Odict, mkdir, ddp_all_gather
@@ -267,30 +268,26 @@ class BaseModel(MetaModel, nn.Module):
 
     def get_loader(self, data_cfg, scope):
         is_train = scope == 'train'
-        dataset = StereoDataset(data_cfg, scope)
+        dataset = StereoBatchDataset(data_cfg, scope)
         sampler_cfg = self.cfgs['trainer_cfg']['sampler'] if is_train else self.cfgs['evaluator_cfg']['sampler']
+
         sampler = DistributedSampler(
             dataset,
             shuffle=sampler_cfg['batch_shuffle'] if is_train else False,
+        )
+
+        sampler = BatchSampler(
+            sampler,
+            sampler_cfg['batch_size'],
             drop_last=False,
         )
-        # Sampler = get_attr_from([Samplers], sampler_cfg['type'])
-        # vaild_args = get_valid_args(Sampler, sampler_cfg, free_keys=[
-        #     'sample_type', 'type'])
-        # print(vaild_args)
-        # sampler = Sampler(dataset)
-        # print(sampler)
-        # collate_fn = CollateFn(dataset.label_set, sampler_cfg)
 
         loader = DataLoader(
             dataset=dataset,
-            batch_size=sampler_cfg['batch_size'],
+            # batch_size=sampler_cfg['batch_size'],
             sampler=sampler,
             num_workers=data_cfg['num_workers'],
-            drop_last=False,
-            # pin_memory=True,
-            # batch_sampler=sampler,
-            # collate_fn=collate_fn,
+            pin_memory=True,
         )
         return loader
 
@@ -386,19 +383,30 @@ class BaseModel(MetaModel, nn.Module):
         """
         # asure the disp_gt has the shape of [B, H, W]
         disp_gt = inputs['disp']
-        # if len(disp_gt.shape) == 4:
-        #     disp_gt = disp_gt.squeeze(1)
 
         # compute the mask of valid disp_gt
         max_disp = self.cfgs['model_cfg']['base_config']['max_disp']
         mask = (disp_gt < max_disp) & (disp_gt > 0)
 
-        return {
-            'ref_img': inputs['left'].to(self.rank),
-            'tgt_img': inputs['right'].to(self.rank),
-            'disp_gt': disp_gt.to(self.rank),
-            'mask': mask.to(self.rank),
+        inputs = {
+            'ref_img': inputs['left'],
+            'tgt_img': inputs['right'],
+            'disp_gt': disp_gt,
+            'mask': mask,
         }
+
+        # check if batch sampler is used
+        if len(inputs['ref_img'].shape) == 5:
+            for k, v in inputs.items():
+                if torch.is_tensor(v):
+                    inputs[k] = v.squeeze(0)
+
+        for k, v in inputs.items():
+            # check if the input is a tensor and move it to the device
+            if torch.is_tensor(v):
+                inputs[k] = v.to(self.device)
+
+        return inputs
 
     def train_step(self, loss_sum) -> bool:
         """
@@ -556,7 +564,7 @@ class BaseModel(MetaModel, nn.Module):
         self.train()
         while True:
             self.epoch += 1
-            self.train_loader.sampler.set_epoch(self.epoch)  # for distributed training shuffle
+            # self.train_loader.sampler.set_epoch(self.epoch)  # for distributed training shuffle
             self.msg_mgr.log_info(f"Epoch {self.epoch} starts.")
             torch.cuda.empty_cache()
             for inputs in self.train_loader:

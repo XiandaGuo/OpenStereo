@@ -33,19 +33,14 @@ class ToTensor(object):
 
 
 class TestCrop(object):
-    """Crops the given image at central location to have a region of
-    the given size. size can be a tuple (target_height, target_width)
-    or an integer, in which case the target will be of a square shape (size, size)
-    """
-
     def __init__(self, size):
         self.size = size
 
     def __call__(self, sample):
         h, w = sample['left'].shape[:2]
         crop_h, crop_w = self.size
-        if w == crop_w and h == crop_h:
-            return sample
+        crop_h = min(h, crop_h)
+        crop_w = min(w, crop_w)
 
         left = sample['left'].astype(np.uint8)
         right = sample['right'].astype(np.uint8)
@@ -57,15 +52,10 @@ class TestCrop(object):
         for k in sample.keys():
             if k in ['disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
                 sample[k] = sample[k][h - crop_h:h, w - crop_w: w]
-            return sample
+        return sample
 
 
 class CenterCrop(object):
-    """Crops the given image at central location to have a region of
-    the given size. size can be a tuple (target_height, target_width)
-    or an integer, in which case the target will be of a square shape (size, size)
-    """
-
     def __init__(self, size):
         self.size = size
 
@@ -85,45 +75,6 @@ class CenterCrop(object):
             elif k in ['disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
                 sample[k] = sample[k][y1: y1 + th, x1: x1 + tw]
         return sample
-
-
-# class RandomCrop(object):
-#     """Crops the given image at a random location to have a region of
-#     the given size. size can be a tuple (target_height, target_width)
-#     or an integer, in which case the target will be of a square shape (size, size)
-#     """
-#
-#     def __init__(self, size):
-#         if isinstance(size, numbers.Number):
-#             self.size = (int(size), int(size))
-#         else:
-#             self.size = size
-#
-#     def __call__(self, sample):
-#
-#         h, w = sample['left'].shape[-2:]
-#         th, tw = self.size
-#         if w == tw and h == th:
-#             return sample
-#
-#         x1 = random.randint(0, w - tw)
-#         y1 = random.randint(0, h - th)
-#
-#         for k in sample.keys():
-#             if sample[k] is not None and isinstance(sample[k], (np.ndarray, torch.Tensor)):
-#                 sample[k] = sample[k][:, y1: y1 + th, x1: x1 + tw]
-#         return sample
-
-
-# class Normalize(object):
-#     def __init__(self, mean, std):
-#         self.mean = mean
-#         self.std = std
-#
-#     def __call__(self, sample):
-#         sample['left'] = TF.normalize(sample['left'] / 255.0, mean=self.mean, std=self.std)
-#         sample['right'] = TF.normalize(sample['right'] / 255.0, mean=self.mean, std=self.std)
-#         return sample
 
 
 class StereoPad(object):

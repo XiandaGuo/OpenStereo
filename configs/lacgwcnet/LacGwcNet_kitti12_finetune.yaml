@@ -8,13 +8,27 @@ data_cfg:
 
   transform:
     train:
-      size: [ 256, 512 ]
-      mean: [ 0.485, 0.456, 0.406 ]
-      std: [ 0.229, 0.224, 0.225 ]
+      - type: RandomCrop
+        size: [ 256, 512 ]
+      #- type: RandomHorizontalFlip
+      #  prob: 0.5
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
     test:
-      size: [ 368, 1232 ]
-      mean: [ 0.485, 0.456, 0.406 ]
-      std: [ 0.229, 0.224, 0.225 ]
+      - type: TestCrop
+        size: [ 368, 1200 ]
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
 
 
 model_cfg:
