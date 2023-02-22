@@ -1,9 +1,9 @@
 data_cfg:
   name: SceneFlow
   root: data/SceneFlow
-  train_list: datasets/sceneflow/sceneflow_finalpass_train.txt
-  val_list: datasets/sceneflow/sceneflow_finalpass_test.txt
-  test_list: datasets/sceneflow/sceneflow_finalpass_test.txt
+  train_list: datasets/sceneflow/sceneflow_cleanpass_train.txt
+  val_list: datasets/sceneflow/sceneflow_cleanpass_test_select.txt
+  test_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
   num_workers: 4
 
   batch_uniform: false
@@ -60,7 +60,7 @@ model_cfg:
 
 optimizer_cfg:
   solver: RMSprop
-  lr: 0.00001
+  lr: 0.001
 
 loss_cfg:
   - log_prefix: disp
@@ -71,15 +71,19 @@ loss_cfg:
 
 scheduler_cfg:
   scheduler: MultiStepLR
-  gamma: 1
+  gamma: 0.1
   milestones: # Learning Rate Reduction at each milestones
     - 25000
+
+  warmup:
+    type: LinearWarmup
+    warmup_period: 2000
 
 trainer_cfg:
   save_name: PSMNet_SceneFlow
   restore_hint: 0
   restore_ckpt_strict: true
-  log_iter: 10
+  log_iter: 1
   with_test: true
   enable_float16: true
   save_iter: 2000
@@ -88,15 +92,18 @@ trainer_cfg:
   total_epoch: 20
   optimizer_reset: true
   scheduler_reset: false
+  clip_grad_norm:
+    max_norm: 35
+    norm_type: 2
   sampler:
     batch_shuffle: true
-    batch_size: 2
+    batch_size: 10
 
 
 evaluator_cfg:
   save_name: PSMNet_SceneFlow
   eval_func: OpenStereoEvaluator
-  restore_hint: 501
+  restore_hint: 20000
   metric:
     - d1_all
     - epe
@@ -108,4 +115,4 @@ evaluator_cfg:
   show_progress_bar: true
   sampler:
     batch_shuffle: false
-    batch_size: 2
+    batch_size: 4

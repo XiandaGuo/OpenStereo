@@ -33,6 +33,7 @@ from utils import NoOp
 from utils import Odict, mkdir, ddp_all_gather
 from utils import get_msg_mgr
 from utils import get_valid_args, is_list, is_dict, ts2np, get_attr_from
+from utils import warmup as Warmup
 from . import backbone
 from . import cost_processor
 from . import disp_processor
@@ -157,7 +158,7 @@ class BaseModel(MetaModel, nn.Module):
                                   cfgs['model_cfg']['model'], self.engine_cfg['save_name'])
 
         self.build_network(cfgs['model_cfg'])
-        # self.init_parameters()
+        self.init_parameters()
 
         self.msg_mgr.log_info(cfgs['data_cfg'])
 
@@ -179,9 +180,10 @@ class BaseModel(MetaModel, nn.Module):
         self.to(self.device)
 
         if is_train:
-            self.loss_aggregator = self.get_loss_func(cfgs['loss_cfg'])
+            self.loss_aggregator = self.get_loss_func(self.cfgs['loss_cfg'])
             self.optimizer = self.get_optimizer(self.cfgs['optimizer_cfg'])
-            self.scheduler = self.get_scheduler(cfgs['scheduler_cfg'])
+            self.scheduler = self.get_scheduler(self.cfgs['scheduler_cfg'])
+            self.warmup = self.get_warmup(self.cfgs['scheduler_cfg'])
 
         self.train(is_train)
         restore_hint = self.engine_cfg['restore_hint']
@@ -284,7 +286,6 @@ class BaseModel(MetaModel, nn.Module):
 
         loader = DataLoader(
             dataset=dataset,
-            # batch_size=sampler_cfg['batch_size'],
             sampler=sampler,
             num_workers=data_cfg['num_workers'],
             pin_memory=True,
@@ -301,9 +302,17 @@ class BaseModel(MetaModel, nn.Module):
     def get_scheduler(self, scheduler_cfg):
         self.msg_mgr.log_info(scheduler_cfg)
         Scheduler = get_attr_from([optim.lr_scheduler], scheduler_cfg['scheduler'])
-        valid_arg = get_valid_args(Scheduler, scheduler_cfg, ['scheduler'])
+        valid_arg = get_valid_args(Scheduler, scheduler_cfg, ['scheduler', 'warmup'])
         scheduler = Scheduler(self.optimizer, **valid_arg)
         return scheduler
+
+    def get_warmup(self, scheduler_cfg):
+        if 'warmup' in scheduler_cfg:
+            warmup_cfg = scheduler_cfg['warmup']
+            warmup = get_attr_from([Warmup], scheduler_cfg['warmup']['type'])
+            valid_arg = get_valid_args(warmup, warmup_cfg, ['type'])
+            return warmup(self.optimizer, **valid_arg)
+        return NoOp()
 
     def save_ckpt(self, iteration=None, epoch=None):
         if dist.get_rank() == 0:
@@ -439,10 +448,15 @@ class BaseModel(MetaModel, nn.Module):
                 return False
         else:
             loss_sum.backward()
+            if "clip_grad_norm" in self.engine_cfg:
+                max_norm = self.engine_cfg['clip_grad_norm']['max_norm']
+                norm_type = self.engine_cfg['clip_grad_norm_type']['norm_type']
+                torch.nn.utils.clip_grad_norm(self.parameters(), max_norm=max_norm, norm_type=norm_type)
             self.optimizer.step()
 
         self.iteration += 1
-        self.scheduler.step()
+        with self.warmup.dampening():
+            self.scheduler.step()
         return True
 
     @staticmethod
@@ -485,7 +499,6 @@ class BaseModel(MetaModel, nn.Module):
         for k, v in info_dict.items():
             v = np.concatenate(v)[:total_size]
             info_dict[k] = v
-        # the final output is a dict {'disp_est': np.array}
         return info_dict
 
     def run_val(self, *args, **kwargs):
@@ -527,24 +540,15 @@ class BaseModel(MetaModel, nn.Module):
                 pbar.update(update_size)
         pbar.close()
 
-        # world_size = dist.get_world_size()
-
-        # gather all the info from different processes
-        # output = [None for _ in range(world_size)]
-        # torch.distributed.all_gather_object(output, infoList)
-
         # calculate the mean of the matric
         if self.rank == 0:
             all_info = infoList
-            # for rank in range(world_size):
-            #     all_info.extend(output[rank])
             res_dict_keys = all_info[0].keys()
             res_dict = {k: [] for k in res_dict_keys}
             for info in all_info:
                 for k, v in info.items():
                     res_dict[k].append(v)
             for k, v in res_dict.items():
-                # print(k,len(v))
                 res_dict[k] = np.nanmean(v)
             visual_summary.update(res_dict)
             return res_dict
