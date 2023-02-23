@@ -436,6 +436,11 @@ class BaseModel(MetaModel, nn.Module):
 
         if self.engine_cfg['enable_float16']:
             self.Scaler.scale(loss_sum).backward()
+            if "clip_grad_norm" in self.engine_cfg:
+                max_norm = self.engine_cfg['clip_grad_norm']['max_norm']
+                norm_type = self.engine_cfg['clip_grad_norm']['norm_type']
+                torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=max_norm, norm_type=norm_type)
+                # print("clip_grad_norm")
             self.Scaler.step(self.optimizer)
             scale = self.Scaler.get_scale()
             self.Scaler.update()
@@ -450,8 +455,8 @@ class BaseModel(MetaModel, nn.Module):
             loss_sum.backward()
             if "clip_grad_norm" in self.engine_cfg:
                 max_norm = self.engine_cfg['clip_grad_norm']['max_norm']
-                norm_type = self.engine_cfg['clip_grad_norm_type']['norm_type']
-                torch.nn.utils.clip_grad_norm(self.parameters(), max_norm=max_norm, norm_type=norm_type)
+                norm_type = self.engine_cfg['clip_grad_norm']['norm_type']
+                torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=max_norm, norm_type=norm_type)
             self.optimizer.step()
 
         self.iteration += 1

@@ -4,7 +4,7 @@ data_cfg:
   train_list: datasets/sceneflow/sceneflow_cleanpass_train.txt
   val_list: datasets/sceneflow/sceneflow_cleanpass_test_select.txt
   test_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
-  num_workers: 4
+  num_workers: 8
 
   batch_uniform: false
   #  random_type: range
@@ -73,24 +73,24 @@ scheduler_cfg:
   scheduler: MultiStepLR
   gamma: 0.1
   milestones: # Learning Rate Reduction at each milestones
-    - 25000
+    - 17000
 
   warmup:
     type: LinearWarmup
-    warmup_period: 2000
+    warmup_period: 8000
 
 trainer_cfg:
   save_name: PSMNet_SceneFlow
   restore_hint: 0
   restore_ckpt_strict: true
-  log_iter: 1
+  log_iter: 10
   with_test: true
   enable_float16: true
   save_iter: 2000
   sync_BN: true
   total_iter: 20000
   total_epoch: 20
-  optimizer_reset: true
+  optimizer_reset: false
   scheduler_reset: false
   clip_grad_norm:
     max_norm: 35
