@@ -2,7 +2,7 @@ data_cfg:
   name: SceneFlow
   root: data/SceneFlow
   train_list: datasets/sceneflow/sceneflow_cleanpass_train.txt
-  val_list: datasets/sceneflow/sceneflow_cleanpass_test_select.txt
+  val_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
   test_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
   num_workers: 8
 
@@ -73,11 +73,11 @@ scheduler_cfg:
   scheduler: MultiStepLR
   gamma: 0.1
   milestones: # Learning Rate Reduction at each milestones
-    - 17000
+    - 35000
 
   warmup:
     type: LinearWarmup
-    warmup_period: 8000
+    warmup_period: 500
 
 trainer_cfg:
   save_name: PSMNet_SceneFlow
@@ -85,34 +85,34 @@ trainer_cfg:
   restore_ckpt_strict: true
   log_iter: 10
   with_test: true
-  enable_float16: true
-  save_iter: 2000
+  enable_float16: false
+  save_iter: 4000
   sync_BN: true
   total_iter: 20000
-  total_epoch: 20
-  optimizer_reset: false
+  total_epoch: 15
+  optimizer_reset: true
   scheduler_reset: false
   clip_grad_norm:
     max_norm: 35
     norm_type: 2
   sampler:
     batch_shuffle: true
-    batch_size: 10
+    batch_size: 4
 
 
 evaluator_cfg:
   save_name: PSMNet_SceneFlow
   eval_func: OpenStereoEvaluator
-  restore_hint: 20000
+  restore_hint: 0
   metric:
     - d1_all
     - epe
     - thres_1
     - thres_2
     - thres_3
-  enable_float16: true
+  enable_float16: false
   restore_ckpt_strict: true
   show_progress_bar: true
   sampler:
     batch_shuffle: false
-    batch_size: 4
+    batch_size: 1
