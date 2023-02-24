@@ -20,20 +20,24 @@ parser.add_argument('--iter', default=0, help="iter to restore")
 opt = parser.parse_args()
 
 
+# def set_ddp_env(rank, world_size):
+#     torch.cuda.set_device(opt.local_rank)
+#     torch.distributed.init_process_group(backend='nccl', init_method='env://', rank=rank, world_size=world_size)
+#     torch.backends.cudnn.benchmark = True
+#
+#
+# def cleanup():
+#     torch.distributed.destroy_process_group()
+
+
 def initialization(cfgs, training):
     msg_mgr = get_msg_mgr()
     engine_cfg = cfgs['trainer_cfg'] if training else cfgs['evaluator_cfg']
-    output_path = os.path.join('output/', cfgs['data_cfg']['name'],
-                               cfgs['model_cfg']['model'], engine_cfg['save_name'])
-    if training:
-        msg_mgr.init_manager(output_path, opt.log_to_file, engine_cfg['log_iter'],
-                             engine_cfg['restore_hint'] if isinstance(engine_cfg['restore_hint'], (int)) else 0)
-    else:
-        msg_mgr.init_manager(output_path, opt.log_to_file, 1,
-                             engine_cfg['restore_hint'] if isinstance(engine_cfg['restore_hint'], (int)) else 0)
-
+    output_path = os.path.join('output/', cfgs['data_cfg']['name'], cfgs['model_cfg']['model'], engine_cfg['save_name'])
+    iteration = engine_cfg['restore_hint'] if isinstance(engine_cfg['restore_hint'], int) else 0
+    log_iter = engine_cfg['log_iter'] if training else 1
+    msg_mgr.init_manager(output_path, opt.log_to_file, log_iter, iteration)
     msg_mgr.log_info(engine_cfg)
-
     seed = torch.distributed.get_rank()
     init_seeds(seed)
 
@@ -50,18 +54,20 @@ def run_model(cfgs, scope):
     if cfgs['trainer_cfg']['fix_BN']:
         model.fix_BN()
     model = get_ddp_module(model, find_unused_parameters=model_cfg['find_unused_parameters'])
-    if '_set_static_graph' in model_cfg.keys():
-        if model_cfg['_set_static_graph']:
-            model._set_static_graph()
+
+    # if '_set_static_graph' in model_cfg.keys():
+    #     if model_cfg['_set_static_graph']:
+    #         model._set_static_graph()
+
     msg_mgr.log_info(params_count(model))
     msg_mgr.log_info("Model Initialization Finished!")
     if scope == 'train':
-        model.run_train()
+        model.run_train(model)
     elif scope == 'val':
-        res = model.run_val()
+        res = model.run_val(model)
         msg_mgr.log_info(res)
     elif scope == 'test':
-        model.run_test()
+        model.run_test(model)
     else:
         raise ValueError("Scope should be one of ['train', 'val', 'test'].")
 

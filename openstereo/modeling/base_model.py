@@ -506,34 +506,35 @@ class BaseModel(MetaModel, nn.Module):
             info_dict[k] = v
         return info_dict
 
-    def run_val(self, *args, **kwargs):
+    @staticmethod
+    def run_val(model, *args, **kwargs):
         """Accept the instance object(model) here, and then run the test loop."""
-        self.eval()
-        dataloader = self.val_loader
-        eval_func = self.cfgs['evaluator_cfg']["eval_func"]
+        model.eval()
+        dataloader = model.val_loader
+        eval_func = model.cfgs['evaluator_cfg']["eval_func"]
         eval_func = getattr(eval_functions, eval_func)
-        valid_args = get_valid_args(eval_func, self.cfgs["evaluator_cfg"], ['metric'])
+        valid_args = get_valid_args(eval_func, model.cfgs["evaluator_cfg"], ['metric'])
         eval_func = partial(eval_func, **valid_args)
 
         infoList = []
 
-        total_size = len(dataloader) * dataloader.batch_sampler.batch_size * self.world_size
+        total_size = len(dataloader) * dataloader.batch_sampler.batch_size * model.world_size
         rest_size = total_size
-        batch_size = dataloader.batch_sampler.batch_size * self.world_size
-        show_progress_bar = self.cfgs['evaluator_cfg']['show_progress_bar']
-        if show_progress_bar and self.rank == 0:
+        batch_size = dataloader.batch_sampler.batch_size * model.world_size
+        show_progress_bar = model.cfgs['evaluator_cfg']['show_progress_bar']
+        if show_progress_bar and model.rank == 0:
             pbar = tqdm(total=total_size, desc='Evaluating')
         else:
             pbar = NoOp()
-        self.msg_mgr.log_info(f"Total size: {total_size} | Total batch: {len(dataloader)}")
+        model.msg_mgr.log_info(f"Total size: {total_size} | Total batch: {len(dataloader)}")
         with torch.no_grad():
             for inputs in dataloader:
-                ipts = self.inputs_pretreament(inputs)
-                with autocast(enabled=self.engine_cfg['enable_float16']):
-                    output = self.forward(ipts)
+                ipts = model.inputs_pretreament(inputs)
+                with autocast(enabled=model.engine_cfg['enable_float16']):
+                    output = model.forward(ipts)
                 inference_disp, visual_summary = output['inference_disp'], output['visual_summary']
                 inference_disp.update(ipts)
-                self.msg_mgr.write_to_tensorboard(visual_summary)
+                model.msg_mgr.write_to_tensorboard(visual_summary)
                 info = eval_func(inference_disp)
                 for k, v in info.items():
                     v = v.unsqueeze(0)
@@ -546,7 +547,7 @@ class BaseModel(MetaModel, nn.Module):
         pbar.close()
 
         # calculate the mean of the matric
-        if self.rank == 0:
+        if model.rank == 0:
             all_info = infoList
             res_dict_keys = all_info[0].keys()
             res_dict = {k: [] for k in res_dict_keys}
@@ -558,66 +559,68 @@ class BaseModel(MetaModel, nn.Module):
             visual_summary.update(res_dict)
             return res_dict
 
-    def run_test(self, *args, **kwargs):
+    @staticmethod
+    def run_test(model, *args, **kwargs):
         try:
-            self.resume_ckpt(self.cfgs['evaluator_cfg']['checkpoint'])
+            model.resume_ckpt(model.cfgs['evaluator_cfg']['checkpoint'])
         except Exception as e:
-            self.msg_mgr.log_warning("Failed to resume the checkpoint, got {}".format(e))
+            model.msg_mgr.log_warning("Failed to resume the checkpoint, got {}".format(e))
         with torch.no_grad():
-            loader = self.test_loader
-            info_dict = self.inference(self, loader)
+            loader = model.test_loader
+            info_dict = model.inference(model, loader)
         return info_dict
 
-    def run_train(self, *args, **kwargs):
+    @staticmethod
+    def run_train(model, *args, **kwargs):
         """Accept the instance object(model) here, and then run the train loop."""
-        self.train()
+        model.train()
         while True:
-            self.epoch += 1
+            model.epoch += 1
             # self.train_loader.sampler.set_epoch(self.epoch)  # for distributed training shuffle
-            self.msg_mgr.log_info(f"Epoch {self.epoch} starts.")
+            model.msg_mgr.log_info(f"Epoch {model.epoch} starts.")
             torch.cuda.empty_cache()
-            for inputs in self.train_loader:
-                ipts = self.inputs_pretreament(inputs)
+            for inputs in model.train_loader:
+                ipts = model.inputs_pretreament(inputs)
                 if ipts['disp_gt'].sum() <= 1:
                     continue
-                with autocast(enabled=self.engine_cfg['enable_float16']):
-                    output = self.forward(ipts)
+                with autocast(enabled=model.engine_cfg['enable_float16']):
+                    output = model.forward(ipts)
                     training_disp, visual_summary = output['training_disp'], output['visual_summary']
                     del output
-                loss_sum, loss_info = self.loss_aggregator(training_disp)
-                ok = self.train_step(loss_sum)
+                loss_sum, loss_info = model.loss_aggregator(training_disp)
+                ok = model.train_step(loss_sum)
                 if not ok:
-                    self.msg_mgr.log_warning("Loss is NaN or Inf. Skip this iter.")
+                    model.msg_mgr.log_warning("Loss is NaN or Inf. Skip this iter.")
                     continue
                 visual_summary.update(loss_info)
-                current_lr = self.optimizer.param_groups[0]['lr']
+                current_lr = model.optimizer.param_groups[0]['lr']
                 visual_summary['scalar/learning_rate'] = current_lr
                 loss_info['scalar/learning_rate'] = current_lr
 
-                self.msg_mgr.train_step(loss_info, visual_summary)
+                model.msg_mgr.train_step(loss_info, visual_summary)
 
-                if self.iteration % self.engine_cfg['save_iter'] == 0:
+                if model.iteration % model.engine_cfg['save_iter'] == 0:
                     # save the checkpoint
-                    self.save_ckpt()
+                    model.save_ckpt()
                     # run test if with_test is true
-                    if self.engine_cfg['with_test']:
-                        self.msg_mgr.log_info("Running test...")
-                        self.eval()
-                        result_dict = self.run_val()
+                    if model.engine_cfg['with_test']:
+                        model.msg_mgr.log_info("Running test...")
+                        model.eval()
+                        result_dict = model.run_val()
                         torch.cuda.empty_cache()
-                        self.msg_mgr.log_info(result_dict)
-                        self.msg_mgr.write_to_tensorboard(result_dict)
-                        self.msg_mgr.reset_time()
-                        self.train()
-                        if self.cfgs['trainer_cfg']['fix_BN']:
-                            self.fix_BN()
+                        model.msg_mgr.log_info(result_dict)
+                        model.msg_mgr.write_to_tensorboard(result_dict)
+                        model.msg_mgr.reset_time()
+                        model.train()
+                        if model.cfgs['trainer_cfg']['fix_BN']:
+                            model.fix_BN()
 
-                if self.engine_cfg['total_epoch'] is None and self.iteration >= self.engine_cfg['total_iter']:
-                    self.msg_mgr.log_info('Training finished! Reached the maximum iteration.')
-                    self.save_ckpt()
+                if model.engine_cfg['total_epoch'] is None and model.iteration >= model.engine_cfg['total_iter']:
+                    model.msg_mgr.log_info('Training finished! Reached the maximum iteration.')
+                    model.save_ckpt()
                     return
 
-            if self.epoch >= self.engine_cfg['total_epoch']:
-                self.save_ckpt()
-                self.msg_mgr.log_info('Training finished! Reached the maximum epoch.')
+            if model.epoch >= model.engine_cfg['total_epoch']:
+                model.save_ckpt()
+                model.msg_mgr.log_info('Training finished! Reached the maximum epoch.')
                 return
