@@ -4,7 +4,7 @@ data_cfg:
   train_list: datasets/sceneflow/sceneflow_finalpass_train.txt
   val_list: datasets/sceneflow/sceneflow_finalpass_test.txt
   test_list: datasets/sceneflow/sceneflow_finalpass_test.txt
-  num_workers: 8
+  num_workers: 32
 
   transform:
     train:
@@ -38,7 +38,7 @@ model_cfg:
     max_disp: 192
     downsample: 4
     num_groups: 40
-    use_concat_volume: true
+    use_concat_volume: True
     concat_channels: 12
 
   # Backbone
@@ -55,7 +55,7 @@ model_cfg:
 
 
 optimizer_cfg:
-  solver: Adam
+  solver: AdamW
   lr: 0.001
   betas: [ 0.9, 0.999 ]
 
@@ -66,14 +66,15 @@ loss_cfg:
     loss_term_weight: 1
     weights: [ 0.5,0.5,0.7,1.0 ]
 
+
 scheduler_cfg:
+  scheduler: MultiStepLR
   gamma: 0.5
   milestones: # Learning Rate Reduction at each milestones
-    - 10000
-    - 15000
-    - 20000
-    - 25000
-  scheduler: MultiStepLR
+    - 3500
+    - 4000
+    - 4500
+    - 5000
   warmup:
     type: LinearWarmup
     warmup_period: 500
@@ -83,20 +84,18 @@ trainer_cfg:
   restore_hint: 0
   restore_ckpt_strict: true
   log_iter: 10
-  with_test: false
+  with_test: true
   enable_float16: false
-  fix_BN: false
-  save_iter: 2000
+  save_iter: 1000
   sync_BN: true
   total_iter: 20000
   total_epoch: 20
   optimizer_reset: false
   scheduler_reset: false
-
   sampler:
     # type: DistributedSampler
-    batch_shuffle: false
-    batch_size: 4
+    batch_shuffle: true
+    batch_size: 12
 
 
 evaluator_cfg:
@@ -109,11 +108,9 @@ evaluator_cfg:
     - thres_1
     - thres_2
     - thres_3
-
   enable_float16: false
   restore_ckpt_strict: true
-
   sampler:
     type: BasicStereoSampler
     batch_shuffle: false
-    batch_size: 1
+    batch_size: 5
