@@ -4,7 +4,7 @@ data_cfg:
   train_list: datasets/sceneflow/sceneflow_finalpass_train.txt
   val_list: datasets/sceneflow/sceneflow_finalpass_test.txt
   test_list: datasets/sceneflow/sceneflow_finalpass_test.txt
-  num_workers: 4
+  num_workers: 32
 
   batch_uniform: false
   #  random_type: range
@@ -47,9 +47,8 @@ model_cfg:
 
 
 optimizer_cfg:
-  solver: AdamW
+  solver: RMSprop
   lr: 0.001
-  betas: [ 0.9, 0.999 ]
 
 
 loss_cfg:
@@ -59,11 +58,14 @@ scheduler_cfg:
   scheduler: MultiStepLR
   gamma: 0.5
   milestones:
+    - 5000
     - 10000
     - 12000
     - 14000
     - 16000
-
+  warmup:
+    type: LinearWarmup
+    warmup_period: 500
 
 trainer_cfg:
   save_name: CasNet_SceneFlow
