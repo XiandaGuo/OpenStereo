@@ -606,7 +606,7 @@ class BaseModel(MetaModel, nn.Module):
                     if model.engine_cfg['with_test']:
                         model.msg_mgr.log_info("Running test...")
                         model.eval()
-                        result_dict = model.run_val()
+                        result_dict = model.run_val(model)
                         torch.cuda.empty_cache()
                         model.msg_mgr.log_info(result_dict)
                         model.msg_mgr.write_to_tensorboard(result_dict)
