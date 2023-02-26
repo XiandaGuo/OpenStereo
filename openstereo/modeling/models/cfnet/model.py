@@ -41,8 +41,13 @@ class CFNet(BaseModel):
                     "disp_est": res[0][0]
                 },
                 "visual_summary": {
+                    'image/test/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
+                    'image/test/disp_c': res[0][0][0],
+                }
+            }
+            if 'disp_gt' in inputs:
+                output['visual_summary'] = {
                     'image/val/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
                     'image/val/disp_c': torch.cat([inputs['disp_gt'][0], res[0][0][0]], dim=0),
                 }
-            }
         return output
