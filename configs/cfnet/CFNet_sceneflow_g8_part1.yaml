@@ -7,9 +7,6 @@ data_cfg:
   num_workers: 32
 
   batch_uniform: false
-  #  random_type: range
-  #  w_range: [ 0.5, 2.0 ]
-  #  h_range: [ 0.5, 2.0 ]
   #  random_type: choice
   #  h_range: [ 256, 288, 320, 352 ]
   #  w_range: [ 480, 512, 544, 576 ]
@@ -48,9 +45,8 @@ model_cfg:
 
 
 optimizer_cfg:
-  solver: Adam
+  solver: RMSprop
   lr: 0.001
-  betas: [ 0.9, 0.999 ]
 
 
 loss_cfg:
@@ -63,12 +59,11 @@ loss_cfg:
 scheduler_cfg:
   gamma: 0.5
   milestones: # Learning Rate Reduction at each milestones
-    - 12500
-    - 17500
-    - 20000
-    - 22500
+    - 10000
   scheduler: MultiStepLR
-
+  warmup:
+    type: LinearWarmup
+    warmup_period: 500
 
 trainer_cfg:
   save_name: CFNet_SceneFlow
@@ -83,7 +78,9 @@ trainer_cfg:
   total_epoch: 10
   optimizer_reset: false
   scheduler_reset: false
-
+  clip_grad_norm:
+    max_norm: 35
+    norm_type: 2
   sampler:
     # type: BasicStereoSampler
     batch_shuffle: true
