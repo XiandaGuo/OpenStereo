@@ -39,6 +39,7 @@ data_cfg:
 model_cfg:
   model: CFNet
   replace_mish: false # replace mish with relu in the first 10 epochs
+  find_unused_parameters: true
 
   base_config:
     max_disp: 256
