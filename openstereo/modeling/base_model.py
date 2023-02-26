@@ -517,10 +517,9 @@ class BaseModel(MetaModel, nn.Module):
         eval_func = partial(eval_func, **valid_args)
 
         infoList = []
-
-        total_size = len(dataloader) * dataloader.batch_sampler.batch_size * model.world_size
+        batch_size = model.cfgs['evaluator_cfg']['sampler']['batch_size'] * model.world_size
+        total_size = len(dataloader) * batch_size
         rest_size = total_size
-        batch_size = dataloader.batch_sampler.batch_size * model.world_size
         show_progress_bar = model.cfgs['evaluator_cfg']['show_progress_bar']
         if show_progress_bar and model.rank == 0:
             pbar = tqdm(total=total_size, desc='Evaluating')

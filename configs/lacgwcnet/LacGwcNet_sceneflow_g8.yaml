@@ -4,7 +4,7 @@ data_cfg:
   train_list: datasets/sceneflow/sceneflow_finalpass_train.txt
   val_list: datasets/sceneflow/sceneflow_finalpass_test.txt
   test_list: datasets/sceneflow/sceneflow_finalpass_test.txt
-  num_workers: 16
+  num_workers: 32
 
   transform:
     train:
@@ -38,9 +38,8 @@ model_cfg:
 
 
 optimizer_cfg:
-  solver: Adam
+  solver: RMSprop
   lr: 0.001
-  betas: [ 0.9, 0.999 ]
 
 
 loss_cfg:
@@ -50,9 +49,11 @@ scheduler_cfg:
   scheduler: MultiStepLR
   gamma: 0.1
   milestones:
-    - 12000
-    - 15000
-
+    - 10000
+    - 14000
+  warmup:
+    type: LinearWarmup
+    warmup_period: 500
 
 trainer_cfg:
   save_name: LacGwcNet_SceneFlow
@@ -64,12 +65,12 @@ trainer_cfg:
   sync_BN: true
   save_iter: 1000
   total_iter: 150000
-  total_epoch: 12
+  total_epoch: 15
   optimizer_reset: false
   scheduler_reset: false
   sampler:
     batch_shuffle: true
-    batch_size: 3
+    batch_size: 4
 
 
 evaluator_cfg:
