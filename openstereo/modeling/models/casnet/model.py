@@ -19,7 +19,8 @@ class CasStereoLoss:
         mask = training_disp['mask']
         loss_info = Odict()
         loss = self.loss_func(pred_disp, disp_gt, mask)
-        loss_info['scalar/CasStereoLoss'] = loss
+        loss_info['scalar/disp_loss'] = loss
+        loss_info['scalar/loss_sum'] = loss
         return loss, loss_info
 
 

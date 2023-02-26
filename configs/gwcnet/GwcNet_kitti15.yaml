@@ -56,9 +56,7 @@ model_cfg:
 optimizer_cfg:
   solver: Adam
   lr: 0.001
-  betas:
-    - 0.9
-    - 0.999
+  betas: [ 0.9, 0.999 ]
 
 
 loss_cfg:
@@ -70,47 +68,44 @@ loss_cfg:
 scheduler_cfg:
   gamma: 0.1
   milestones: # Learning Rate Reduction at each milestones
-    - 5000
-    - 15000
+    - 1500
   scheduler: MultiStepLR
-
+  warmup:
+    type: LinearWarmup
+    warmup_period: 500
 
 trainer_cfg:
-  enable_float16: False
-  fix_BN: false
-  log_iter: 20
-  with_test: true
-  restore_ckpt_strict: true
-  restore_hint: 0
-  save_iter: 100
   save_name: GwcNet_kitti12
+  restore_hint: 'output/SceneFlow/GwcNet/GwcNet_SceneFlow/checkpoints/GwcNet_SceneFlow-20000.pt'
+  restore_ckpt_strict: true
+  log_iter: 1
+  with_test: true
+  enable_float16: false
+  save_iter: 200
   sync_BN: true
   total_iter: 20000
-  total_epoch: 300
+  total_epoch: 400
+  optimizer_reset: true
+  scheduler_reset: true
 
   sampler:
-    type: BasicStereoSampler
-    batch_shuffle: false
+    batch_shuffle: true
     batch_size: 4
 
 
 evaluator_cfg:
   eval_func: OpenStereoEvaluator
   save_name: GwcNet_kitti12
-  restore_hint: 0
+  restore_hint: 'output/SceneFlow/GwcNet/GwcNet_SceneFlow/checkpoints/GwcNet_SceneFlow-20000.pt'
   metric:
     - d1_all
     - epe
     - thres_1
     - thres_2
     - thres_3
-
   enable_float16: False
-  fix_BN: false
   restore_ckpt_strict: true
-  sync_BN: true
 
   sampler:
-    type: BasicStereoSampler
     batch_shuffle: false
     batch_size: 1

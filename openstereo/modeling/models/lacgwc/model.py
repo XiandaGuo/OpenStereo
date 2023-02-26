@@ -33,7 +33,8 @@ class LacGwcLoss:
 
     def __call__(self, training_output):
         loss = self.loss_fn(training_output)
-        self.info['scalar/LacGwcLoss'] = loss
+        self.info['scalar/disp_loss'] = loss
+        self.info['scalar/loss_sum'] = loss
         return loss, self.info
 
 

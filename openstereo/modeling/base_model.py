@@ -288,7 +288,7 @@ class BaseModel(MetaModel, nn.Module):
             dataset=dataset,
             sampler=sampler,
             num_workers=data_cfg['num_workers'],
-            pin_memory=True,
+            pin_memory=False,
         )
         return loader
 
