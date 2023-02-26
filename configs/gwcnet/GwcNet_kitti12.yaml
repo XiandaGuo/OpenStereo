@@ -74,7 +74,7 @@ loss_cfg:
 scheduler_cfg:
   gamma: 0.1
   milestones: # Learning Rate Reduction at each milestones
-    - 1500
+    - 6000
   scheduler: MultiStepLR
   warmup:
     type: LinearWarmup
