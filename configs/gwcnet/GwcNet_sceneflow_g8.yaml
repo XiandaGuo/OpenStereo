@@ -20,8 +20,8 @@ data_cfg:
         mean: [ 0.485, 0.456, 0.406 ]
         std: [ 0.229, 0.224, 0.225 ]
     test:
-      - type: StereoPad
-        size: [ 576, 960 ]
+      - type: TestCrop
+        size: [ 512, 960 ]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -71,10 +71,10 @@ scheduler_cfg:
   scheduler: MultiStepLR
   gamma: 0.5
   milestones: # Learning Rate Reduction at each milestones
-    - 3500
-    - 4000
-    - 4500
-    - 5000
+    - 10000
+    - 12000
+    - 14000
+    - 16000
   warmup:
     type: LinearWarmup
     warmup_period: 500
@@ -86,7 +86,7 @@ trainer_cfg:
   log_iter: 10
   with_test: true
   enable_float16: false
-  save_iter: 1000
+  save_iter: 2000
   sync_BN: true
   total_iter: 20000
   total_epoch: 20
@@ -95,7 +95,7 @@ trainer_cfg:
   sampler:
     # type: DistributedSampler
     batch_shuffle: true
-    batch_size: 12
+    batch_size: 4
 
 
 evaluator_cfg:
@@ -113,4 +113,4 @@ evaluator_cfg:
   sampler:
     type: BasicStereoSampler
     batch_shuffle: false
-    batch_size: 5
+    batch_size: 1
