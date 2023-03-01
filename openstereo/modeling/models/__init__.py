@@ -8,6 +8,7 @@ from .raftstereo import RAFT_Stereo
 from .acvnet import ACVNet
 from .sttr import STTRNet
 from .psmnet import PSMNet
+from .coex import CoExNet
 
 try:
     from .ganet import GANet
