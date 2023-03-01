@@ -28,7 +28,7 @@ class ToTensor(object):
     def __call__(self, sample):
         for k in sample.keys():
             if sample[k] is not None and isinstance(sample[k], np.ndarray):
-                sample[k] = torch.from_numpy(sample[k].copy())
+                sample[k] = torch.from_numpy(sample[k].copy()).to(torch.float32)
         return sample
 
 
@@ -199,16 +199,16 @@ class GetValidDisp(object):
         disp = sample['disp']
         disp[disp > self.max_disp] = 0
         disp[disp < 0] = 0
-
-        disp_right = sample['disp_right']
-
-        disp_right[disp_right > self.max_disp] = 0
-        disp_right[disp_right < 0] = 0
-
         sample.update({
             'disp': disp,
-            'disp_right': disp_right
         })
+        if 'disp_right' in sample.keys():
+            disp_right = sample['disp_right']
+            disp_right[disp_right > self.max_disp] = 0
+            disp_right[disp_right < 0] = 0
+            sample.update({
+                'disp_right': disp_right
+            })
 
         return sample
 

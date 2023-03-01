@@ -3,6 +3,7 @@ import os
 
 import torch
 import torch.nn as nn
+from torch.cuda.amp import autocast
 
 from modeling import models
 from utils import config_loader, get_ddp_module, init_seeds, params_count, get_msg_mgr
@@ -58,12 +59,14 @@ def run_model(cfgs, scope):
     model.eval()
     x1 = torch.ones(1, 3, 256, 512)
     x2 = torch.ones(1, 3, 256, 512)
+    # enable fp16
     with torch.no_grad():
         model.eval()
-        res = model({
-            'ref_img': x1.cuda(),
-            'tgt_img': x2.cuda()
-        })
+        with autocast(enabled=model.engine_cfg['enable_float16']):
+            res = model({
+                'ref_img': x1.cuda(),
+                'tgt_img': x2.cuda()
+            })
         disp = res['inference_disp']['disp_est']
         print(disp.max(), disp.min(), disp.mean(), disp.std())
 

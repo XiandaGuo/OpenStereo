@@ -33,6 +33,9 @@ class StereoBatchDataset(StereoDataset):
         elif self.data_cfg['name'] == 'ETH3D':
             from data.reader.eth3d_reader import ETH3DReader
             self.dataset = ETH3DReader(self.data_cfg['root'], self.data_cfg[f'{self.scope}_list'])
+        elif self.data_cfg['name'] == 'DrivingStereo':
+            from data.reader.driving_reader import DrivingReader
+            self.dataset = DrivingReader(self.data_cfg['root'], self.data_cfg[f'{self.scope}_list'])
         else:
             name = self.data_cfg['name']
             raise NotImplementedError(f'{name} dataset is not supported yet.')

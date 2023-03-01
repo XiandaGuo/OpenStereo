@@ -22,7 +22,7 @@ def png_disp_loader(path):
 
 
 class BaseReader(Dataset):
-    def __init__(self, root, list_file, image_reader='PIL', disp_reader='PFM'):
+    def __init__(self, root, list_file, image_reader='PIL', disp_reader='PIL'):
         self.root = root
         self.image_reader_type = image_reader
         self.disp_reader_type = disp_reader
