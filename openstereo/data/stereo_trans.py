@@ -55,6 +55,22 @@ class TestCrop(object):
         return sample
 
 
+class TestCrop(object):
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, sample):
+        h, w = sample['left'].shape[:2]
+        crop_h, crop_w = self.size
+        crop_h = min(h, crop_h)
+        crop_w = min(w, crop_w)
+
+        for k in sample.keys():
+            if k in ['left', 'right', 'disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
+                sample[k] = sample[k][h - crop_h:h, w - crop_w: w]
+        return sample
+
+
 class CenterCrop(object):
     def __init__(self, size):
         self.size = size
