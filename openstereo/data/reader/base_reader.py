@@ -2,7 +2,8 @@ import cv2
 import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
-from data.reader.readpfm import readPFM
+
+from .readpfm import readPFM
 
 
 def pil_loader(path):
@@ -14,7 +15,7 @@ def cv2_loader(path):
 
 
 def pfm_disp_loader(path):
-    return readPFM(path)
+    return readPFM(path)[0].astype(np.float32)
 
 
 def png_disp_loader(path):
@@ -22,11 +23,13 @@ def png_disp_loader(path):
 
 
 class BaseReader(Dataset):
-    def __init__(self, root, list_file, image_reader='PIL', disp_reader='PIL'):
+    def __init__(self, root, list_file, image_reader='PIL', disp_reader='PIL', right_disp=True, occ_mask=False):
         self.root = root
+        self.list_file = list_file
         self.image_reader_type = image_reader
         self.disp_reader_type = disp_reader
-        self.list_file = list_file
+        self.return_right_disp = right_disp
+        self.return_occ_mask = occ_mask
         self.data_list = self.load_anno()
         self.image_loader = self.build_image_loader()
         self.disp_loader = self.build_disp_loader()

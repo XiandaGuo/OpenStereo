@@ -439,7 +439,8 @@ class BaseModel(MetaModel, nn.Module):
             if "clip_grad_norm" in self.engine_cfg:
                 max_norm = self.engine_cfg['clip_grad_norm']['max_norm']
                 norm_type = self.engine_cfg['clip_grad_norm']['norm_type']
-                torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=max_norm, norm_type=norm_type)
+                # torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=max_norm, norm_type=norm_type)
+                torch.nn.utils.clip_grad_value_(self.parameters(), 0.1)
                 # print("clip_grad_norm")
             self.Scaler.step(self.optimizer)
             scale = self.Scaler.get_scale()

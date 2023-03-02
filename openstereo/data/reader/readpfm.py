@@ -1,6 +1,7 @@
 import re
-import numpy as np
 import sys
+
+import numpy as np
 
 
 def readPFM(file):

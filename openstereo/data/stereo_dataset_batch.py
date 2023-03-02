@@ -2,40 +2,96 @@ import random
 
 import numpy as np
 import torch
+from torch.utils.data import Dataset
 
 from . import stereo_trans as ST
-from .stereo_dataset import StereoDataset
 
 
-class StereoBatchDataset(StereoDataset):
+class StereoBatchDataset(Dataset):
     def __init__(self, data_cfg, scope='train'):
-        super().__init__(data_cfg, scope)
+        super().__init__()
+        self.data_cfg = data_cfg
+        self.is_train = scope == 'train'
+        self.scope = scope.lower()
+        self.dataset = None
+        self.transform = None
+        self.image_reader_type = data_cfg['image_reader'] if 'image_reader' in data_cfg else "PIL"
+        self.disp_reader_type = data_cfg['disp_reader'] if 'disp_reader' in data_cfg else "PIL"
+        self.return_right_disp = data_cfg['return_right_disp'] if 'return_right_disp' in data_cfg else True
+        self.return_occ_mask = data_cfg['return_occ_mask'] if 'return_occ_mask' in data_cfg else False
+
         # for batch uniform
         self.batch_uniform = data_cfg['batch_uniform'] if 'batch_uniform' in data_cfg else False
         self.random_type = data_cfg['random_type'] if 'random_type' in data_cfg else None
         self.w_range = data_cfg['w_range'] if 'w_range' in data_cfg else None
         self.h_range = data_cfg['h_range'] if 'h_range' in data_cfg else None
-        self.random_crop_index = None
+        self.random_crop_index = None  # for batch uniform random crop, record the index of the crop transform operator
+        self.build_dataset()
 
     def build_dataset(self):
         if self.data_cfg['name'] in ['KITTI2012', 'KITTI2015']:
             from data.reader.kitti_reader import KittiReader
-            self.dataset = KittiReader(self.data_cfg['root'], self.data_cfg[f'{self.scope}_list'])
+            self.disp_reader_type = 'PIL'
+            self.dataset = KittiReader(
+                self.data_cfg['root'],
+                self.data_cfg[f'{self.scope}_list'],
+                self.image_reader_type,
+                self.disp_reader_type,
+                right_disp=self.return_right_disp,
+                use_noc=self.data_cfg['use_noc'] if 'use_noc' in self.data_cfg else False,  # NOC disp or OCC disp
+            )
         elif self.data_cfg['name'] == 'FlyingThings3DSubset':
             from data.reader.sceneflow_reader import FlyingThings3DSubsetReader
-            self.dataset = FlyingThings3DSubsetReader(self.data_cfg['root'], self.data_cfg[f'{self.scope}_list'])
+            self.disp_reader_type = 'PFM'
+            self.return_right_disp = True
+            self.return_occ_mask = True
+            self.dataset = FlyingThings3DSubsetReader(
+                self.data_cfg['root'],
+                self.data_cfg[f'{self.scope}_list'],
+                self.image_reader_type,
+                self.disp_reader_type,
+                right_disp=self.return_right_disp,
+                occ_mask=self.return_occ_mask
+            )
         elif self.data_cfg['name'] == 'SceneFlow':
             from data.reader.sceneflow_reader import SceneFlowReader
-            self.dataset = SceneFlowReader(self.data_cfg['root'], self.data_cfg[f'{self.scope}_list'])
-        elif self.data_cfg['name'] == 'Middlebury':
-            from data.reader.middlebury_reader import MiddleburyReader
-            self.dataset = MiddleburyReader(self.data_cfg['root'], self.data_cfg[f'{self.scope}_list'])
-        elif self.data_cfg['name'] == 'ETH3D':
-            from data.reader.eth3d_reader import ETH3DReader
-            self.dataset = ETH3DReader(self.data_cfg['root'], self.data_cfg[f'{self.scope}_list'])
+            self.disp_reader_type = 'PFM'
+            self.dataset = SceneFlowReader(
+                self.data_cfg['root'],
+                self.data_cfg[f'{self.scope}_list'],
+                self.image_reader_type,
+                self.disp_reader_type,
+                right_disp=self.return_right_disp,
+            )
         elif self.data_cfg['name'] == 'DrivingStereo':
             from data.reader.driving_reader import DrivingReader
-            self.dataset = DrivingReader(self.data_cfg['root'], self.data_cfg[f'{self.scope}_list'])
+            self.return_right_disp = False
+            self.return_occ_mask = False
+            self.disp_reader_type = 'PIL'
+            self.dataset = DrivingReader(
+                self.data_cfg['root'],
+                self.data_cfg[f'{self.scope}_list'],
+                self.image_reader_type,
+                self.disp_reader_type
+            )
+        elif self.data_cfg['name'] == 'Middlebury':
+            from data.reader.middlebury_reader import MiddleburyReader
+            self.disp_reader_type = 'PFM'
+            self.dataset = MiddleburyReader(
+                self.data_cfg['root'],
+                self.data_cfg[f'{self.scope}_list'],
+                self.image_reader_type,
+                self.disp_reader_type
+            )
+        elif self.data_cfg['name'] == 'ETH3D':
+            from data.reader.eth3d_reader import ETH3DReader
+            self.disp_reader_type = 'PFM'
+            self.dataset = ETH3DReader(
+                self.data_cfg['root'],
+                self.data_cfg[f'{self.scope}_list'],
+                self.image_reader_type,
+                self.disp_reader_type
+            )
         else:
             name = self.data_cfg['name']
             raise NotImplementedError(f'{name} dataset is not supported yet.')
@@ -50,7 +106,7 @@ class StereoBatchDataset(StereoDataset):
         # set the image_size for this batch
         if self.batch_uniform:
             base_size = self.transform.transforms[self.random_crop_index].size
-            size = self.get_size(base_size)
+            size = self.get_crop_size(base_size)
             self.transform.transforms[self.random_crop_index].size = size
 
         batch_result = {}
@@ -85,6 +141,7 @@ class StereoBatchDataset(StereoDataset):
                 transform_compose.append(ST.RandomCrop(trans['size']))
                 self.random_crop_index = len(transform_compose) - 1
             if trans['type'] == 'RandomHorizontalFlip':
+                assert self.return_right_disp, 'RandomHorizontalFlip is used, but return_right_disp is False.'
                 transform_compose.append(ST.RandomHorizontalFlip(p=trans['prob']))
             elif trans['type'] == 'GetValidDispNOcc':
                 transform_compose.append(ST.GetValidDispNOcc())
@@ -99,7 +156,7 @@ class StereoBatchDataset(StereoDataset):
 
         return ST.Compose(transform_compose)
 
-    def get_size(self, base_size):
+    def get_crop_size(self, base_size):
         if self.random_type == 'range':
             w = random.randint(self.w_range[0] * base_size[1], self.w_range[1] * base_size[1])
             h = random.randint(self.h_range[0] * base_size[0], self.h_range[1] * base_size[0])
@@ -109,3 +166,6 @@ class StereoBatchDataset(StereoDataset):
         else:
             raise NotImplementedError
         return int(h), int(w)
+
+    def __len__(self):
+        return len(self.dataset)
