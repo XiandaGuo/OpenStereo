@@ -1,10 +1,9 @@
 import torch
-from functools import partial
 
 from modeling.base_model import BaseModel
 from utils import Odict
-from .psmnet import PSMNet
 from .loss import stereo_psmnet_loss
+from .psmnet import PSMNet
 
 
 class CasStereoLoss:
@@ -35,6 +34,9 @@ class CasStereoNet(BaseModel):
         self.grad_method = 'detach'
         self.cr_base_chs = [32, 32, 16]
         super().__init__(*args, **kwargs)
+
+    def init_parameters(self):
+        return
 
     def build_network(self, model_cfg):
         """Build the network."""
@@ -78,7 +80,10 @@ class CasStereoNet(BaseModel):
                 },
                 "visual_summary": {
                     "image/train/image_c": torch.cat([ref_img[0], tgt_img[0]], dim=1),
-                    "image/train/disp_c": torch.cat([inputs["disp_gt"][0], res[f"stage{len(self.ndisps)}"]["pred"][0]], dim=0)
+                    "image/train/disp_c": torch.cat(
+                        [inputs["disp_gt"][0], res[f"stage{len(self.ndisps)}"]["pred"][0]],
+                        dim=0
+                    )
                 }
             }
         else:
