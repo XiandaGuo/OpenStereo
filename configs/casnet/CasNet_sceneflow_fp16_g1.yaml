@@ -4,7 +4,7 @@ data_cfg:
   train_list: datasets/sceneflow/sceneflow_finalpass_train.txt
   val_list: datasets/sceneflow/sceneflow_finalpass_test.txt
   test_list: datasets/sceneflow/sceneflow_finalpass_test.txt
-  num_workers: 4
+  num_workers: 8
 
   batch_uniform: false
   #  random_type: range
@@ -46,23 +46,11 @@ model_cfg:
   base_config:
     max_disp: 192
 
-#  # Backbone
-#  backbone_cfg:
-#    type: GwcNet
-#
-#  # VolumeCostProcessor
-#  cost_processor_cfg:
-#    type: GwcVolumeCostProcessor
-#
-#  # DispProcessor
-#  disp_processor_cfg:
-#    type: GwcDispProcessor
-
 
 optimizer_cfg:
-  solver: AdamW
+  solver: RMSprop
   lr: 0.001
-  betas: [ 0.9, 0.999 ]
+#  betas: [ 0.9, 0.999 ]
 
 
 loss_cfg:
@@ -72,36 +60,40 @@ scheduler_cfg:
   scheduler: MultiStepLR
   gamma: 0.5
   milestones:
-    - 75000
-    - 90000
-    - 105000
-    - 120000
+    - 30000
+    - 36000
+    - 42000
+    - 48000
+  warmup:
+    type: LinearWarmup
+    warmup_period: 100
 
 
 trainer_cfg:
   save_name: CasNet_SceneFlow
-  restore_hint: weights/CasNet_SceneFlow-03000.pt
+  restore_hint: 0
   restore_ckpt_strict: true
-  log_iter: 1
+  log_iter: 10
   with_test: true
-  enable_float16: false
-#  sync_BN: true
-  save_iter: 200
+  enable_float16: true
+  sync_BN: false
+  save_iter: 3000
   total_iter: 150000
-  total_epoch: 20
+  total_epoch: 18
   optimizer_reset: false
   scheduler_reset: false
 
   sampler:
     # type: BasicStereoSampler
     batch_shuffle: false
-    batch_size: 2
+    batch_size: 12
 
 
 evaluator_cfg:
   eval_func: OpenStereoEvaluator
   save_name: CasNet_SceneFlow
-  restore_hint: weights/CasNet_SceneFlow-03000.pt
+  restore_hint: 0
+#  show_progress_bar: true
   metric:
     - d1_all
     - epe
@@ -109,9 +101,9 @@ evaluator_cfg:
     - thres_2
     - thres_3
   restore_ckpt_strict: true
-  enable_float16: false
+  enable_float16: true
 
   sampler:
-    type: BasicStereoSampler
+#    type: BasicStereoSampler
     batch_shuffle: false
-    batch_size: 1
+    batch_size: 16
