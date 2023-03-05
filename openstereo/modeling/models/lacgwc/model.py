@@ -48,6 +48,9 @@ class LacGwcNet(BaseModel):
     def get_loss_func(self, loss_cfg):
         return LacGwcLoss(max_disp=192)
 
+    def init_parameters(self):
+        return
+
     def forward(self, inputs):
         """Forward the network."""
         ref_img = inputs["ref_img"]

@@ -106,4 +106,4 @@ evaluator_cfg:
   sampler:
 #    type: BasicStereoSampler
     batch_shuffle: false
-    batch_size: 16
+    batch_size: 10
