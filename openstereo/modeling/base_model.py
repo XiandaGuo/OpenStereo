@@ -534,7 +534,6 @@ class BaseModel(MetaModel, nn.Module):
                     output = model.forward(ipts)
                 inference_disp, visual_summary = output['inference_disp'], output['visual_summary']
                 inference_disp.update(ipts)
-                model.msg_mgr.write_to_tensorboard(visual_summary)
                 info = eval_func(inference_disp)
                 for k, v in info.items():
                     v = v.unsqueeze(0)
@@ -545,6 +544,9 @@ class BaseModel(MetaModel, nn.Module):
                 update_size = batch_size if rest_size >= 0 else total_size % batch_size
                 pbar.update(update_size)
         pbar.close()
+
+        # save the last batch of visual summary
+        model.msg_mgr.write_to_tensorboard(visual_summary)
 
         # calculate the mean of the matric
         if model.rank == 0:

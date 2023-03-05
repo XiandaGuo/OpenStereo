@@ -16,7 +16,7 @@ def d1_metric_np(disp_est, disp_gt, mask):
         float: D1 metric value
     """
     if mask.sum() == 0:
-        return 0
+        return torch.tensor(0.0).to(disp_est.device)
     disp_est, disp_gt = disp_est[mask], disp_gt[mask]
     E = np.abs(disp_gt - disp_est)
     err_mask = (E > 3) & (E / np.abs(disp_gt) > 0.05)
@@ -37,7 +37,7 @@ def d1_metric(disp_est, disp_gt, mask):
         float: D1 metric value
     """
     if mask.sum() == 0:
-        return 0
+        return torch.tensor(0.0).to(disp_est.device)
     disp_est, disp_gt = disp_est[mask], disp_gt[mask]
     E = torch.abs(disp_gt - disp_est)
     err_mask = (E > 3) & (E / torch.abs(disp_gt) > 0.05)
@@ -58,7 +58,7 @@ def threshold_metric_np(disp_est, disp_gt, mask, threshold):
         float: threshold metric value
     """
     if mask.sum() == 0:
-        return 0
+        return torch.tensor(0.0).to(disp_est.device)
     disp_est, disp_gt = disp_est[mask], disp_gt[mask]
     E = np.abs(disp_gt - disp_est)
     err_mask = E > threshold
@@ -79,7 +79,7 @@ def threshold_metric(disp_est, disp_gt, mask, threshold):
         float: threshold metric value
     """
     if mask.sum() == 0:
-        return 0
+        return torch.tensor(0.0).to(disp_est.device)
     disp_est, disp_gt = disp_est[mask], disp_gt[mask]
     E = torch.abs(disp_gt - disp_est)
     err_mask = E > threshold
@@ -98,7 +98,7 @@ def epe_metric_np(disp_est, disp_gt, mask):
         float: EPE metric value
     """
     if mask.sum() == 0:
-        return 0
+        return torch.tensor(0.0).to(disp_est.device)
     disp_est, disp_gt = disp_est[mask], disp_gt[mask]
     E = np.abs(disp_gt - disp_est)
     return np.mean(E)
@@ -116,7 +116,7 @@ def epe_metric(disp_est, disp_gt, mask):
         float: EPE metric value
     """
     if mask.sum() == 0:
-        return 0
+        return torch.tensor(0.0).to(disp_est.device)
     disp_est, disp_gt = disp_est[mask], disp_gt[mask]
     E = torch.abs(disp_gt - disp_est)
     return torch.mean(E)

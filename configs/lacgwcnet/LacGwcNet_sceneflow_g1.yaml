@@ -87,6 +87,7 @@ evaluator_cfg:
     - thres_3
   restore_ckpt_strict: true
   enable_float16: false
+  show_progress_bar: true
   sampler:
     type: BasicStereoSampler
     batch_shuffle: false
