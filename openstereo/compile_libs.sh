@@ -20,9 +20,3 @@ python setup.py clean
 rm -rf build
 python setup.py build
 cp -r build/lib* build/lib
-
-cd ../sync_bn
-python setup.py clean
-rm -rf build
-python setup.py build
-cp -r build/lib* build/lib

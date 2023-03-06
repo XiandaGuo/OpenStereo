@@ -42,15 +42,16 @@ loss_cfg:
 
 
 optimizer_cfg:
-  solver: RMSprop
+  solver: Adam
   lr: 0.001
+  betas: [ 0.9, 0.999 ]
 
 
 scheduler_cfg:
   scheduler: MultiStepLR
   gamma: 0.1
   milestones:
-    - 89000
+    - 10000
   warmup:
     type: LinearWarmup
     warmup_period: 100
@@ -58,11 +59,11 @@ scheduler_cfg:
 
 trainer_cfg:
   save_name: LacGwcNet_SceneFlow
-  restore_hint: 1
+  restore_hint: 0
   restore_ckpt_strict: true
   log_iter: 10
   with_test: true
-  enable_float16: false
+  enable_float16: true
   sync_BN: false
   save_iter: 9000
   total_iter: 150000
@@ -86,9 +87,9 @@ evaluator_cfg:
     - thres_2
     - thres_3
   restore_ckpt_strict: true
-  enable_float16: false
+  enable_float16: ture
   show_progress_bar: true
   sampler:
     type: BasicStereoSampler
     batch_shuffle: false
-    batch_size: 4
+    batch_size: 5

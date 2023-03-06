@@ -1,18 +1,12 @@
 import torch
 import torch.nn as nn
-# import torch.nn.init as init
 from libs.GANet.modules.GANet import DisparityRegression, GetCostVolume
-# from libs.GANet.modules.GANet import MyNormalize
-from libs.GANet.modules.GANet import SGA
-from libs.GANet.modules.GANet import LGA, LGA2, LGA3
-# from libs.sync_bn.modules.sync_bn import BatchNorm2d, BatchNorm3d
+from libs.GANet.modules.GANet import SGA, LGA, LGA2, LGA3, MyLoss2
+
 from torch.nn import BatchNorm2d, BatchNorm3d
 import torch.nn.functional as F
-# from torch.autograd import Variable
-# import numpy as np
 
 from modeling.base_model import BaseModel
-# from modeling.losses import Weighted_Smooth_l1_Loss
 from utils import Odict
 
 
@@ -424,14 +418,49 @@ class GaNet(nn.Module):
             return self.cost_agg(x, g)
 
 
+class GaLoss:
+    def __init__(self, is_kitti=False):
+        super(GaLoss, self).__init__()
+        self.is_kitti = is_kitti
+        self.criterion = MyLoss2(thresh=3, alpha=2)
+
+    def __call__(self, training_output):
+        training_disp = training_output['disp']
+        pred_disp = training_disp['disp_ests']
+        disp_gt = training_disp['disp_gt']
+        mask = training_disp['mask']
+        disp0, disp1, disp2 = pred_disp
+        if self.is_kitti:
+            loss = 0.2 * F.smooth_l1_loss(disp0[mask], disp_gt[mask], reduction='mean') \
+                   + 0.6 * F.smooth_l1_loss(disp1[mask], disp_gt[mask], reduction='mean') \
+                   + self.criterion(disp2[mask], disp_gt[mask])
+        else:
+            loss = 0.2 * F.smooth_l1_loss(disp0[mask], disp_gt[mask], reduction='mean') \
+                   + 0.6 * F.smooth_l1_loss(disp1[mask], disp_gt[mask], reduction='mean') \
+                   + F.smooth_l1_loss(disp2[mask], disp_gt[mask], reduction='mean')
+
+        loss_info = Odict()
+        loss_info['scalar/disp_loss'] = loss
+        loss_info['scalar/loss_sum'] = loss
+        return loss, loss_info
+
+
 class GANet(BaseModel):
     def __init__(self, *args, **kwargs):
         self.maxdisp = 192
         super().__init__(*args, **kwargs)
 
+    def get_loss_func(self, loss_cfg):
+        """Build the loss."""
+        is_kitti = loss_cfg.get("is_kitti", False)
+        return GaLoss(is_kitti)
+
     def build_network(self, model_cfg):
         """Build the network."""
         self.net = GaNet(maxdisp=self.maxdisp)
+
+    def init_parameters(self):
+        return
 
     def forward(self, inputs):
         """Forward the network."""
@@ -449,14 +478,25 @@ class GANet(BaseModel):
                         "mask": inputs['mask']
                     },
                 },
-                "visual_summary": {}
+                "visual_summary": {
+                    'image/train/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
+                    'image/train/disp_c': torch.cat([inputs['disp_gt'][0], res[-1][0]], dim=0),
+                },
             }
         else:
             output = {
                 "inference_disp": {
                     "disp_est": res
                 },
-                "visual_summary": {}
+                "visual_summary": {
+                    'image/test/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
+                    'image/test/disp_c': res[0],
+                }
             }
+            if 'disp_gt' in inputs:
+                output['visual_summary'] = {
+                    'image/val/disp_c': torch.cat([inputs['disp_gt'][0], res[0]], dim=0),
+                    'image/val/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
+                }
 
         return output
