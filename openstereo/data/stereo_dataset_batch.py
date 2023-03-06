@@ -30,16 +30,28 @@ class StereoBatchDataset(Dataset):
 
     def build_dataset(self):
         if self.data_cfg['name'] in ['KITTI2012', 'KITTI2015']:
-            from data.reader.kitti_reader import KittiReader
-            self.disp_reader_type = 'PIL'
-            self.dataset = KittiReader(
-                self.data_cfg['root'],
-                self.data_cfg[f'{self.scope}_list'],
-                self.image_reader_type,
-                self.disp_reader_type,
-                right_disp=self.return_right_disp,
-                use_noc=self.data_cfg['use_noc'] if 'use_noc' in self.data_cfg else False,  # NOC disp or OCC disp
-            )
+            if self.scope == 'test_kitti':
+                from data.reader.kitti_reader import KittiTestReader
+                self.disp_reader_type = 'PIL'
+                self.dataset = KittiTestReader(
+                    self.data_cfg['root'],
+                    self.data_cfg['test_list'],
+                    self.image_reader_type,
+                    self.disp_reader_type,
+                    right_disp=False,
+                    use_noc=False,
+                )
+            else:
+                from data.reader.kitti_reader import KittiReader
+                self.disp_reader_type = 'PIL'
+                self.dataset = KittiReader(
+                    self.data_cfg['root'],
+                    self.data_cfg[f'{self.scope}_list'],
+                    self.image_reader_type,
+                    self.disp_reader_type,
+                    right_disp=self.return_right_disp,
+                    use_noc=self.data_cfg['use_noc'] if 'use_noc' in self.data_cfg else False,  # NOC disp or OCC disp
+                )
         elif self.data_cfg['name'] == 'FlyingThings3DSubset':
             from data.reader.sceneflow_reader import FlyingThings3DSubsetReader
             self.disp_reader_type = 'PFM'
@@ -99,7 +111,12 @@ class StereoBatchDataset(Dataset):
 
     def build_transform(self):
         transform_config = self.data_cfg['transform']
-        config = transform_config['train'] if self.is_train else transform_config['test']
+        if self.scope == 'test_kitti':
+            config = transform_config['test_kitti']
+        elif self.scope == 'train':
+            config = transform_config['train']
+        else:
+            config = transform_config['test']
         self.transform = self.build_transform_by_cfg(config)
 
     def __getitem__(self, indexs):
@@ -110,6 +127,10 @@ class StereoBatchDataset(Dataset):
             self.transform.transforms[self.random_crop_index].size = size
 
         batch_result = {}
+
+        if isinstance(indexs, int):
+            indexs = [indexs]
+
         for index in indexs:
             sample = self.dataset[index]
             result = self.transform(sample)
@@ -121,7 +142,8 @@ class StereoBatchDataset(Dataset):
                     else:
                         batch_result[each_item] = np.concatenate([batch_result[each_item], tmp], 0)
                 else:
-                    tmp = torch.unsqueeze(result[each_item], 0)
+                    tmp = torch.unsqueeze(result[each_item], 0) if torch.is_tensor(result[each_item]) else result[
+                        each_item]
                     if each_item not in batch_result:
                         batch_result[each_item] = tmp
                     else:
@@ -137,6 +159,8 @@ class StereoBatchDataset(Dataset):
                 transform_compose.append(ST.TestCrop(trans['size']))
             if trans['type'] == 'StereoPad':
                 transform_compose.append(ST.StereoPad(trans['size']))
+            if trans['type'] == 'DivisiblePad':
+                transform_compose.append(ST.DivisiblePad(trans['by']))
             elif trans['type'] == 'RandomCrop':
                 transform_compose.append(ST.RandomCrop(trans['size']))
                 self.random_crop_index = len(transform_compose) - 1

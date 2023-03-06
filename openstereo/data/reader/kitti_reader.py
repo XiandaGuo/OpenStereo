@@ -29,6 +29,23 @@ class KittiReader(BaseReader):
         return sample
 
 
+class KittiTestReader(KittiReader):
+    def __init__(self, root, list_file, image_reader='PIL', disp_reader='PIL', right_disp=False, use_noc=False):
+        super().__init__(root, list_file, image_reader, disp_reader, right_disp, use_noc)
+
+    def item_loader(self, item):
+        full_paths = [os.path.join(self.root, x) for x in item]
+        left_img_path, right_img_path = full_paths
+        left_img = self.image_loader(left_img_path)
+        right_img = self.image_loader(right_img_path)
+        sample = {
+            'left': left_img,
+            'right': right_img,
+            'name': left_img_path.split('/')[-1],
+        }
+        return sample
+
+
 if __name__ == '__main__':
     dataset = KittiReader(root='../../data/kitti12', list_file='../../../datasets/kitti12/kitti12_train165.txt')
     print(dataset)

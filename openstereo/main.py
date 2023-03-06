@@ -13,7 +13,7 @@ parser.add_argument('--local_rank', type=int, default=0,
 parser.add_argument('--cfgs', type=str,
                     default='configs/default.yaml', help="path of config file")
 parser.add_argument('--phase', default='train',
-                    choices=['train', 'test', 'val'], help="choose train or test phase")
+                    choices=['train', 'test', 'val', 'test_kitti'], help="choose train or test phase")
 parser.add_argument('--log_to_file', action='store_true',
                     help="log to file, default path is: output/<dataset>/<model>/<save_name>/<logs>/<Datetime>.txt")
 parser.add_argument('--iter', default=0, help="iter to restore")
@@ -68,8 +68,10 @@ def run_model(cfgs, scope):
         msg_mgr.log_info(res)
     elif scope == 'test':
         model.run_test(model)
+    elif scope == 'test_kitti':
+        model.run_test_kitti(model)
     else:
-        raise ValueError("Scope should be one of ['train', 'val', 'test'].")
+        raise ValueError("Scope should be one of ['train', 'val', 'test', 'test_kitti'].")
 
 
 if __name__ == '__main__':
@@ -82,7 +84,7 @@ if __name__ == '__main__':
         cfgs['evaluator_cfg']['restore_hint'] = int(opt.iter)
         cfgs['trainer_cfg']['restore_hint'] = int(opt.iter)
 
-    assert opt.phase.lower() in ['train', 'test', 'val']
+    assert opt.phase.lower() in ['train', 'val', 'test', 'test_kitti']
     is_train = (opt.phase == 'train')
 
     initialization(cfgs, is_train)

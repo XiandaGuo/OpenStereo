@@ -20,6 +20,7 @@ import torch
 import torch.distributed as dist
 import torch.nn as nn
 import torch.optim as optim
+from PIL import Image
 from torch.cuda.amp import GradScaler
 from torch.cuda.amp import autocast
 from torch.utils.data import DataLoader, BatchSampler
@@ -168,6 +169,8 @@ class BaseModel(MetaModel, nn.Module):
                 self.val_loader = self.get_loader(cfgs['data_cfg'], 'val')
         elif scope == 'val':
             self.val_loader = self.get_loader(cfgs['data_cfg'], 'val')
+        elif scope == 'test_kitti':
+            self.test_loader = self.get_loader(cfgs['data_cfg'], 'test_kitti')
         else:
             self.test_loader = self.get_loader(cfgs['data_cfg'], 'test')
 
@@ -272,22 +275,30 @@ class BaseModel(MetaModel, nn.Module):
         is_train = scope == 'train'
         dataset = StereoBatchDataset(data_cfg, scope)
         sampler_cfg = self.cfgs['trainer_cfg']['sampler'] if is_train else self.cfgs['evaluator_cfg']['sampler']
+        num_workers = data_cfg['num_workers']
+        batch_size = sampler_cfg['batch_size']
+        shuffle = sampler_cfg['batch_shuffle'] if is_train else False
+
+        if self.scope in ["test", 'test_kitti']:
+            shuffle = False
+            batch_size = 1
 
         sampler = DistributedSampler(
             dataset,
-            shuffle=sampler_cfg['batch_shuffle'] if is_train else False,
+            shuffle=shuffle,
         )
 
         sampler = BatchSampler(
             sampler,
-            sampler_cfg['batch_size'],
+            batch_size,
             drop_last=False,
         )
 
         loader = DataLoader(
             dataset=dataset,
             sampler=sampler,
-            num_workers=data_cfg['num_workers'],
+            collate_fn=lambda x: x[0],
+            num_workers=num_workers,
             pin_memory=False,
         )
         return loader
@@ -391,31 +402,33 @@ class BaseModel(MetaModel, nn.Module):
                   and other meta data.
         """
         # asure the disp_gt has the shape of [B, H, W]
-        disp_gt = inputs['disp']
+        if 'disp' in inputs:
+            disp_gt = inputs['disp']
+            # compute the mask of valid disp_gt
+            max_disp = self.cfgs['model_cfg']['base_config']['max_disp']
+            mask = (disp_gt < max_disp) & (disp_gt > 0)
+            inputs_ = {
+                'ref_img': inputs['left'],
+                'tgt_img': inputs['right'],
+                'disp_gt': disp_gt,
+                'mask': mask,
+            }
+        else:
+            inputs_ = {
+                'ref_img': inputs['left'],
+                'tgt_img': inputs['right'],
+            }
 
-        # compute the mask of valid disp_gt
-        max_disp = self.cfgs['model_cfg']['base_config']['max_disp']
-        mask = (disp_gt < max_disp) & (disp_gt > 0)
-
-        inputs = {
-            'ref_img': inputs['left'],
-            'tgt_img': inputs['right'],
-            'disp_gt': disp_gt,
-            'mask': mask,
-        }
-
-        # check if batch sampler is used
-        if len(inputs['ref_img'].shape) == 5:
-            for k, v in inputs.items():
-                if torch.is_tensor(v):
-                    inputs[k] = v.squeeze(0)
-
-        for k, v in inputs.items():
+        if 'pad_top' in inputs:
+            inputs_['pad_top'] = inputs['pad_top']
+            inputs_['pad_right'] = inputs['pad_right']
+            inputs_['name'] = inputs['name']
+        for k, v in inputs_.items():
             # check if the input is a tensor and move it to the device
             if torch.is_tensor(v):
-                inputs[k] = v.to(self.device)
+                inputs_[k] = v.to(self.device)
 
-        return inputs
+        return inputs_
 
     def train_step(self, loss_sum) -> bool:
         """
@@ -518,7 +531,7 @@ class BaseModel(MetaModel, nn.Module):
         eval_func = partial(eval_func, **valid_args)
 
         infoList = []
-        batch_size = model.cfgs['evaluator_cfg']['sampler']['batch_size'] * model.world_size
+        batch_size = model.val_loader.sampler.batch_size * model.world_size
         total_size = len(dataloader) * batch_size
         rest_size = total_size
         show_progress_bar = model.cfgs['evaluator_cfg']['show_progress_bar']
@@ -560,6 +573,31 @@ class BaseModel(MetaModel, nn.Module):
                 res_dict[k] = np.nanmean(v)
             visual_summary.update(res_dict)
             return res_dict
+
+    @staticmethod
+    @torch.no_grad()
+    def run_test_kitti(model):
+        model_name = model.cfgs['model_cfg']['model']
+        name = model.cfgs['data_cfg']['name']
+        output_dir = f"output/{name}_submit/{model_name}/disp_0"
+        os.makedirs(output_dir, exist_ok=True)
+        model.msg_mgr.log_info("Start testing...")
+        for i, inputs in enumerate(model.test_loader):
+            ipts = model.inputs_pretreament(inputs)
+            with autocast(enabled=model.engine_cfg['enable_float16']):
+                output = model.forward(ipts)
+            inference_disp, visual_summary = output['inference_disp'], output['visual_summary']
+            disp_est = inference_disp['disp_est']
+            if 'pad_top' in ipts:
+                disp_est = disp_est[:, ipts['pad_top']:, :]
+            if 'pad_right' in ipts:
+                disp_est = disp_est[:, :, :-ipts['pad_right']]
+            img = disp_est.squeeze(0).cpu().numpy()
+            img = (img * 256).astype('uint16')
+            img = Image.fromarray(img)
+            name = inputs['name']
+            img.save(os.path.join(output_dir, name))
+        model.msg_mgr.log_info("Testing finished.")
 
     @staticmethod
     def run_test(model, *args, **kwargs):

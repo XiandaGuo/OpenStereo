@@ -3,7 +3,6 @@ import numpy as np
 import torch
 
 import torchvision.transforms.functional as TF
-from PIL import Image
 
 
 class Compose(object):
@@ -29,29 +28,6 @@ class ToTensor(object):
         for k in sample.keys():
             if sample[k] is not None and isinstance(sample[k], np.ndarray):
                 sample[k] = torch.from_numpy(sample[k].copy()).to(torch.float32)
-        return sample
-
-
-class TestCrop(object):
-    def __init__(self, size):
-        self.size = size
-
-    def __call__(self, sample):
-        h, w = sample['left'].shape[:2]
-        crop_h, crop_w = self.size
-        crop_h = min(h, crop_h)
-        crop_w = min(w, crop_w)
-
-        left = sample['left'].astype(np.uint8)
-        right = sample['right'].astype(np.uint8)
-        left_img = Image.fromarray(left).crop((w - crop_w, h - crop_h, w, h))
-        right_img = Image.fromarray(right).crop((w - crop_w, h - crop_h, w, h))
-        sample['left'] = np.array(left_img).astype(np.float32)
-        sample['right'] = np.array(right_img).astype(np.float32)
-
-        for k in sample.keys():
-            if k in ['disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
-                sample[k] = sample[k][h - crop_h:h, w - crop_w: w]
         return sample
 
 
@@ -116,6 +92,36 @@ class StereoPad(object):
             elif k in ['disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
                 sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right)), 'constant',
                                    constant_values=0)
+        return sample
+
+
+class DivisiblePad(object):
+    def __init__(self, by):
+        self.by = by
+
+    def __call__(self, sample):
+        h, w = sample['left'].shape[:2]
+        if h % self.by != 0:
+            pad_top = h + self.by - h % self.by - h
+        else:
+            pad_top = 0
+        if w % self.by != 0:
+            pad_right = w + self.by - w % self.by - w
+        else:
+            pad_right = 0
+        pad_left = 0
+        pad_bottom = 0
+
+        # apply pad for left, right, disp image, and occ mask
+        for k in sample.keys():
+            if k in ['left', 'right']:
+                sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), 'constant',
+                                   constant_values=0)
+            elif k in ['disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
+                sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right)), 'constant',
+                                   constant_values=0)
+        sample['pad_top'] = pad_top
+        sample['pad_right'] = pad_right
         return sample
 
 
