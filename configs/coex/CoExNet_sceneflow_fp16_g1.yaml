@@ -5,7 +5,7 @@ data_cfg:
   val_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
   test_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
   num_workers: 4
-  train_batch_size: 16
+  train_batch_size: 32
   val_batch_size: 10
   pin_memory: true
   train_shuffle: true

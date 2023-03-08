@@ -86,7 +86,7 @@ class Trainer:
     def train_epoch(self):
         total_loss = 0
         self.model.train()
-        self.model.msg_mgr.log_info(
+        self.msg_mgr.log_info(
             f"Using {dist.get_world_size() if self.is_dist else 1} Device,"
             f" batches on each device: {len(self.train_loader)},"
             f" batch size: {self.train_loader.sampler.batch_size}"
@@ -109,7 +109,7 @@ class Trainer:
                     # Updates the scale for next iteration
                     self.scaler.update()
                     if scale > self.scaler.get_scale():
-                        self.model.msg_mgr.log_debug(
+                        self.msg_mgr.log_debug(
                             "Training step skip. Expected the former scale equals to the present, got {} and {}".format(
                                 scale, self.scaler.get_scale()))
                         pbar.update(1)
@@ -133,8 +133,8 @@ class Trainer:
             })
         pbar.close()
         total_loss = torch.tensor(total_loss, device=self.device)
-        dist.barrier()
         if self.is_dist:
+            dist.barrier()
             dist.all_reduce(total_loss, op=dist.ReduceOp.AVG)
         self.epoch_scheduler.step()
         return total_loss / len(self.train_loader)
@@ -157,14 +157,17 @@ class Trainer:
         for k in self.evaluator.metrics:
             epoch_metrics[k] = 0
 
+        self.msg_mgr.log_info(
+            f"Using {dist.get_world_size() if self.is_dist else 1} Device,"
+            f" batches on each device: {len(self.val_loader)},"
+            f" batch size: {self.val_loader.sampler.batch_size}"
+        )
+
         if self.is_dist and self.rank == 0 or not self.is_dist:
             pbar = tqdm(total=len(self.val_loader), desc=f'Eval epoch {self.current_epoch}')
         else:
             pbar = NoOp()
-        self.model.msg_mgr.log_info(
-            f"Total batch: {len(self.val_loader)},"
-            f" batch size: {self.val_loader.sampler.batch_size}"
-        )
+
         for i, data in enumerate(self.val_loader):
             batch_inputs = self.model.prepare_inputs(data)
             with autocast(enabled=self.fp16):

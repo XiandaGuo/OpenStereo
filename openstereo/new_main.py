@@ -147,4 +147,5 @@ if __name__ == '__main__':
         world_size = torch.cuda.device_count()
         mp.spawn(dist_worker, args=(world_size, opt, cfgs), nprocs=world_size)
     else:
+        print("Non-distributed mode.")
         worker(opt, cfgs, torch.device(opt.device))
