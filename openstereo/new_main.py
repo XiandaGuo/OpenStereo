@@ -6,12 +6,12 @@ import torch.multiprocessing as mp
 from torch.distributed import init_process_group
 from torch.utils.data import BatchSampler, DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
-from tqdm import tqdm
 
 from data.stereo_dataset_batch import StereoBatchDataset
 from modeling import models
 from trainer import Trainer
 from utils import config_loader, init_seeds, get_msg_mgr
+from utils.common import DDPPassthrough
 
 
 def arg_parse():
@@ -83,6 +83,9 @@ def dist_worker(rank, world_size, opt, cfgs):
     Model = getattr(models, model_cfg['model'])
     device = torch.device(f'cuda:{rank}')
     model = Model(cfgs, device, scope)
+    model = model.to(device)
+    # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    model = DDPPassthrough(model, device_ids=[rank], output_device=rank)  # DDPmodel
     data_cfg = cfgs['data_cfg']
     model_trainer = Trainer(
         model=model,
@@ -96,7 +99,7 @@ def dist_worker(rank, world_size, opt, cfgs):
         fp16=True,
         is_dist=True,
     )
-    model_trainer.load_model('results/checkpoints/epoch_2.pth')
+    # model_trainer.load_model('results/checkpoints/epoch_2.pth')
     model_trainer.train_model(15)
     # model_trainer.val_epoch()
     cleanup()

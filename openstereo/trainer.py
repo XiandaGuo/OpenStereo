@@ -87,7 +87,8 @@ class Trainer:
         total_loss = 0
         self.model.train()
         self.model.msg_mgr.log_info(
-            f"Total batch: {len(self.train_loader)},"
+            f"Using {dist.get_world_size() if self.is_dist else 1} Device,"
+            f" Total batch each device: {len(self.train_loader)},"
             f" batch size: {self.train_loader.sampler.batch_size}"
         )
         if self.is_dist and self.rank == 0 or not self.is_dist:
@@ -135,13 +136,13 @@ class Trainer:
         dist.barrier()
         if self.is_dist:
             dist.all_reduce(total_loss, op=dist.ReduceOp.AVG)
+        self.epoch_scheduler.step()
         return total_loss / len(self.train_loader)
 
     def train_model(self, epochs=10):
         for epoch in range(epochs):
             self.model.train()
             self.train_epoch()
-            self.epoch_scheduler.step()
             self.save_model(os.path.join(self.save_dir, "checkpoints", f'epoch_{self.current_epoch}.pth'))
             self.val_epoch()
             self.current_epoch += 1
