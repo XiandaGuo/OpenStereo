@@ -4,7 +4,7 @@ import os
 import torch
 import torch.multiprocessing as mp
 from torch.distributed import init_process_group
-from torch.utils.data import BatchSampler, DataLoader, RandomSampler
+from torch.utils.data import BatchSampler, DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
 
@@ -16,7 +16,7 @@ from utils import config_loader, init_seeds, get_msg_mgr
 
 def arg_parse():
     parser = argparse.ArgumentParser(description='Main program for OpenStereo.')
-    parser.add_argument('--cfgs', type=str, default='configs/psmnet/PSMNet_sceneflow_g8.yaml',
+    parser.add_argument('--cfgs', type=str, default='configs/coex/CoExNet_sceneflow_g1.yaml',
                         help="path of config file")
     parser.add_argument('--scope', default='train', choices=['train', 'val', 'test_kitti'],
                         help="choose train or test scope")
@@ -53,6 +53,28 @@ def initialization(opt, cfgs, scope):
         init_seeds(0)
 
 
+def get_data_loader(data_cfg, scope, distributed=True):
+    is_train = scope == 'train'
+    dataset = StereoBatchDataset(data_cfg, scope)
+    batch_size = data_cfg.get(f'{scope}_batch_size', 1)
+    num_workers = data_cfg['num_workers']
+    pin_memory = data_cfg['pin_memory']
+    shuffle = data_cfg.get(f'{scope}_shuffle', False)
+    if distributed:
+        sampler = DistributedSampler(dataset, shuffle=shuffle)
+    else:
+        sampler = RandomSampler(dataset) if shuffle else SequentialSampler(dataset)
+    sampler = BatchSampler(sampler, batch_size, drop_last=False)
+    loader = DataLoader(
+        dataset=dataset,
+        sampler=sampler,
+        collate_fn=dataset.collect_fn,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+    )
+    return loader
+
+
 def dist_worker(rank, world_size, opt, cfgs):
     ddp_init(rank, world_size)
     initialization(opt, cfgs, opt.scope)
@@ -69,9 +91,10 @@ def dist_worker(rank, world_size, opt, cfgs):
         optimizer_cfg=cfgs['optimizer_cfg'],
         scheduler_cfg=cfgs['scheduler_cfg'],
         evaluator_cfg=cfgs['evaluator_cfg'],
-        is_dist=True,
-        device=rank,
+        device=torch.device('cuda'),
+        rank=rank,
         fp16=True,
+        is_dist=True,
     )
     # model_trainer.load_model('results/checkpoints/epoch_0.pth')
     model_trainer.train_model()
@@ -79,55 +102,27 @@ def dist_worker(rank, world_size, opt, cfgs):
     cleanup()
 
 
-def collect_fn(batch):
-    return batch[0]
-
-
-def get_data_loader(data_cfg, scope, distributed=True):
-    dataset = StereoBatchDataset(data_cfg, scope)
-    if distributed:
-        sampler = DistributedSampler(
-            dataset,
-            shuffle=True,
-        )
-    else:
-        sampler = RandomSampler(
-            dataset,
-        )
-    sampler = BatchSampler(
-        sampler,
-        10,
-        drop_last=False,
-    )
-    loader = DataLoader(
-        dataset=dataset,
-        sampler=sampler,
-        collate_fn=collect_fn,
-        num_workers=4,
-        pin_memory=False,
-    )
-    return loader
-
-
 def worker(opt, cfgs, device):
     initialization(opt, cfgs, opt.scope)
     model_cfg = cfgs['model_cfg']
     scope = opt.scope
     Model = getattr(models, model_cfg['model'])
-    model = Model(cfgs, device, scope == 'train')
-    model.to(device)
+    model = Model(cfgs, device, scope)
     data_cfg = cfgs['data_cfg']
-    train_loader = get_data_loader(data_cfg, 'train', False)
-    val_loader = get_data_loader(data_cfg, 'val', False)
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-    pbar = tqdm(total=len(train_loader), desc="Training: loss=0.000")
-
-    for i, batch_data in enumerate(train_loader):
-        loss = model.train_step(batch_data, optimizer)
-        pbar.set_description(f'Training: loss={loss.item():.3f}')
-        pbar.update(1)
-    for i, batch_data in enumerate(val_loader):
-        model.val_step(batch_data)
+    model_trainer = Trainer(
+        model=model,
+        train_loader=get_data_loader(data_cfg, 'train', distributed=False),
+        val_loader=get_data_loader(data_cfg, 'val', distributed=False),
+        optimizer_cfg=cfgs['optimizer_cfg'],
+        scheduler_cfg=cfgs['scheduler_cfg'],
+        evaluator_cfg=cfgs['evaluator_cfg'],
+        device=torch.device('cuda'),
+        fp16=True,
+        is_dist=False,
+    )
+    # model_trainer.load_model('results/checkpoints/epoch_0.pth')
+    model_trainer.train_model()
+    # model_trainer.val_epoch()
 
 
 if __name__ == '__main__':
@@ -138,5 +133,5 @@ if __name__ == '__main__':
         world_size = torch.cuda.device_count()
         mp.spawn(dist_worker, args=(world_size, opt, cfgs), nprocs=world_size)
     else:
-        device = torch.device('cpu')
+        device = torch.device('cuda')
         worker(opt, cfgs, device)

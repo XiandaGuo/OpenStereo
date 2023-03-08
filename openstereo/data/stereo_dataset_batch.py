@@ -193,3 +193,7 @@ class StereoBatchDataset(Dataset):
 
     def __len__(self):
         return len(self.dataset)
+
+    @staticmethod
+    def collect_fn(batch):
+        return batch[0]

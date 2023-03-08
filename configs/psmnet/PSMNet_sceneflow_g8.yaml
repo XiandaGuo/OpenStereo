@@ -1,10 +1,15 @@
 data_cfg:
   name: SceneFlow
   root: data/SceneFlow
-  train_list: datasets/SceneFlow/sceneflow_cleanpass_train.txt
-  val_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
-  test_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
-  num_workers: 16
+  train_list: datasets/sceneflow/sceneflow_cleanpass_train.txt
+  val_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
+  test_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
+  num_workers: 4
+  train_batch_size: 10
+  val_batch_size: 10
+  pin_memory: true
+  train_shuffle: true
+  val_shuffle: false
 
   batch_uniform: false
   #  random_type: range

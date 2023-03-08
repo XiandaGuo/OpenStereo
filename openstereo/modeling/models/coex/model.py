@@ -4,18 +4,18 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from modeling.base_model import BaseModel
+from modeling.new_base_model import BaseModel
 
 
 class CoExNet(BaseModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def build_network(self, model_cfg):
+    def build_network(self):
         self.net = CoEx()
 
     def init_parameters(self):
-        pass
+        return
 
     def forward(self, inputs):
         """Forward the network."""

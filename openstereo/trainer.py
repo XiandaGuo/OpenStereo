@@ -4,7 +4,6 @@ import torch
 import torch.distributed as dist
 import torch.nn as nn
 import torch.optim as optim
-import torchvision.transforms as T
 from torch.cuda.amp import autocast
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -13,26 +12,19 @@ from evaluation.evaluator import OpenStereoEvaluator
 from utils import NoOp, get_attr_from, get_valid_args
 
 
-def invTrans(img):
-    return T.Normalize(
-        mean=[-0.485 / 0.229, -0.456 / 0.224, -0.406 / 0.225],
-        std=[1 / 0.229, 1 / 0.224, 1 / 0.255]
-    )(img)
-
-
 class Trainer:
     def __init__(
             self,
             model: nn.Module = None,
             train_loader: DataLoader = None,
             val_loader: DataLoader = None,
-            optimizer_cfg=None,
-            scheduler_cfg=None,
-            evaluator_cfg=None,
-            is_dist=True,
-            rank=None,
-            device=None,
-            fp16=False,
+            optimizer_cfg: dict = None,
+            scheduler_cfg: dict = None,
+            evaluator_cfg: dict = None,
+            is_dist: bool = True,
+            device: torch.device = torch.device('cpu'),
+            fp16: bool = False,
+            rank: int = None,
     ):
         self.msg_mgr = model.msg_mgr
         self.model = model
@@ -48,12 +40,7 @@ class Trainer:
         self.evaluator = NoOp()
         self.is_dist = is_dist
         self.rank = rank if is_dist else None
-        if is_dist:
-            self.device = torch.device('cuda', rank)
-        elif device is None:
-            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        else:
-            self.device = device if device is not None else torch.device('cpu')
+        self.device = torch.device('cuda', rank) if is_dist else device
         self.fp16 = fp16
         self.seed = 1024
         self.save_dir = './results'
@@ -99,8 +86,11 @@ class Trainer:
     def train_epoch(self):
         total_loss = 0
         self.model.train()
-        self.model.msg_mgr.log_info(f"Total batch: {len(self.train_loader)}")
-        if not self.is_dist or self.rank == 0:
+        self.model.msg_mgr.log_info(
+            f"Total batch: {len(self.train_loader)},"
+            f" batch size: {self.train_loader.sampler.batch_size}"
+        )
+        if self.is_dist and self.rank == 0 or not self.is_dist:
             pbar = tqdm(total=len(self.train_loader), desc=f'Train epoch {self.current_epoch}')
         else:
             pbar = NoOp()
@@ -166,11 +156,14 @@ class Trainer:
         for k in self.evaluator.metrics:
             epoch_metrics[k] = 0
 
-        if not self.is_dist or self.rank == 0:
+        if self.is_dist and self.rank == 0 or not self.is_dist:
             pbar = tqdm(total=len(self.val_loader), desc=f'Eval epoch {self.current_epoch}')
         else:
             pbar = NoOp()
-
+        self.model.msg_mgr.log_info(
+            f"Total batch: {len(self.val_loader)},"
+            f" batch size: {self.val_loader.sampler.batch_size}"
+        )
         for i, data in enumerate(self.val_loader):
             batch_inputs = self.model.prepare_inputs(data)
             with autocast(enabled=self.fp16):

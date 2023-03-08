@@ -1,10 +1,15 @@
 data_cfg:
   name: SceneFlow
   root: data/SceneFlow
-  train_list: datasets/sceneflow/sceneflow_finalpass_train.txt
-  val_list: datasets/sceneflow/sceneflow_finalpass_test.txt
-  test_list: datasets/sceneflow/sceneflow_finalpass_test.txt
+  train_list: datasets/sceneflow/sceneflow_cleanpass_train.txt
+  val_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
+  test_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
   num_workers: 4
+  train_batch_size: 16
+  val_batch_size: 10
+  pin_memory: true
+  train_shuffle: true
+  val_shuffle: false
 
   batch_uniform: false
   #  random_type: range
@@ -55,44 +60,44 @@ loss_cfg:
 
 optimizer_cfg:
   solver: Adam
-  lr: 0.0001
+  lr: 0.001
   betas: [ 0.9, 0.999 ]
 
 scheduler_cfg:
   scheduler: MultiStepLR
   gamma: 0.1
   milestones: # Learning Rate Reduction at each milestones
-    - 14000
+    - 7
+    - 9
 
   warmup:
-    type: LinearWarmup
-    warmup_period: 500
+    warmup_steps: 5
 
-trainer_cfg:
+train_cfg:
   save_name: CoExNet_SceneFlow
   restore_hint: 0
   restore_ckpt_strict: true
   log_iter: 10
   with_test: true
   enable_float16: false
-  save_iter: 2000
-  sync_BN: false
+  save_iter: 1000
+  sync_BN: true
   total_iter: 20000
-  total_epoch: 12
+  total_epoch: 15
   optimizer_reset: false
   scheduler_reset: false
-#  clip_grad_norm:
-#    max_norm: 35
-#    norm_type: 2
+  clip_grad_norm:
+    max_norm: 35
+    norm_type: 2
   sampler:
     batch_shuffle: true
-    batch_size: 16
+    batch_size: 4
 
 
 evaluator_cfg:
   save_name: CoExNet_SceneFlow
   eval_func: OpenStereoEvaluator
-  restore_hint: 11000
+  restore_hint: 0
   metric:
     - d1_all
     - epe
@@ -101,7 +106,8 @@ evaluator_cfg:
     - thres_3
   enable_float16: false
   restore_ckpt_strict: true
-  show_progress_bar: true
+  show_progress_bar: false
   sampler:
     batch_shuffle: false
-    batch_size: 10
+    batch_size: 1
+
