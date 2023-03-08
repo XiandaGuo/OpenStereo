@@ -2,7 +2,7 @@ data_cfg:
   name: KITTI2015
   root: data/kitti15
   train_list: datasets/kitti15/kitti15_train200.txt
-  val_list: datasets/kitti15/kitti15_val35.txt
+  val_list: datasets/kitti15/kitti15_train200.txt
   test_list: datasets/kitti15/kitti15_test.txt
   num_workers: 8
 
@@ -67,8 +67,9 @@ model_cfg:
 
 
 optimizer_cfg:
-  solver: RMSprop
-  lr: 0.0001
+  solver: Adam
+  lr: 0.001
+  betas: [ 0.9, 0.999 ]
 
 loss_cfg:
   - log_prefix: disp
@@ -81,37 +82,38 @@ scheduler_cfg:
   scheduler: MultiStepLR
   gamma: 0.1
   milestones: # Learning Rate Reduction at each milestones
-    - 6000
+    - 4000
+    - 8000
 
   warmup:
     type: LinearWarmup
     warmup_period: 100
 
 trainer_cfg:
-  save_name: PSMNet_KITTI15
-  restore_hint: 6600
+  save_name: PSMNet_KITTI15_N
+  restore_hint: '/home/ralph/Projects/PhiGent/OpenStereo/output/SceneFlow/PSMNet/PSMNet_SceneFlow/checkpoints/PSMNet_SceneFlow-00501.pt'
   restore_ckpt_strict: true
   log_iter: 10
   with_test: true
-  enable_float16: false
-  save_iter: 200
+  enable_float16: true
+  save_iter: 500
   sync_BN: true
   total_iter: 20000
-  total_epoch: 400
-  optimizer_reset: false
-  scheduler_reset: false
+  total_epoch: 600
+  optimizer_reset: true
+  scheduler_reset: true
   clip_grad_norm:
     max_norm: 35
     norm_type: 2
   sampler:
     batch_shuffle: true
-    batch_size: 7
+    batch_size: 10
 
 
 evaluator_cfg:
-  save_name: PSMNet_KITTI15
+  save_name: PSMNet_KITTI15_N
   eval_func: OpenStereoEvaluator
-  restore_hint: 7000
+  restore_hint: 11949
   metric:
     - d1_all
     - epe
@@ -120,7 +122,7 @@ evaluator_cfg:
     - thres_3
   enable_float16: false
   restore_ckpt_strict: true
-  show_progress_bar: false
+  show_progress_bar: true
   sampler:
     batch_shuffle: false
     batch_size: 1

@@ -96,8 +96,8 @@ def dist_worker(rank, world_size, opt, cfgs):
         fp16=True,
         is_dist=True,
     )
-    # model_trainer.load_model('results/checkpoints/epoch_0.pth')
-    model_trainer.train_model()
+    model_trainer.load_model('results/checkpoints/epoch_2.pth')
+    model_trainer.train_model(15)
     # model_trainer.val_epoch()
     cleanup()
 
@@ -120,7 +120,7 @@ def worker(opt, cfgs, device):
         fp16=True,
         is_dist=False,
     )
-    # model_trainer.load_model('results/checkpoints/epoch_0.pth')
+    # model_trainer.load_model('results/checkpoints/epoch_2.pth')
     model_trainer.train_model()
     # model_trainer.val_epoch()
 
