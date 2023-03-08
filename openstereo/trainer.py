@@ -88,7 +88,7 @@ class Trainer:
         self.model.train()
         self.model.msg_mgr.log_info(
             f"Using {dist.get_world_size() if self.is_dist else 1} Device,"
-            f" Total batch each device: {len(self.train_loader)},"
+            f" batches on each device: {len(self.train_loader)},"
             f" batch size: {self.train_loader.sampler.batch_size}"
         )
         if self.is_dist and self.rank == 0 or not self.is_dist:

@@ -221,3 +221,10 @@ class BaseModel(MetaModel, nn.Module):
             outputs = self.forward_step(data_batch)
             loss = self.compute_loss(None, outputs)
         return loss
+
+    def fix_bn(self):
+        """Fix the batch normalization layers."""
+        for module in self.modules():
+            classname = module.__class__.__name__
+            if classname.find('BatchNorm') != -1:
+                module.eval()

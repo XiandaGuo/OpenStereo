@@ -11,7 +11,7 @@ from data.stereo_dataset_batch import StereoBatchDataset
 from modeling import models
 from trainer import Trainer
 from utils import config_loader, init_seeds, get_msg_mgr
-from utils.common import DDPPassthrough
+from utils.common import DDPPassthrough, params_count
 
 
 def arg_parse():
@@ -21,16 +21,22 @@ def arg_parse():
     parser.add_argument('--scope', default='train', choices=['train', 'val', 'test_kitti'],
                         help="choose train or test scope")
     # set distributed training store true
+    parser.add_argument('--master_addr', type=str, default='localhost', help="master address")
+    parser.add_argument('--master_port', type=str, default='12355', help="master port")
     parser.add_argument('--no_distribute', action='store_true', default=False, help="disable distributed training")
     parser.add_argument('--log_to_file', action='store_true',
                         help="log to file, default path is: output/<dataset>/<model>/<save_name>/<logs>/<Datetime>.txt")
+    parser.add_argument('--device', type=str, default='cuda', help="device to use for non-distributed mode.")
+
     opt = parser.parse_args()
     return opt
 
 
-def ddp_init(rank, world_size):
-    os.environ["MASTER_ADDR"] = "localhost"
-    os.environ["MASTER_PORT"] = "12355"
+def ddp_init(rank, world_size, master_addr, master_port):
+    if master_addr is not None:
+        os.environ["MASTER_ADDR"] = master_addr
+    if master_port is not None:
+        os.environ["MASTER_PORT"] = master_port
     init_process_group(backend="nccl", rank=rank, world_size=world_size)
 
 
@@ -54,7 +60,6 @@ def initialization(opt, cfgs, scope):
 
 
 def get_data_loader(data_cfg, scope, distributed=True):
-    is_train = scope == 'train'
     dataset = StereoBatchDataset(data_cfg, scope)
     batch_size = data_cfg.get(f'{scope}_batch_size', 1)
     num_workers = data_cfg['num_workers']
@@ -76,7 +81,7 @@ def get_data_loader(data_cfg, scope, distributed=True):
 
 
 def dist_worker(rank, world_size, opt, cfgs):
-    ddp_init(rank, world_size)
+    ddp_init(rank, world_size, opt.master_addr, opt.master_port)
     initialization(opt, cfgs, opt.scope)
     model_cfg = cfgs['model_cfg']
     scope = opt.scope
@@ -85,7 +90,11 @@ def dist_worker(rank, world_size, opt, cfgs):
     model = Model(cfgs, device, scope)
     model = model.to(device)
     # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    # model.fix_bn()
     model = DDPPassthrough(model, device_ids=[rank], output_device=rank)  # DDPmodel
+    msg_mgr = get_msg_mgr()
+    msg_mgr.log_info(params_count(model))
+    msg_mgr.log_info("Model Initialization Finished!")
     data_cfg = cfgs['data_cfg']
     model_trainer = Trainer(
         model=model,
@@ -112,6 +121,8 @@ def worker(opt, cfgs, device):
     Model = getattr(models, model_cfg['model'])
     model = Model(cfgs, device, scope)
     data_cfg = cfgs['data_cfg']
+    model = model.to(device)
+    # model.fix_bn()
     model_trainer = Trainer(
         model=model,
         train_loader=get_data_loader(data_cfg, 'train', distributed=False),
@@ -119,7 +130,7 @@ def worker(opt, cfgs, device):
         optimizer_cfg=cfgs['optimizer_cfg'],
         scheduler_cfg=cfgs['scheduler_cfg'],
         evaluator_cfg=cfgs['evaluator_cfg'],
-        device=torch.device('cuda'),
+        device=device,
         fp16=True,
         is_dist=False,
     )
@@ -136,5 +147,4 @@ if __name__ == '__main__':
         world_size = torch.cuda.device_count()
         mp.spawn(dist_worker, args=(world_size, opt, cfgs), nprocs=world_size)
     else:
-        device = torch.device('cuda')
-        worker(opt, cfgs, device)
+        worker(opt, cfgs, torch.device(opt.device))
