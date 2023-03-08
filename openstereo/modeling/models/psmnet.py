@@ -1,4 +1,4 @@
-from modeling.base_model import BaseModel
+from modeling.new_base_model import BaseModel
 
 
 class PSMNet(BaseModel):

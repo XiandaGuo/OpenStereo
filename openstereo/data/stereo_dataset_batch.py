@@ -30,7 +30,7 @@ class StereoBatchDataset(Dataset):
 
     def build_dataset(self):
         if self.data_cfg['name'] in ['KITTI2012', 'KITTI2015']:
-            if self.scope == 'test_kitti':
+            if "test" in self.scope:
                 from data.reader.kitti_reader import KittiTestReader
                 self.disp_reader_type = 'PIL'
                 self.dataset = KittiTestReader(

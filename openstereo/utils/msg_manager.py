@@ -3,8 +3,8 @@ import os.path as osp
 import time
 from time import strftime, localtime
 
-import torch
 import numpy as np
+import torch
 import torchvision.utils as vutils
 from torch.utils.tensorboard import SummaryWriter
 
@@ -79,7 +79,7 @@ class MessageManager:
     def log_training_info(self):
         now = time.time()
         string = "Iteration {:0>5}, Cost {:.2f}s".format(
-            self.iteration, now-self.time, end="")
+            self.iteration, now - self.time, end="")
         for i, (k, v) in enumerate(self.info_dict.items()):
             if 'scalar' not in k:
                 continue
@@ -115,7 +115,9 @@ noop = NoOp()
 
 
 def get_msg_mgr():
-    if torch.distributed.get_rank() > 0:
+    if not torch.distributed.is_initialized():
+        return msg_mgr
+    elif torch.distributed.get_rank() > 0:
         return noop
     else:
         return msg_mgr
