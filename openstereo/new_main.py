@@ -3,7 +3,6 @@ import os
 
 import torch
 import torch.multiprocessing as mp
-import torch.nn as nn
 from torch.distributed import init_process_group
 from torch.utils.data import BatchSampler, DataLoader, RandomSampler
 from torch.utils.data.distributed import DistributedSampler
@@ -12,7 +11,7 @@ from tqdm import tqdm
 from data.stereo_dataset_batch import StereoBatchDataset
 from modeling import models
 from trainer import Trainer
-from utils import config_loader, get_ddp_module, init_seeds, params_count, get_msg_mgr
+from utils import config_loader, init_seeds, get_msg_mgr
 
 
 def arg_parse():
@@ -54,34 +53,6 @@ def initialization(opt, cfgs, scope):
         init_seeds(0)
 
 
-def run_model(cfgs, scope):
-    is_train = scope == 'train'
-    msg_mgr = get_msg_mgr()
-    model_cfg = cfgs['model_cfg']
-    msg_mgr.log_info(model_cfg)
-    Model = getattr(models, model_cfg['model'])
-    model = Model(cfgs, scope)
-    if is_train and cfgs['trainer_cfg']['sync_BN']:
-        model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
-    if cfgs['trainer_cfg']['fix_BN']:
-        model.fix_BN()
-    model = get_ddp_module(model, find_unused_parameters=model_cfg['find_unused_parameters'])
-
-    msg_mgr.log_info(params_count(model))
-    msg_mgr.log_info("Model Initialization Finished!")
-    if scope == 'train':
-        model.run_train(model)
-    elif scope == 'val':
-        res = model.run_val(model)
-        msg_mgr.log_info(res)
-    elif scope == 'test':
-        model.run_test(model)
-    elif scope == 'test_kitti':
-        model.run_test_kitti(model)
-    else:
-        raise ValueError("Scope should be one of ['train', 'val', 'test', 'test_kitti'].")
-
-
 def dist_worker(rank, world_size, opt, cfgs):
     ddp_init(rank, world_size)
     initialization(opt, cfgs, opt.scope)
@@ -97,12 +68,14 @@ def dist_worker(rank, world_size, opt, cfgs):
         val_loader=get_data_loader(data_cfg, 'val'),
         optimizer_cfg=cfgs['optimizer_cfg'],
         scheduler_cfg=cfgs['scheduler_cfg'],
+        evaluator_cfg=cfgs['evaluator_cfg'],
         is_dist=True,
         device=rank,
         fp16=True,
     )
-    # model_trainer.load_model('results/checkpoints/epoch_2.pth')
+    # model_trainer.load_model('results/checkpoints/epoch_0.pth')
     model_trainer.train_model()
+    # model_trainer.val_epoch()
     cleanup()
 
 

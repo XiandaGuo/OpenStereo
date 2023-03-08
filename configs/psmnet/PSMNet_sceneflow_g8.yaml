@@ -73,10 +73,11 @@ scheduler_cfg:
   scheduler: MultiStepLR
   gamma: 0.1
   milestones: # Learning Rate Reduction at each milestones
-    - 10000
+    - 7
+    - 9
 
   warmup:
-    warmup_steps: 100
+    warmup_steps: 5
 
 train_cfg:
   save_name: PSMNet_SceneFlow
@@ -114,4 +115,4 @@ evaluator_cfg:
   show_progress_bar: false
   sampler:
     batch_shuffle: false
-    batch_size: 2
+    batch_size: 1
