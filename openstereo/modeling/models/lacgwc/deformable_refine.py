@@ -41,7 +41,7 @@ class OffsetConv(nn.Module):
         if self.modulation:
             m = torch.sigmoid(self.m_conv(x))
         else:
-            m = torch.ones(B, N // 2, H, W).cuda()
+            m = torch.ones(B, N // 2, H, W).to(x.device)
 
         return offset, m
 

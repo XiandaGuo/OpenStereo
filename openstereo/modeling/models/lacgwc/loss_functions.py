@@ -8,7 +8,7 @@ from PIL import Image
 
 def disp2distribute(disp_gt, max_disp, b=2):
     disp_gt = disp_gt.unsqueeze(1)
-    disp_range = torch.arange(0, max_disp).view(1, -1, 1, 1).float().cuda()
+    disp_range = torch.arange(0, max_disp).view(1, -1, 1, 1).float().to(disp_gt.device)
     gt_distribute = torch.exp(-torch.abs(disp_range - disp_gt) / b)
     gt_distribute = gt_distribute / (torch.sum(gt_distribute, dim=1, keepdim=True) + 1e-8)
     return gt_distribute
