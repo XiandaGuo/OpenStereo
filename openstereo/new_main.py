@@ -88,10 +88,12 @@ def dist_worker(rank, world_size, opt, cfgs):
     Model = getattr(models, model_cfg['model'])
     device = torch.device(f'cuda:{rank}')
     model = Model(cfgs, device, scope)
+    if cfgs['train_cfg'].get('sync_bn', False):
+        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    if cfgs['train_cfg'].get('fix_bn', False):
+        model.fix_bn()
     model = model.to(device)
-    # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-    # model.fix_bn()
-    model = DDPPassthrough(model, device_ids=[rank], output_device=rank)  # DDPmodel
+    model = DDPPassthrough(model, device_ids=[rank])  # DDPmodel
     msg_mgr = get_msg_mgr()
     msg_mgr.log_info(params_count(model))
     msg_mgr.log_info("Model Initialization Finished!")

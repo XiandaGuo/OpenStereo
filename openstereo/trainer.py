@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 from evaluation.evaluator import OpenStereoEvaluator
 from utils import NoOp, get_attr_from, get_valid_args
+from utils.warmup import LinearWarmup
 
 
 class Trainer:
@@ -34,7 +35,7 @@ class Trainer:
         self.scheduler_cfg = scheduler_cfg
         self.evaluator_cfg = evaluator_cfg
         self.optimizer = NoOp()
-        self.warmup = NoOp()
+        self.warmup_scheduler = NoOp()
         self.epoch_scheduler = NoOp()
         self.batch_scheduler = NoOp()
         self.evaluator = NoOp()
@@ -51,13 +52,13 @@ class Trainer:
         self.build_model()
         self.build_optimizer(optimizer_cfg)
         self.build_scheduler(scheduler_cfg)
-        self.build_warmup(scheduler_cfg)
+        self.build_warmup_scheduler(scheduler_cfg)
         self.build_evaluator()
 
     def build_model(self, checkpoint=None):
         if checkpoint is not None:
             self.load_model(checkpoint)
-        self.model.to(self.device)
+        # self.model.to(self.device)
 
     def build_optimizer(self, optimizer_cfg):
         self.msg_mgr.log_info(optimizer_cfg)
@@ -76,8 +77,14 @@ class Trainer:
         else:
             self.batch_scheduler = scheduler
 
-    def build_warmup(self, scheduler_cfg):
-        pass
+    def build_warmup_scheduler(self, scheduler_cfg):
+        warmup_cfg = scheduler_cfg.get('warmup', None)
+        if warmup_cfg is None:
+            return
+        self.warmup_scheduler = LinearWarmup(
+            self.optimizer,
+            warmup_period=warmup_cfg.get('warmup_steps', 1),
+        )
 
     def build_evaluator(self):
         metrics = self.evaluator_cfg.get('metrics', ['epe', 'd1_all', 'thres_1', 'thres_2', 'thres_3'])
@@ -122,8 +129,11 @@ class Trainer:
                 torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
                 self.optimizer.step()
             self.current_iter += 1
-            self.batch_scheduler.step()
-            self.warmup.step()
+            if self.warmup_scheduler is not None:
+                with self.warmup_scheduler.dampening():
+                    self.batch_scheduler.step()
+            else:
+                self.batch_scheduler.step()
             total_loss += loss.item() if not torch.isnan(loss) else 0
             pbar.update(1)
             pbar.set_postfix({
@@ -136,7 +146,11 @@ class Trainer:
         if self.is_dist:
             dist.barrier()
             dist.all_reduce(total_loss, op=dist.ReduceOp.AVG)
-        self.epoch_scheduler.step()
+        if self.warmup_scheduler is not None:
+            with self.warmup_scheduler.dampening():
+                self.epoch_scheduler.step()
+        else:
+            self.epoch_scheduler.step()
         return total_loss / len(self.train_loader)
 
     def train_model(self, epochs=10):
@@ -212,6 +226,9 @@ class Trainer:
                 self.epoch_scheduler.load_state_dict(checkpoint['epoch_scheduler'])
         except KeyError:
             self.msg_mgr.log_warning('Optimizer and scheduler not loaded.')
+
+        if not isinstance(self.warmup_scheduler, NoOp):
+            self.warmup_scheduler.last_step = self.current_iter
         self.msg_mgr.log_info(f'Model loaded from {path}')
 
     def save_model(self, path):

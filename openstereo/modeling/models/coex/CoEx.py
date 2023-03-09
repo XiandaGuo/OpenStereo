@@ -1,16 +1,13 @@
-from __future__ import print_function
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from .submodules.feature import Feature, FeatUp
-from .submodules.utils import AttentionCostVolume
 from .submodules.aggregation import Aggregation
+from .submodules.feature import Feature, FeatUp
 from .submodules.regression import Regression
 from .submodules.util_conv import BasicConv, Conv2x
-
-import pdb
+from .submodules.utils import AttentionCostVolume
 
 
 class CoEx(nn.Module):
