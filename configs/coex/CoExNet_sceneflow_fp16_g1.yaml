@@ -4,8 +4,8 @@ data_cfg:
   train_list: datasets/sceneflow/sceneflow_cleanpass_train.txt
   val_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
   test_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
-  num_workers: 4
-  train_batch_size: 32
+  num_workers: 8
+  train_batch_size: 8
   val_batch_size: 10
   pin_memory: true
   train_shuffle: true
@@ -22,7 +22,7 @@ data_cfg:
   transform:
     train:
       - type: RandomCrop
-        size: [ 256, 512 ]
+        size: [ 288, 576 ]
       #- type: RandomHorizontalFlip
       #  prob: 0.5
       - type: GetValidDisp
@@ -68,10 +68,10 @@ scheduler_cfg:
   gamma: 0.1
   milestones: # Learning Rate Reduction at each milestones
     - 7
-    - 9
+    - 12
 
   warmup:
-    warmup_steps: 5
+    warmup_steps: 100
 
 train_cfg:
   save_name: CoExNet_SceneFlow
@@ -79,7 +79,7 @@ train_cfg:
   restore_ckpt_strict: true
   log_iter: 10
   with_test: true
-  enable_float16: false
+  enable_float16: true
   save_iter: 1000
   sync_BN: true
   total_iter: 20000
@@ -104,7 +104,7 @@ evaluator_cfg:
     - thres_1
     - thres_2
     - thres_3
-  enable_float16: false
+  enable_float16: true
   restore_ckpt_strict: true
   show_progress_bar: false
   sampler:
