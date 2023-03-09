@@ -81,9 +81,11 @@ def get_data_loader(data_cfg, scope, distributed=True):
 
 
 def dist_worker(rank, world_size, opt, cfgs):
+    msg_mgr = get_msg_mgr()
     ddp_init(rank, world_size, opt.master_addr, opt.master_port)
     initialization(opt, cfgs, opt.scope)
     model_cfg = cfgs['model_cfg']
+    data_cfg = cfgs['data_cfg']
     scope = opt.scope
     Model = getattr(models, model_cfg['model'])
     device = torch.device(f'cuda:{rank}')
@@ -94,10 +96,8 @@ def dist_worker(rank, world_size, opt, cfgs):
         model.fix_bn()
     model = model.to(device)
     model = DDPPassthrough(model, device_ids=[rank])  # DDPmodel
-    msg_mgr = get_msg_mgr()
     msg_mgr.log_info(params_count(model))
     msg_mgr.log_info("Model Initialization Finished!")
-    data_cfg = cfgs['data_cfg']
     model_trainer = Trainer(
         model=model,
         train_loader=get_data_loader(data_cfg, 'train'),
@@ -117,14 +117,19 @@ def dist_worker(rank, world_size, opt, cfgs):
 
 
 def worker(opt, cfgs, device):
+    msg_mgr = get_msg_mgr()
     initialization(opt, cfgs, opt.scope)
     model_cfg = cfgs['model_cfg']
+    data_cfg = cfgs['data_cfg']
     scope = opt.scope
     Model = getattr(models, model_cfg['model'])
     model = Model(cfgs, device, scope)
-    data_cfg = cfgs['data_cfg']
     model = model.to(device)
+    if cfgs['train_cfg'].get('fix_bn', False):
+        model.fix_bn()
     # model.fix_bn()
+    msg_mgr.log_info(params_count(model))
+    msg_mgr.log_info("Model Initialization Finished!")
     model_trainer = Trainer(
         model=model,
         train_loader=get_data_loader(data_cfg, 'train', distributed=False),
