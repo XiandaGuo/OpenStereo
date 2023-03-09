@@ -16,14 +16,14 @@ from utils.common import DDPPassthrough, params_count
 
 def arg_parse():
     parser = argparse.ArgumentParser(description='Main program for OpenStereo.')
-    parser.add_argument('--cfgs', type=str, default='configs/coex/CoExNet_sceneflow_g1.yaml',
+    parser.add_argument('--config', type=str, default='configs/coex/CoExNet_sceneflow_g1.yaml',
                         help="path of config file")
     parser.add_argument('--scope', default='train', choices=['train', 'val', 'test_kitti'],
                         help="choose train or test scope")
     # set distributed training store true
     parser.add_argument('--master_addr', type=str, default='localhost', help="master address")
     parser.add_argument('--master_port', type=str, default='12355', help="master port")
-    parser.add_argument('--no_distribute', action='store_true', default=False, help="disable distributed training")
+    parser.add_argument('--no_distribute', action='store_true', default=True, help="disable distributed training")
     parser.add_argument('--log_to_file', action='store_true',
                         help="log to file, default path is: output/<dataset>/<model>/<save_name>/<logs>/<Datetime>.txt")
     parser.add_argument('--device', type=str, default='cuda', help="device to use for non-distributed mode.")
@@ -136,14 +136,14 @@ def worker(opt, cfgs, device):
         fp16=True,
         is_dist=False,
     )
-    # model_trainer.load_model('results/checkpoints/epoch_2.pth')
+    # model_trainer.load_model('results/checkpoints/epoch_0.pth')
     model_trainer.train_model()
     # model_trainer.val_epoch()
 
 
 if __name__ == '__main__':
     opt = arg_parse()
-    cfgs = config_loader(opt.cfgs)
+    cfgs = config_loader(opt.config)
     is_dist = not opt.no_distribute
     if is_dist:
         world_size = torch.cuda.device_count()
