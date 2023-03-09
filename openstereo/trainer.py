@@ -196,6 +196,9 @@ class Trainer:
                 v = v.item() if isinstance(v, torch.Tensor) else v
                 epoch_metrics[k] += v
             pbar.update(1)
+            pbar.set_postfix({
+                'epe': val_res['epe'].item(),
+            })
         pbar.close()
         for k in epoch_metrics.keys():
             epoch_metrics[k] = torch.tensor(epoch_metrics[k] / len(self.val_loader)).to(self.device)
@@ -211,8 +214,8 @@ class Trainer:
 
     def load_model(self, path):
         checkpoint = torch.load(path, map_location=self.device)
-        self.current_epoch = checkpoint.get('epoch', 0)
-        self.current_iter = checkpoint.get('iter', 0)
+        self.current_epoch = checkpoint.get('epoch', -1) + 1
+        self.current_iter = checkpoint.get('iter', -1) + 1
         try:
             self.model.load_state_dict(checkpoint['model'])
         except RuntimeError:

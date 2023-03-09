@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 
-from modeling.base_model import BaseModel
+from modeling.new_base_model import BaseModel
 from .stackhourglass import PSMNet
 from . import loss_functions as lf
 
@@ -42,11 +42,11 @@ class LacGwcNet(BaseModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def build_network(self, model_cfg):
-        self.net = PSMNet(model_cfg['base_config']['max_disp'])
+    def build_network(self):
+        self.net = PSMNet(self.model_cfg['base_config']['max_disp'])
 
-    def get_loss_func(self, loss_cfg):
-        return LacGwcLoss(max_disp=192)
+    def build_loss_fn(self, loss_cfg=None):
+        self.loss_fn = LacGwcLoss(max_disp=192)
 
     def init_parameters(self):
         return
