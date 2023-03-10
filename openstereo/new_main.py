@@ -4,10 +4,7 @@ import os
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
-from torch.utils.data import BatchSampler, DataLoader, RandomSampler, SequentialSampler
-from torch.utils.data.distributed import DistributedSampler
 
-from data.stereo_dataset_batch import StereoBatchDataset
 from modeling import models
 from utils import config_loader, init_seeds, get_msg_mgr
 from utils.common import DDPPassthrough, params_count
@@ -55,27 +52,6 @@ def initialization(opt, cfgs, scope):
     init_seeds(seed)
 
 
-def get_data_loader(data_cfg, scope):
-    dataset = StereoBatchDataset(data_cfg, scope)
-    batch_size = data_cfg.get(f'{scope}_batch_size', 1)
-    num_workers = data_cfg.get('num_workers', 8)
-    pin_memory = data_cfg.get('pin_memory', False)
-    shuffle = data_cfg.get(f'shuffle', False)
-    if dist.is_initialized():
-        sampler = DistributedSampler(dataset, shuffle=shuffle)
-    else:
-        sampler = RandomSampler(dataset) if shuffle else SequentialSampler(dataset)
-    sampler = BatchSampler(sampler, batch_size, drop_last=False)
-    loader = DataLoader(
-        dataset=dataset,
-        sampler=sampler,
-        collate_fn=dataset.collect_fn,
-        num_workers=num_workers,
-        pin_memory=pin_memory,
-    )
-    return loader
-
-
 def worker(rank, world_size, opt, cfgs):
     is_dist = not opt.no_distribute
     if is_dist:
@@ -96,9 +72,6 @@ def worker(rank, world_size, opt, cfgs):
     msg_mgr.log_info(params_count(model))
     msg_mgr.log_info("Model Initialization Finished!")
 
-    # train_loader = get_data_loader(data_cfg, 'train')
-    # val_loader = get_data_loader(data_cfg, 'val')
-
     model_trainer = model.Trainer(
         model=model,
         trainer_cfg=trainer_cfg,
@@ -118,37 +91,6 @@ def worker(rank, world_size, opt, cfgs):
     else:
         raise ValueError(f"Unknown scope: {scope}")
     cleanup()
-
-
-#
-# def worker(opt, cfgs, device):
-#     initialization(opt, cfgs, opt.scope)
-#     msg_mgr = get_msg_mgr()
-#     model_cfg = cfgs['model_cfg']
-#     data_cfg = cfgs['data_cfg']
-#     scope = opt.scope
-#     Model = getattr(models, model_cfg['model'])
-#     model = Model(cfgs, device, scope)
-#     model = model.to(device)
-#     if cfgs['train_cfg'].get('fix_bn', False):
-#         model.fix_bn()
-#     # model.fix_bn()
-#     msg_mgr.log_info(params_count(model))
-#     msg_mgr.log_info("Model Initialization Finished!")
-#     model_trainer = BaseTrainer(
-#         model=model,
-#         train_loader=get_data_loader(data_cfg, 'train'),
-#         val_loader=get_data_loader(data_cfg, 'val'),
-#         optimizer_cfg=cfgs['optimizer_cfg'],
-#         scheduler_cfg=cfgs['scheduler_cfg'],
-#         evaluator_cfg=cfgs['evaluator_cfg'],
-#         device=device,
-#         fp16=True,
-#         is_dist=False,
-#     )
-#     model_trainer.load_model('results/checkpoints/epoch_0.pth')
-#     # model_trainer.train_model()
-#     model_trainer.val_epoch()
 
 
 if __name__ == '__main__':

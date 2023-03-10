@@ -78,6 +78,7 @@ class BaseModel(MetaModel, nn.Module):
         self.msg_mgr = get_msg_mgr()
         self.cfg = cfg
         self.model_cfg = cfg['model_cfg']
+        self.model_name = self.model_cfg['model']
         self.max_disp = self.model_cfg['base_config']['max_disp']
         self.msg_mgr.log_info(self.model_cfg)
         self.DispProcessor = None

@@ -11,7 +11,7 @@ from tqdm import tqdm
 from data.stereo_dataset_batch import StereoBatchDataset
 from evaluation.evaluator import OpenStereoEvaluator
 from modeling.common import ClipGrad, fix_bn
-from utils import NoOp, get_attr_from, get_valid_args
+from utils import NoOp, get_attr_from, get_valid_args, mkdir
 from utils.warmup import LinearWarmup
 
 
@@ -43,26 +43,22 @@ class BaseTrainer:
         self.is_dist = is_dist
         self.rank = rank if is_dist else None
         self.device = torch.device('cuda', rank) if is_dist else device
-
-        self.current_epoch = 0
-        self.current_iter = 0
+        self.current_epoch = 1
+        self.current_iter = 1
         self.seed = 1024
-        self.save_dir = './results'
-
+        self.save_path = os.path.join(
+            'output/', self.data_cfg['name'], self.model.model_name, self.trainer_cfg['save_name']
+        )
         self.fp16 = self.trainer_cfg.get('fp16', False)
         if self.fp16:
             self.scaler = torch.cuda.amp.GradScaler()
-
         # for faster access, mount model to trainer
-        self.loss_fn = None
         self.compute_loss = None
         self.prepare_inputs = None
         self.forward = None
-
         self.train_loader = None
         self.val_loader = None
         self.test_loader = None
-
         self.build_model()
         self.build_data_loader()
         self.build_optimizer(self.optimizer_cfg)
@@ -73,7 +69,6 @@ class BaseTrainer:
 
     def build_model(self, *args, **kwargs):
         # mount model to trainer for faster access
-        self.loss_fn = self.model.loss_fn
         self.compute_loss = self.model.compute_loss
         self.prepare_inputs = self.model.prepare_inputs
         self.forward = self.model.forward
@@ -153,15 +148,14 @@ class BaseTrainer:
             pbar = NoOp()
         for i, data in enumerate(self.train_loader):
             self.optimizer.zero_grad()
-            batch_inputs = self.prepare_inputs(data, device=self.device)
+            batch_inputs = self.model.prepare_inputs(data, device=self.device)
             if self.fp16:
                 with autocast():
-                    outputs = self.model(batch_inputs)
-                    loss, loss_info = self.compute_loss(batch_inputs, outputs)
+                    outputs = self.model.forward(batch_inputs)
+                    loss, loss_info = self.model.compute_loss(batch_inputs, outputs)
                     self.scaler.scale(loss).backward()
                     scale = self.scaler.get_scale()
-                    # torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=35, norm_type=2)
-                    torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
+                    self.clip_gard()
                     self.scaler.step(self.optimizer)
                     # Updates the scale for next iteration
                     self.scaler.update()
@@ -175,8 +169,7 @@ class BaseTrainer:
                 outputs = self.forward(batch_inputs)
                 loss, loss_info = self.compute_loss(batch_inputs, outputs)
                 loss.backward()
-                # torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=35, norm_type=2)
-                torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
+                self.clip_gard()
                 self.optimizer.step()
             self.current_iter += 1
             if self.warmup_scheduler is not None:
@@ -207,11 +200,8 @@ class BaseTrainer:
 
     def train_model(self, epochs=10):
         for epoch in range(epochs):
-            self.model.train()
             self.train_epoch()
-            self.save_model(os.path.join(self.save_dir, "checkpoints", f'epoch_{self.current_epoch}.pth'))
-            if self.is_dist:
-                dist.barrier()
+            self.save_model()
             self.val_epoch()
             self.current_epoch += 1
         self.msg_mgr.log_info('Training finished.')
@@ -293,10 +283,12 @@ class BaseTrainer:
             self.warmup_scheduler.last_step = self.current_iter
         self.msg_mgr.log_info(f'Model loaded from {path}')
 
-    def save_model(self, path):
+    def save_model(self):
         # Only save model from master process
         if self.is_dist and self.rank != 0:
-            return
+            dist.barrier()
+        mkdir(os.path.join(self.save_path, "checkpoints/"))
+        save_name = self.trainer_cfg['save_name']
         state_dict = {
             'model': self.model.state_dict(),
             'epoch': self.current_epoch,
@@ -310,8 +302,14 @@ class BaseTrainer:
         if not isinstance(self.epoch_scheduler, NoOp):
             self.msg_mgr.log_debug('Epoch scheduler saved.')
             state_dict['epoch_scheduler'] = self.epoch_scheduler.state_dict()
-        torch.save(state_dict, path)
-        self.msg_mgr.log_info(f'Model saved to {path}.')
+        torch.save(
+            state_dict,
+            os.path.join(self.save_path, "checkpoints/", f'{save_name}_epoch_{self.current_epoch:0>3}.pt')
+        )
+        self.msg_mgr.log_info(f'Model saved to {save_name}_epoch_{self.current_epoch:0>3}.pt')
+        if self.is_dist:
+            # for distributed training, wait for all processes to finish saving
+            dist.barrier()
 
     def build_clip_grad(self):
         clip_type = self.clip_grade_config.get('clip_type', 'None')
