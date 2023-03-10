@@ -5,60 +5,109 @@ import torch.distributed as dist
 import torch.nn as nn
 import torch.optim as optim
 from torch.cuda.amp import autocast
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, DistributedSampler, RandomSampler, SequentialSampler, BatchSampler
 from tqdm import tqdm
 
+from data.stereo_dataset_batch import StereoBatchDataset
 from evaluation.evaluator import OpenStereoEvaluator
+from modeling.common import ClipGrad, fix_bn
 from utils import NoOp, get_attr_from, get_valid_args
 from utils.warmup import LinearWarmup
 
 
-class Trainer:
+class BaseTrainer:
     def __init__(
             self,
             model: nn.Module = None,
-            train_loader: DataLoader = None,
-            val_loader: DataLoader = None,
-            optimizer_cfg: dict = None,
-            scheduler_cfg: dict = None,
-            evaluator_cfg: dict = None,
+            trainer_cfg: dict = None,
+            data_cfg: dict = None,
             is_dist: bool = True,
-            device: torch.device = torch.device('cpu'),
-            fp16: bool = False,
             rank: int = None,
+            device: torch.device = torch.device('cpu'),
+            **kwargs
     ):
         self.msg_mgr = model.msg_mgr
         self.model = model
-        self.train_loader = train_loader
-        self.val_loader = val_loader
-        self.optimizer_cfg = optimizer_cfg
-        self.scheduler_cfg = scheduler_cfg
-        self.evaluator_cfg = evaluator_cfg
+        self.trainer_cfg = trainer_cfg
+        self.data_cfg = data_cfg
+        self.optimizer_cfg = trainer_cfg['optimizer_cfg']
+        self.scheduler_cfg = trainer_cfg['scheduler_cfg']
+        self.evaluator_cfg = trainer_cfg['evaluator_cfg']
+        self.clip_grade_config = trainer_cfg['clip_grad_cfg']
         self.optimizer = NoOp()
+        self.evaluator = NoOp()
         self.warmup_scheduler = NoOp()
         self.epoch_scheduler = NoOp()
         self.batch_scheduler = NoOp()
-        self.evaluator = NoOp()
+        self.clip_gard = NoOp()
         self.is_dist = is_dist
         self.rank = rank if is_dist else None
         self.device = torch.device('cuda', rank) if is_dist else device
-        self.fp16 = fp16
-        self.seed = 1024
-        self.save_dir = './results'
+
         self.current_epoch = 0
         self.current_iter = 0
+        self.seed = 1024
+        self.save_dir = './results'
+
+        self.fp16 = self.trainer_cfg.get('fp16', False)
         if self.fp16:
             self.scaler = torch.cuda.amp.GradScaler()
-        self.build_model()
-        self.build_optimizer(optimizer_cfg)
-        self.build_scheduler(scheduler_cfg)
-        self.build_warmup_scheduler(scheduler_cfg)
-        self.build_evaluator()
 
-    def build_model(self, checkpoint=None):
-        if checkpoint is not None:
-            self.load_model(checkpoint)
-        # self.model.to(self.device)
+        # for faster access, mount model to trainer
+        self.loss_fn = None
+        self.compute_loss = None
+        self.prepare_inputs = None
+        self.forward = None
+
+        self.train_loader = None
+        self.val_loader = None
+        self.test_loader = None
+
+        self.build_model()
+        self.build_data_loader()
+        self.build_optimizer(self.optimizer_cfg)
+        self.build_scheduler(self.scheduler_cfg)
+        self.build_warmup_scheduler(self.scheduler_cfg)
+        self.build_evaluator()
+        self.build_clip_grad()
+
+    def build_model(self, *args, **kwargs):
+        # mount model to trainer for faster access
+        self.loss_fn = self.model.loss_fn
+        self.compute_loss = self.model.compute_loss
+        self.prepare_inputs = self.model.prepare_inputs
+        self.forward = self.model.forward
+        # apply sync batch norm
+        if self.is_dist and self.trainer_cfg.get('sync_bn', False):
+            self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model)
+        # apply fix batch norm
+        if self.trainer_cfg.get('fix_bn', False):
+            self.model = fix_bn(self.model)
+
+    def build_data_loader(self):
+        self.train_loader = self.get_data_loader(self.data_cfg, 'train')
+        self.val_loader = self.get_data_loader(self.data_cfg, 'val')
+
+    def get_data_loader(self, data_cfg, scope):
+        data_cfg = data_cfg
+        dataset = StereoBatchDataset(data_cfg, scope)
+        batch_size = data_cfg.get(f'{scope}_batch_size', 1)
+        num_workers = data_cfg.get('num_workers', 4)
+        pin_memory = data_cfg.get('pin_memory', False)
+        shuffle = data_cfg.get(f'shuffle', False)
+        if self.is_dist:
+            sampler = DistributedSampler(dataset, shuffle=shuffle)
+        else:
+            sampler = RandomSampler(dataset) if shuffle else SequentialSampler(dataset)
+        sampler = BatchSampler(sampler, batch_size, drop_last=False)
+        loader = DataLoader(
+            dataset=dataset,
+            sampler=sampler,
+            collate_fn=dataset.collect_fn,
+            num_workers=num_workers,
+            pin_memory=pin_memory,
+        )
+        return loader
 
     def build_optimizer(self, optimizer_cfg):
         self.msg_mgr.log_info(optimizer_cfg)
@@ -104,14 +153,15 @@ class Trainer:
             pbar = NoOp()
         for i, data in enumerate(self.train_loader):
             self.optimizer.zero_grad()
+            batch_inputs = self.prepare_inputs(data, device=self.device)
             if self.fp16:
                 with autocast():
-                    outputs = self.model.forward_step(data)
-                    loss = self.model.compute_loss(None, outputs)
+                    outputs = self.model(batch_inputs)
+                    loss, loss_info = self.compute_loss(batch_inputs, outputs)
                     self.scaler.scale(loss).backward()
                     scale = self.scaler.get_scale()
                     # torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=35, norm_type=2)
-                    # torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
+                    torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
                     self.scaler.step(self.optimizer)
                     # Updates the scale for next iteration
                     self.scaler.update()
@@ -122,8 +172,8 @@ class Trainer:
                         pbar.update(1)
                         continue
             else:
-                outputs = self.model.forward_step(data)
-                loss = self.model.compute_loss(None, outputs)
+                outputs = self.forward(batch_inputs)
+                loss, loss_info = self.compute_loss(batch_inputs, outputs)
                 loss.backward()
                 # torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=35, norm_type=2)
                 torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
@@ -145,7 +195,9 @@ class Trainer:
         total_loss = torch.tensor(total_loss, device=self.device)
         if self.is_dist:
             dist.barrier()
-            dist.all_reduce(total_loss, op=dist.ReduceOp.AVG)
+            # reduce loss from all devices
+            dist.all_reduce(total_loss, op=dist.ReduceOp.SUM)
+            total_loss /= dist.get_world_size()
         if self.warmup_scheduler is not None:
             with self.warmup_scheduler.dampening():
                 self.epoch_scheduler.step()
@@ -183,11 +235,10 @@ class Trainer:
             pbar = tqdm(total=len(self.val_loader), desc=f'Eval epoch {self.current_epoch}')
         else:
             pbar = NoOp()
-
         for i, data in enumerate(self.val_loader):
-            batch_inputs = self.model.prepare_inputs(data)
+            batch_inputs = self.prepare_inputs(data, device=self.device)
             with autocast(enabled=self.fp16):
-                inference_disp = self.model.forward(batch_inputs)['inference_disp']
+                inference_disp = self.model(batch_inputs)['inference_disp']
             val_data = {
                 'disp_est': inference_disp['disp_est'],
                 'disp_gt': batch_inputs['disp_gt'],
@@ -208,7 +259,9 @@ class Trainer:
             dist.barrier()
             self.msg_mgr.log_debug("Start reduce metrics.")
             for k in epoch_metrics.keys():
-                dist.all_reduce(epoch_metrics[k], op=dist.ReduceOp.AVG)
+                # reduce from all devices
+                dist.all_reduce(epoch_metrics[k], op=dist.ReduceOp.SUM)
+                epoch_metrics[k] /= dist.get_world_size()
         for k in epoch_metrics.keys():
             epoch_metrics[k] = epoch_metrics[k].item()
         self.msg_mgr.log_info(f"Epoch {self.current_epoch} metrics: {epoch_metrics}")
@@ -218,7 +271,7 @@ class Trainer:
         if not os.path.exists(path):
             self.msg_mgr.log_warning(f"Checkpoint {path} not found.")
             return
-        map_location = {'cuda:0': 'cuda:{self.rank}'} if self.is_dist else self.device
+        map_location = {'cuda:0': f'cuda:{self.rank}'} if self.is_dist else self.device
         checkpoint = torch.load(path, map_location=map_location)
         self.current_epoch = checkpoint.get('epoch', -1) + 1
         self.current_iter = checkpoint.get('iter', -1) + 1
@@ -259,3 +312,12 @@ class Trainer:
             state_dict['epoch_scheduler'] = self.epoch_scheduler.state_dict()
         torch.save(state_dict, path)
         self.msg_mgr.log_info(f'Model saved to {path}.')
+
+    def build_clip_grad(self):
+        clip_type = self.clip_grade_config.get('clip_type', 'None')
+        if clip_type == 'None':
+            return
+        clip_value = self.clip_grade_config.get('clip_value', 0.1)
+        max_norm = self.clip_grade_config.get('max_norm', 35)
+        norm_type = self.clip_grade_config.get('norm_type', 2)
+        self.clip_gard = ClipGrad(clip_type, clip_value, max_norm, norm_type)

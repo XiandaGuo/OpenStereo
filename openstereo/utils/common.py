@@ -14,10 +14,17 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 
 
 class NoOp:
-    def __getattr__(self, *args):
+
+    def __call__(self, *args, **kwargs):
+        pass
+
+    def __getattr__(self, *args, **kwargs):
         def no_op(*args, **kwargs): pass
 
         return no_op
+
+    def __enter__(self, *args, **kwargs):
+        return
 
 
 class Odict(OrderedDict):

@@ -14,6 +14,7 @@ from abc import abstractmethod, ABCMeta
 import torch
 from torch import nn
 
+from base_trainer import BaseTrainer
 from utils import get_msg_mgr, is_dict, get_attr_from, is_list, get_valid_args
 from . import backbone as backbones
 from . import cost_processor as cost_processors
@@ -30,7 +31,7 @@ class MetaModel(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def build_network(self, model_cfg):
+    def build_network(self):
         """Build your network here."""
         raise NotImplementedError
 
@@ -40,20 +41,25 @@ class MetaModel(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def prepare_inputs(self, inputs):
-        """Transform the input data based on transform setting."""
+    def build_loss_fn(self):
+        """Build your optimizer here."""
         raise NotImplementedError
 
-    @abstractmethod
-    def forward_step(self, inputs) -> bool:
-        """Do one forward step."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def compute_loss(self, outputs, targets):
-        """Compute the loss."""
-        raise NotImplementedError
-
+    # @abstractmethod
+    # def prepare_inputs(self, inputs):
+    #     """Transform the input data based on transform setting."""
+    #     raise NotImplementedError
+    #
+    # @abstractmethod
+    # def forward_step(self, inputs) -> bool:
+    #     """Do one forward step."""
+    #     raise NotImplementedError
+    #
+    # @abstractmethod
+    # def compute_loss(self, outputs, targets):
+    #     """Compute the loss."""
+    #     raise NotImplementedError
+    #
     # @abstractmethod
     # def train_step(self, loss_num) -> bool:
     #     """Do one training step."""
@@ -67,12 +73,12 @@ class MetaModel(metaclass=ABCMeta):
 
 
 class BaseModel(MetaModel, nn.Module):
-    def __init__(self, cfg, device, is_train=True):
+    def __init__(self, cfg, **kwargs):
         super(BaseModel, self).__init__()
         self.msg_mgr = get_msg_mgr()
         self.cfg = cfg
         self.model_cfg = cfg['model_cfg']
-        self.is_train = is_train
+        self.max_disp = self.model_cfg['base_config']['max_disp']
         self.msg_mgr.log_info(self.model_cfg)
         self.DispProcessor = None
         self.CostProcessor = None
@@ -80,7 +86,7 @@ class BaseModel(MetaModel, nn.Module):
         self.loss_fn = None
         self.build_network()
         self.build_loss_fn()
-        self.device = device
+        self.Trainer = BaseTrainer
 
     def build_backbone(self, backbone_cfg):
         """Get the backbone of the model."""
@@ -135,7 +141,7 @@ class BaseModel(MetaModel, nn.Module):
         if "init_parameters" in model_cfg.keys():
             self.init_parameters()
 
-    def build_loss_fn(self, ):
+    def build_loss_fn(self):
         """Get the loss function."""
         loss_cfg = self.cfg['loss_cfg']
         self.loss_fn = LossAggregator(loss_cfg)
@@ -148,6 +154,54 @@ class BaseModel(MetaModel, nn.Module):
         inputs.update(cost_out)
         disp_out = self.DispProcessor(inputs)
         return disp_out
+
+    def prepare_inputs(self, inputs, device=None):
+        """Reorganize input data for different models
+
+        Args:
+            inputs: the input data.
+            device: the device to put the data.
+        Returns:
+            dict: training data including ref_img, tgt_img, disp image,
+                  and other meta data.
+        """
+        processed_inputs = {
+            'ref_img': inputs['left'],
+            'tgt_img': inputs['right'],
+        }
+        # for training
+
+        if 'disp' in inputs.keys():
+            disp_gt = inputs['disp']
+            # compute the mask of valid disp_gt
+            mask = (disp_gt < self.max_disp) & (disp_gt > 0)
+            processed_inputs.update({
+                'disp_gt': disp_gt,
+                'mask': mask,
+            })
+
+        if not self.training:
+
+            # for test
+            if "pad" in inputs.keys():
+                processed_inputs['pad'] = inputs['pad']  # [top, bottom, left, right]
+
+            # for test
+            if "name" in inputs.keys():
+                processed_inputs['name'] = inputs['name']
+
+        if device is not None:
+            # move data to device
+            for k, v in processed_inputs.items():
+                processed_inputs[k] = v.to(device) if torch.is_tensor(v) else v
+        return processed_inputs
+
+    #
+    def compute_loss(self, inputs, outputs):
+        """Compute the loss."""
+        training_disp = outputs['training_disp']
+        loss, loss_info = self.loss_fn(training_disp)
+        return loss, loss_info
 
     def init_parameters(self):
         for m in self.modules():
@@ -163,68 +217,3 @@ class BaseModel(MetaModel, nn.Module):
                 if m.affine:
                     nn.init.normal_(m.weight.data, 1.0, 0.02)
                     nn.init.constant_(m.bias.data, 0.0)
-
-    def prepare_inputs(self, inputs):
-        """Reorganize input data for different models
-
-        Args:
-            inputs: the input data.
-        Returns:
-            dict: training data including ref_img, tgt_img, disp image,
-                  and other meta data.
-        """
-        processed_inputs = {
-            'ref_img': inputs['left'],
-            'tgt_img': inputs['right'],
-        }
-        if 'disp' in inputs.keys():
-            disp_gt = inputs['disp']
-            # compute the mask of valid disp_gt
-            max_disp = self.model_cfg['base_config']['max_disp']
-            mask = (disp_gt < max_disp) & (disp_gt > 0)
-            processed_inputs.update({
-                'disp_gt': disp_gt,
-                'mask': mask,
-            })
-        for k in ['pad_top', 'pad_bottom', 'pad_left', 'pad_right']:
-            if k in inputs.keys():
-                processed_inputs[k] = inputs[k]
-        for k, v in processed_inputs.items():
-            processed_inputs[k] = v.to(self.device) if torch.is_tensor(v) else v
-        return processed_inputs
-
-    def forward_step(self, batch_data) -> bool:
-        batch_inputs = self.prepare_inputs(batch_data)
-        outputs = self.forward(batch_inputs)
-        return outputs
-
-    def compute_loss(self, inputs, outputs):
-        """Compute the loss."""
-        training_disp = outputs['training_disp']
-        loss, _ = self.loss_fn(training_disp)
-        return loss
-
-    def train_step(self, data_batch, optimizer):
-        """Train the model for one step."""
-        self.train()
-        optimizer.zero_grad()
-        outputs = self.forward_step(data_batch)
-        loss = self.compute_loss(None, outputs)
-        loss.backward()
-        optimizer.step()
-        return loss
-
-    def val_step(self, data_batch):
-        """Validate the model for one step."""
-        self.eval()
-        with torch.no_grad():
-            outputs = self.forward_step(data_batch)
-            loss = self.compute_loss(None, outputs)
-        return loss
-
-    def fix_bn(self):
-        """Fix the batch normalization layers."""
-        for module in self.modules():
-            classname = module.__class__.__name__
-            if classname.find('BatchNorm') != -1:
-                module.eval()
