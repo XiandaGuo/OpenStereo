@@ -52,10 +52,6 @@ class BaseTrainer:
         self.fp16 = self.trainer_cfg.get('fp16', False)
         if self.fp16:
             self.scaler = torch.cuda.amp.GradScaler()
-        # for faster access, mount model to trainer
-        # self.compute_loss = None
-        # self.prepare_inputs = None
-        # self.forward = None
         self.train_loader = None
         self.val_loader = None
         self.test_loader = None
@@ -68,16 +64,15 @@ class BaseTrainer:
         self.build_clip_grad()
 
     def build_model(self, *args, **kwargs):
-        # mount model to trainer for faster access
-        # self.compute_loss = self.model.compute_loss
-        # self.prepare_inputs = self.model.prepare_inputs
-        # self.forward = self.model.forward
         # apply sync batch norm
         if self.is_dist and self.trainer_cfg.get('sync_bn', False):
-            self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model)
+            self.model = nn.SyncBatchNorm.convert_sync_batchnorm(self.model)
         # apply fix batch norm
         if self.trainer_cfg.get('fix_bn', False):
             self.model = fix_bn(self.model)
+        # init parameters
+        if self.trainer_cfg.get('init_parameters', False):
+            self.model.init_parameters()
 
     def build_data_loader(self):
         self.train_loader = self.get_data_loader(self.data_cfg, 'train')
@@ -146,27 +141,35 @@ class BaseTrainer:
             pbar = tqdm(total=len(self.train_loader), desc=f'Train epoch {self.current_epoch}')
         else:
             pbar = NoOp()
+
+        # for distributed sampler to shuffle data
+        # the first sampler is batch sampler and the second is distributed sampler
+        if self.is_dist:
+            self.train_loader.sampler.sampler.set_epoch(self.current_epoch)
+
         for i, data in enumerate(self.train_loader):
             self.optimizer.zero_grad()
             batch_inputs = self.model.prepare_inputs(data, device=self.device)
             if self.fp16:
                 with autocast():
-                    outputs = self.model.forward(batch_inputs)
+                    outputs = self.model(batch_inputs)
                     loss, loss_info = self.model.compute_loss(batch_inputs, outputs)
-                    self.scaler.scale(loss).backward()
-                    scale = self.scaler.get_scale()
-                    self.clip_gard(self.model)
-                    self.scaler.step(self.optimizer)
-                    # Updates the scale for next iteration
-                    self.scaler.update()
-                    if scale > self.scaler.get_scale():
-                        self.msg_mgr.log_debug(
-                            "Training step skip. Expected the former scale equals to the present, got {} and {}".format(
-                                scale, self.scaler.get_scale()))
-                        pbar.update(1)
-                        continue
+                self.scaler.scale(loss).backward()
+                # Unscales the gradients of optimizer's assigned params in-place
+                self.scaler.unscale_(self.optimizer)
+                # Since the gradients of optimizer's assigned params are unscaled, clips as usual
+                self.clip_gard(self.model)
+                self.scaler.step(self.optimizer)
+                # Updates the scale for next iteration
+                self.scaler.update()
+                # if scale > self.scaler.get_scale():
+                #     self.msg_mgr.log_debug(
+                #         "Training step skip. Expected the former scale equals to the present, got {} and {}".format(
+                #             scale, self.scaler.get_scale()))
+                #     pbar.update(1)
+                #     continue
             else:
-                outputs = self.model.forward(batch_inputs)
+                outputs = self.model(batch_inputs)
                 loss, loss_info = self.model.compute_loss(batch_inputs, outputs)
                 loss.backward()
                 self.clip_gard(self.model)
@@ -196,13 +199,15 @@ class BaseTrainer:
                 self.epoch_scheduler.step()
         else:
             self.epoch_scheduler.step()
-        return total_loss / len(self.train_loader)
+        return total_loss.item() / len(self.train_loader)
 
     def train_model(self, epochs=10):
         for epoch in range(epochs):
             self.train_epoch()
-            self.save_model()
-            self.val_epoch()
+            if self.current_epoch % self.trainer_cfg['save_every'] == 0:
+                self.save_model()
+            if self.current_epoch % self.trainer_cfg['val_every'] == 0:
+                self.val_epoch()
             self.current_epoch += 1
         self.msg_mgr.log_info('Training finished.')
 
@@ -226,7 +231,7 @@ class BaseTrainer:
         else:
             pbar = NoOp()
         for i, data in enumerate(self.val_loader):
-            batch_inputs = self.prepare_inputs(data, device=self.device)
+            batch_inputs = self.model.prepare_inputs(data, device=self.device)
             with autocast(enabled=self.fp16):
                 inference_disp = self.model(batch_inputs)['inference_disp']
             val_data = {
@@ -287,6 +292,7 @@ class BaseTrainer:
         # Only save model from master process
         if self.is_dist and self.rank != 0:
             dist.barrier()
+            return
         mkdir(os.path.join(self.save_path, "checkpoints/"))
         save_name = self.trainer_cfg['save_name']
         state_dict = {

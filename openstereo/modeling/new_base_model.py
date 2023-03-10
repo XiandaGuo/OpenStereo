@@ -45,31 +45,20 @@ class MetaModel(metaclass=ABCMeta):
         """Build your optimizer here."""
         raise NotImplementedError
 
-    # @abstractmethod
-    # def prepare_inputs(self, inputs):
-    #     """Transform the input data based on transform setting."""
-    #     raise NotImplementedError
-    #
-    # @abstractmethod
-    # def forward_step(self, inputs) -> bool:
-    #     """Do one forward step."""
-    #     raise NotImplementedError
-    #
-    # @abstractmethod
-    # def compute_loss(self, outputs, targets):
-    #     """Compute the loss."""
-    #     raise NotImplementedError
-    #
-    # @abstractmethod
-    # def train_step(self, loss_num) -> bool:
-    #     """Do one training step."""
-    #     raise NotImplementedError
+    @abstractmethod
+    def prepare_inputs(self, inputs):
+        """Transform the input data based on transform setting."""
+        raise NotImplementedError
 
-    #
-    # @abstractmethod
-    # def inference(self, *args, **kwargs):
-    #     """Do inference (calculate features.)."""
-    #     raise NotImplementedError
+    @abstractmethod
+    def forward(self, inputs):
+        """Forward the network."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def compute_loss(self, outputs, targets):
+        """Compute the loss."""
+        raise NotImplementedError
 
 
 class BaseModel(MetaModel, nn.Module):
@@ -139,8 +128,6 @@ class BaseModel(MetaModel, nn.Module):
             cfg = base_config.copy()
             cfg.update(model_cfg['disp_processor_cfg'])
             self.DispProcessor = self.build_disp_processor(cfg)
-        if "init_parameters" in model_cfg.keys():
-            self.init_parameters()
 
     def build_loss_fn(self):
         """Get the loss function."""
@@ -170,8 +157,6 @@ class BaseModel(MetaModel, nn.Module):
             'ref_img': inputs['left'],
             'tgt_img': inputs['right'],
         }
-        # for training
-
         if 'disp' in inputs.keys():
             disp_gt = inputs['disp']
             # compute the mask of valid disp_gt
@@ -180,17 +165,10 @@ class BaseModel(MetaModel, nn.Module):
                 'disp_gt': disp_gt,
                 'mask': mask,
             })
-
         if not self.training:
-
-            # for test
-            if "pad" in inputs.keys():
-                processed_inputs['pad'] = inputs['pad']  # [top, bottom, left, right]
-
-            # for test
-            if "name" in inputs.keys():
-                processed_inputs['name'] = inputs['name']
-
+            for k in ['pad', 'name']:
+                if k in inputs.keys():
+                    processed_inputs[k] = inputs[k]
         if device is not None:
             # move data to device
             for k, v in processed_inputs.items():

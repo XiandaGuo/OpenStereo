@@ -22,7 +22,7 @@ data_cfg:
   transform:
     train:
       - type: RandomCrop
-#        size: [ 288, 576 ]
+        #        size: [ 288, 576 ]
         size: [ 256, 512 ]
 
       #- type: RandomHorizontalFlip
@@ -63,10 +63,14 @@ loss_cfg:
 
 trainer_cfg:
   save_name: CoExNet_SceneFlow
-  sync_bn: true
-  fp16: true
   restore_hint: 0
-  log_iter: 10
+  log_iter: 10 # iter
+  save_every: 1 # epoch
+  val_every: 1 # epoch
+  fp16: true
+  sync_bn: true
+  fix_bn: false
+  init_parameters: false
 
   optimizer_cfg:
     solver: Adam
@@ -89,9 +93,9 @@ trainer_cfg:
       - thres_3
 
   clip_grad_cfg:
-#    type: norm
-#    max_norm: 35
-#    norm_type: 2
+    #    type: norm
+    #    max_norm: 35
+    #    norm_type: 2
     type: value
     clip_value: 0.1
 
