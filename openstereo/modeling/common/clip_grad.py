@@ -2,7 +2,7 @@ import torch
 
 
 class ClipGrad:
-    def __init__(self, clip_type, clip_value, max_norm, norm_type):
+    def __init__(self, clip_type="None", clip_value=0.1, max_norm=35, norm_type=2):
         self.clip_type = clip_type
         self.clip_value = clip_value
         self.max_norm = max_norm

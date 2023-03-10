@@ -53,9 +53,9 @@ class BaseTrainer:
         if self.fp16:
             self.scaler = torch.cuda.amp.GradScaler()
         # for faster access, mount model to trainer
-        self.compute_loss = None
-        self.prepare_inputs = None
-        self.forward = None
+        # self.compute_loss = None
+        # self.prepare_inputs = None
+        # self.forward = None
         self.train_loader = None
         self.val_loader = None
         self.test_loader = None
@@ -69,9 +69,9 @@ class BaseTrainer:
 
     def build_model(self, *args, **kwargs):
         # mount model to trainer for faster access
-        self.compute_loss = self.model.compute_loss
-        self.prepare_inputs = self.model.prepare_inputs
-        self.forward = self.model.forward
+        # self.compute_loss = self.model.compute_loss
+        # self.prepare_inputs = self.model.prepare_inputs
+        # self.forward = self.model.forward
         # apply sync batch norm
         if self.is_dist and self.trainer_cfg.get('sync_bn', False):
             self.model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(self.model)
@@ -155,7 +155,7 @@ class BaseTrainer:
                     loss, loss_info = self.model.compute_loss(batch_inputs, outputs)
                     self.scaler.scale(loss).backward()
                     scale = self.scaler.get_scale()
-                    self.clip_gard()
+                    self.clip_gard(self.model)
                     self.scaler.step(self.optimizer)
                     # Updates the scale for next iteration
                     self.scaler.update()
@@ -166,10 +166,10 @@ class BaseTrainer:
                         pbar.update(1)
                         continue
             else:
-                outputs = self.forward(batch_inputs)
-                loss, loss_info = self.compute_loss(batch_inputs, outputs)
+                outputs = self.model.forward(batch_inputs)
+                loss, loss_info = self.model.compute_loss(batch_inputs, outputs)
                 loss.backward()
-                self.clip_gard()
+                self.clip_gard(self.model)
                 self.optimizer.step()
             self.current_iter += 1
             if self.warmup_scheduler is not None:
@@ -312,8 +312,8 @@ class BaseTrainer:
             dist.barrier()
 
     def build_clip_grad(self):
-        clip_type = self.clip_grade_config.get('clip_type', 'None')
-        if clip_type == 'None':
+        clip_type = self.clip_grade_config.get('type', None)
+        if clip_type is None:
             return
         clip_value = self.clip_grade_config.get('clip_value', 0.1)
         max_norm = self.clip_grade_config.get('max_norm', 35)
