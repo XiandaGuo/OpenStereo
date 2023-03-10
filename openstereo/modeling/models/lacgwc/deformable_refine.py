@@ -105,9 +105,8 @@ class GetValueV2(nn.Module):
 
     def _get_p(self, offset, dtype):
         N, h, w = offset.size(1) // 2, offset.size(2), offset.size(3)
-
         # (1, 2N, h, w)
-        p_0 = self._get_p_0(h, w, N, dtype)
+        p_0 = self._get_p_0(h, w, N, dtype).to(offset.device)
         p = p_0 + offset
         return p
 

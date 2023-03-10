@@ -23,7 +23,7 @@ def arg_parse():
     # set distributed training store true
     parser.add_argument('--master_addr', type=str, default='localhost', help="master address")
     parser.add_argument('--master_port', type=str, default='12355', help="master port")
-    parser.add_argument('--no_distribute', action='store_true', default=True, help="disable distributed training")
+    parser.add_argument('--no_distribute', action='store_true', default=False, help="disable distributed training")
     parser.add_argument('--log_to_file', action='store_true',
                         help="log to file, default path is: output/<dataset>/<model>/<save_name>/<logs>/<Datetime>.txt")
     parser.add_argument('--device', type=str, default='cuda', help="device to use for non-distributed mode.")
@@ -81,9 +81,9 @@ def get_data_loader(data_cfg, scope, distributed=True):
 
 
 def dist_worker(rank, world_size, opt, cfgs):
-    msg_mgr = get_msg_mgr()
     ddp_init(rank, world_size, opt.master_addr, opt.master_port)
     initialization(opt, cfgs, opt.scope)
+    msg_mgr = get_msg_mgr()
     model_cfg = cfgs['model_cfg']
     data_cfg = cfgs['data_cfg']
     scope = opt.scope
@@ -105,20 +105,20 @@ def dist_worker(rank, world_size, opt, cfgs):
         optimizer_cfg=cfgs['optimizer_cfg'],
         scheduler_cfg=cfgs['scheduler_cfg'],
         evaluator_cfg=cfgs['evaluator_cfg'],
-        device=torch.device('cuda'),
+        device=device,
         rank=rank,
-        fp16=True,
+        fp16=False,
         is_dist=True,
     )
-    # model_trainer.load_model('results/checkpoints/epoch_2.pth')
-    model_trainer.train_model(15)
-    # model_trainer.val_epoch()
+    model_trainer.load_model('results/checkpoints/epoch_0.pth')
+    # model_trainer.train_model(20)
+    model_trainer.val_epoch()
     cleanup()
 
 
 def worker(opt, cfgs, device):
-    msg_mgr = get_msg_mgr()
     initialization(opt, cfgs, opt.scope)
+    msg_mgr = get_msg_mgr()
     model_cfg = cfgs['model_cfg']
     data_cfg = cfgs['data_cfg']
     scope = opt.scope
@@ -141,9 +141,9 @@ def worker(opt, cfgs, device):
         fp16=True,
         is_dist=False,
     )
-    # model_trainer.load_model('results/checkpoints/epoch_0.pth')
-    model_trainer.train_model()
-    # model_trainer.val_epoch()
+    model_trainer.load_model('results/checkpoints/epoch_0.pth')
+    # model_trainer.train_model()
+    model_trainer.val_epoch()
 
 
 if __name__ == '__main__':

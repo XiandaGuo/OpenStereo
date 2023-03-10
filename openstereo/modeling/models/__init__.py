@@ -12,4 +12,4 @@ from .coex import CoExNet
 try:
     from .ganet import GANet
 except ImportError:
-    print('GANet is not available')
+    pass

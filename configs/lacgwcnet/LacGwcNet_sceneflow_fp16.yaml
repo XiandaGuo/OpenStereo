@@ -1,10 +1,23 @@
 data_cfg:
   name: SceneFlow
   root: data/SceneFlow
-  train_list: datasets/sceneflow/sceneflow_finalpass_train.txt
-  val_list: datasets/sceneflow/sceneflow_finalpass_test.txt
-  test_list: datasets/sceneflow/sceneflow_finalpass_test.txt
-  num_workers: 16
+  train_list: datasets/sceneflow/sceneflow_cleanpass_train.txt
+  val_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
+  test_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
+  num_workers: 8
+  train_batch_size: 2
+  val_batch_size: 2
+  pin_memory: true
+  train_shuffle: true
+  val_shuffle: false
+
+  batch_uniform: false
+  #  random_type: range
+  #  w_range: [ 0.5, 2.0 ]
+  #  h_range: [ 0.5, 2.0 ]
+  #  random_type: choice
+  #  h_range: [ 256, 288, 320, 352 ]
+  #  w_range: [ 480, 512, 544, 576 ]
 
   transform:
     train:
@@ -33,50 +46,53 @@ data_cfg:
 
 model_cfg:
   model: LacGwcNet
+  #  find_unused_parameters: true
   base_config:
     max_disp: 192
 
+loss_cfg:
+# This model uses the user-defined loss function.
+
 
 optimizer_cfg:
-  solver: AdamW
-  lr: 0.0001
+  solver: Adam
+  lr: 0.001
   betas: [ 0.9, 0.999 ]
 
-
-loss_cfg:
-  # This model uses the user-defined loss function.
 
 scheduler_cfg:
   scheduler: MultiStepLR
   gamma: 0.1
   milestones:
-    - 75000
+    - 10000
+  warmup:
+    type: LinearWarmup
+    warmup_period: 100
 
 
-trainer_cfg:
+train_cfg:
   save_name: LacGwcNet_SceneFlow
-  restore_hint: weights/LacGwcNet_SceneFlow-00100.pt
+  restore_hint: 0
   restore_ckpt_strict: true
-  log_iter: 1
+  log_iter: 10
   with_test: true
-  enable_float16: false
-  sync_BN: true
-  save_iter: 200
+  enable_float16: true
+  sync_bn: false
+  save_iter: 9000
   total_iter: 150000
-  total_epoch: 20000
-  optimizer_reset: true
-  scheduler_reset: true
+  total_epoch: 20
+  optimizer_reset: false
+  scheduler_reset: false
   sampler:
     # type: BasicStereoSampler
     batch_shuffle: true
-    batch_size: 1
+    batch_size: 4
 
 
 evaluator_cfg:
   eval_func: OpenStereoEvaluator
   save_name: LacGwcNet_SceneFlow
-  restore_hint: 21800
-  show_progress_bar: true
+  restore_hint: 0
   metric:
     - d1_all
     - epe
@@ -84,8 +100,9 @@ evaluator_cfg:
     - thres_2
     - thres_3
   restore_ckpt_strict: true
-  enable_float16: false
+  enable_float16: ture
+  show_progress_bar: true
   sampler:
     type: BasicStereoSampler
     batch_shuffle: false
-    batch_size: 1
+    batch_size: 5

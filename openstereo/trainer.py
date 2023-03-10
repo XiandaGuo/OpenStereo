@@ -111,7 +111,7 @@ class Trainer:
                     self.scaler.scale(loss).backward()
                     scale = self.scaler.get_scale()
                     # torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=35, norm_type=2)
-                    torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
+                    # torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
                     self.scaler.step(self.optimizer)
                     # Updates the scale for next iteration
                     self.scaler.update()
@@ -158,6 +158,8 @@ class Trainer:
             self.model.train()
             self.train_epoch()
             self.save_model(os.path.join(self.save_dir, "checkpoints", f'epoch_{self.current_epoch}.pth'))
+            if self.is_dist:
+                dist.barrier()
             self.val_epoch()
             self.current_epoch += 1
         self.msg_mgr.log_info('Training finished.')
@@ -213,7 +215,11 @@ class Trainer:
         return epoch_metrics
 
     def load_model(self, path):
-        checkpoint = torch.load(path, map_location=self.device)
+        if not os.path.exists(path):
+            self.msg_mgr.log_warning(f"Checkpoint {path} not found.")
+            return
+        map_location = {'cuda:0': 'cuda:{self.rank}'} if self.is_dist else self.device
+        checkpoint = torch.load(path, map_location=map_location)
         self.current_epoch = checkpoint.get('epoch', -1) + 1
         self.current_iter = checkpoint.get('iter', -1) + 1
         try:

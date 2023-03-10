@@ -28,7 +28,8 @@ class LacGwcLoss:
                 lf.CEloss(disp_gt, self.max_disp, gt_distribute, distribute3)
         loss1 += F.smooth_l1_loss(predr[mask], disp_gt[mask])
         loss2 += lf.CEloss(disp_gt, self.max_disp, gt_distribute, distributer)
-
+        loss1 = torch.mean(loss1)
+        loss2 = torch.mean(loss2)
         return 0.1 * loss1 + loss2
 
     def __call__(self, training_output):
@@ -40,13 +41,14 @@ class LacGwcLoss:
 
 class LacGwcNet(BaseModel):
     def __init__(self, *args, **kwargs):
+        self.max_disp = 192
         super().__init__(*args, **kwargs)
 
     def build_network(self):
-        self.net = PSMNet(self.model_cfg['base_config']['max_disp'])
+        self.net = PSMNet(maxdisp=self.max_disp)
 
     def build_loss_fn(self, loss_cfg=None):
-        self.loss_fn = LacGwcLoss(max_disp=192)
+        self.loss_fn = LacGwcLoss(max_disp=self.max_disp)
 
     def init_parameters(self):
         return
