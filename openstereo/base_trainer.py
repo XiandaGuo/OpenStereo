@@ -67,15 +67,15 @@ class BaseTrainer:
     def build_model(self, *args, **kwargs):
         # apply sync batch norm
         if self.is_dist and self.trainer_cfg.get('sync_bn', False):
-            self.msg_mgr.info('convert batch norm to sync batch norm')
+            self.msg_mgr.log_info('convert batch norm to sync batch norm')
             self.model = nn.SyncBatchNorm.convert_sync_batchnorm(self.model)
         # apply fix batch norm
         if self.trainer_cfg.get('fix_bn', False):
-            self.msg_mgr.info('fix batch norm')
+            self.msg_mgr.log_info('fix batch norm')
             self.model = fix_bn(self.model)
         # init parameters
         if self.trainer_cfg.get('init_parameters', False):
-            self.msg_mgr.info('init parameters')
+            self.msg_mgr.log_info('init parameters')
             self.model.init_parameters()
 
     def build_data_loader(self):
@@ -149,6 +149,7 @@ class BaseTrainer:
             f" batches on each device: {len(self.train_loader)},"
             f" batch size: {self.train_loader.sampler.batch_size}"
         )
+
         if self.is_dist and self.rank == 0 or not self.is_dist:
             pbar = tqdm(total=len(self.train_loader), desc=f'Train epoch {self.current_epoch}')
         else:
@@ -186,12 +187,16 @@ class BaseTrainer:
             else:
                 self.batch_scheduler.step()
             total_loss += loss.item() if not torch.isnan(loss) else 0
-            pbar.update(1)
-            pbar.set_postfix({
-                'loss': loss.item(),
-                'epoch_loss': total_loss / (i + 1),
-                'lr': self.optimizer.param_groups[0]['lr']
-            })
+            self.msg_mgr.train_step(loss_info)
+            log_iter = self.trainer_cfg.get('log_iter', 10)
+            if i % log_iter == 0:
+                pbar.update(log_iter)
+                pbar.set_postfix({
+                    'loss': loss.item(),
+                    'epoch_loss': total_loss / (i + 1),
+                    'lr': self.optimizer.param_groups[0]['lr']
+                })
+                # self.msg_mgr.write_to_tensorboard(loss_info)
         pbar.close()
         total_loss = torch.tensor(total_loss, device=self.device)
         if self.is_dist:
@@ -203,8 +208,10 @@ class BaseTrainer:
             self.epoch_scheduler.step()
         return total_loss.item() / len(self.train_loader)
 
-    def train_model(self, epochs=10):
-        for epoch in range(epochs):
+    def train_model(self):
+        self.msg_mgr.log_info('Training started.')
+        total_epochs = self.trainer_cfg.get('total_epoch', 10)
+        while self.current_epoch < total_epochs:
             self.train_epoch()
             if self.current_epoch % self.trainer_cfg['save_every'] == 0:
                 self.save_model()
@@ -245,10 +252,15 @@ class BaseTrainer:
             for k, v in val_res.items():
                 v = v.item() if isinstance(v, torch.Tensor) else v
                 epoch_metrics[k] += v
-            pbar.update(1)
-            pbar.set_postfix({
-                'epe': val_res['epe'].item(),
-            })
+
+            log_iter = self.trainer_cfg.get('log_iter', 10)
+            if i % log_iter == 0:
+                pbar.update(log_iter)
+                pbar.set_postfix({
+                    'epe': val_res['epe'].item(),
+                })
+
+
         pbar.close()
         for k in epoch_metrics.keys():
             epoch_metrics[k] = torch.tensor(epoch_metrics[k] / len(self.val_loader)).to(self.device)
@@ -259,34 +271,12 @@ class BaseTrainer:
                 dist.all_reduce(epoch_metrics[k], op=dist.ReduceOp.AVG)
         for k in epoch_metrics.keys():
             epoch_metrics[k] = epoch_metrics[k].item()
+        visual_info = {}
+        for k, v in epoch_metrics.items():
+            visual_info[f'scalar/val/{k}'] = v
+        self.msg_mgr.write_to_tensorboard(visual_info, self.current_epoch)
         self.msg_mgr.log_info(f"Epoch {self.current_epoch} metrics: {epoch_metrics}")
         return epoch_metrics
-
-    def load_model(self, path):
-        if not os.path.exists(path):
-            self.msg_mgr.log_warning(f"Checkpoint {path} not found.")
-            return
-        map_location = {'cuda:0': f'cuda:{self.rank}'} if self.is_dist else self.device
-        checkpoint = torch.load(path, map_location=map_location)
-        self.current_epoch = checkpoint.get('epoch', -1) + 1
-        self.current_iter = checkpoint.get('iter', -1) + 1
-        try:
-            self.model.load_state_dict(checkpoint['model'])
-        except RuntimeError:
-            self.msg_mgr.log_warning('Loaded model is not compatible with current model.')
-            return
-        try:
-            self.optimizer.load_state_dict(checkpoint['optimizer'])
-            if not isinstance(self.batch_scheduler, NoOp):
-                self.batch_scheduler.load_state_dict(checkpoint['batch_scheduler'])
-            if not isinstance(self.epoch_scheduler, NoOp):
-                self.epoch_scheduler.load_state_dict(checkpoint['epoch_scheduler'])
-        except KeyError:
-            self.msg_mgr.log_warning('Optimizer and scheduler not loaded.')
-
-        if not isinstance(self.warmup_scheduler, NoOp):
-            self.warmup_scheduler.last_step = self.current_iter
-        self.msg_mgr.log_info(f'Model loaded from {path}')
 
     def save_model(self):
         # Only save model from master process
@@ -316,3 +306,43 @@ class BaseTrainer:
         if self.is_dist:
             # for distributed training, wait for all processes to finish saving
             dist.barrier()
+
+    def load_model(self, path):
+        if not os.path.exists(path):
+            self.msg_mgr.log_warning(f"Checkpoint {path} not found.")
+            return
+        map_location = {'cuda:0': f'cuda:{self.rank}'} if self.is_dist else self.device
+        checkpoint = torch.load(path, map_location=map_location)
+        self.current_epoch = checkpoint.get('epoch', -1) + 1
+        self.current_iter = checkpoint.get('iter', -1) + 1
+        try:
+            self.model.load_state_dict(checkpoint['model'])
+        except RuntimeError:
+            self.msg_mgr.log_warning('Loaded model is not compatible with current model.')
+            return
+        try:
+            self.optimizer.load_state_dict(checkpoint['optimizer'])
+            if not isinstance(self.batch_scheduler, NoOp):
+                self.batch_scheduler.load_state_dict(checkpoint['batch_scheduler'])
+            if not isinstance(self.epoch_scheduler, NoOp):
+                self.epoch_scheduler.load_state_dict(checkpoint['epoch_scheduler'])
+        except KeyError:
+            self.msg_mgr.log_warning('Optimizer and scheduler not loaded.')
+
+        if not isinstance(self.warmup_scheduler, NoOp):
+            self.warmup_scheduler.last_step = self.current_iter
+        self.msg_mgr.log_info(f'Model loaded from {path}')
+
+    def resume_ckpt(self, restore_hint):
+        if isinstance(restore_hint, int):
+            save_name = self.trainer_cfg['save_name']
+            save_name = os.path.join(
+                self.save_path, 'checkpoints/{}-{:0>5}.pt'.format(save_name, restore_hint))
+            self.iteration = restore_hint
+        elif isinstance(restore_hint, str):
+            save_name = restore_hint
+            self.iteration = 0
+        else:
+            raise ValueError(
+                "Error type for -Restore_Hint-, supported: int or string.")
+        self.load_model(save_name)

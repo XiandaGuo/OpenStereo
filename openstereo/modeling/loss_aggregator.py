@@ -56,7 +56,7 @@ class LossAggregator():
                 loss_func = self.losses[k]
                 loss, info = loss_func(**v)
                 for name, value in info.items():
-                    loss_info['scalar/%s/%s' % (k, name)] = value
+                    loss_info[f'scalar/loss/{k}'] = value
                 loss = loss.mean() * loss_func.loss_term_weight
                 loss_sum += loss
             else:
@@ -73,5 +73,5 @@ class LossAggregator():
                 else:
                     raise ValueError(
                         "Error type for -training_disp-, supported: A feature dict or loss tensor.")
-        loss_info['scalar/loss_sum'] = loss_sum
+        loss_info['scalar/loss/sum'] = loss_sum
         return loss_sum, loss_info

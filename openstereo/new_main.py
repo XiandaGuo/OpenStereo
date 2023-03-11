@@ -81,9 +81,12 @@ def worker(rank, world_size, opt, cfgs):
         device=device,
     )
 
-    if trainer_cfg.get('restore_hint', None):
-        model_trainer.load_model(trainer_cfg['restore_hint'])
+    # restore checkpoint
+    restore_hint = trainer_cfg.get('restore_hint', 0)
+    if restore_hint:
+        model_trainer.resume_ckpt(restore_hint)
 
+    # run model
     if scope == 'train':
         model_trainer.train_model()
     elif scope == 'val':

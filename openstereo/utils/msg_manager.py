@@ -5,7 +5,6 @@ from time import strftime, localtime
 
 import numpy as np
 import torch
-import torchvision.utils as vutils
 from torch.utils.tensorboard import SummaryWriter
 
 from .common import is_list, is_tensor, ts2np, mkdir, Odict, NoOp
@@ -56,25 +55,36 @@ class MessageManager:
         self.info_dict.clear()
         self.writer.flush()
 
-    def write_to_tensorboard(self, summary):
+    def train_step(self, summary):
+        self.iteration += 1
+        self.write_to_tensorboard(summary, self.iteration)
 
+    def write_to_tensorboard(self, summary, iteration):
         for k, v in summary.items():
             module_name = k.split('/')[0]
-            if module_name not in self.writer_hparams:
-                self.log_warning(
-                    'Not Expected --Summary-- type [{}] appear!!!{}'.format(k, self.writer_hparams))
-                continue
             board_name = k.replace(module_name + "/", '')
             writer_module = getattr(self.writer, 'add_' + module_name)
-            v = v.detach() if is_tensor(v) else v
-            v = vutils.make_grid(
-                v, normalize=True, scale_each=True) if 'image' in module_name else v
-            if module_name == 'scalar':
-                try:
-                    v = v.mean()
-                except:
-                    v = v
-            writer_module(board_name, v, self.iteration)
+            writer_module(board_name, v, iteration)
+
+    # def write_to_tensorboard(self, summary):
+    #
+    #     for k, v in summary.items():
+    #         module_name = k.split('/')[0]
+    #         if module_name not in self.writer_hparams:
+    #             self.log_warning(
+    #                 'Not Expected --Summary-- type [{}] appear!!!{}'.format(k, self.writer_hparams))
+    #             continue
+    #         board_name = k.replace(module_name + "/", '')
+    #         writer_module = getattr(self.writer, 'add_' + module_name)
+    #         v = v.detach() if is_tensor(v) else v
+    #         v = vutils.make_grid(
+    #             v, normalize=True, scale_each=True) if 'image' in module_name else v
+    #         if module_name == 'scalar':
+    #             try:
+    #                 v = v.mean()
+    #             except:
+    #                 v = v
+    #         writer_module(board_name, v, self.iteration)
 
     def log_training_info(self):
         now = time.time()
@@ -92,13 +102,13 @@ class MessageManager:
     def reset_time(self):
         self.time = time.time()
 
-    def train_step(self, info, summary):
-        self.iteration += 1
-        self.append(info)
-        if self.iteration % self.log_iter == 0:
-            self.log_training_info()
-            self.flush()
-            self.write_to_tensorboard(summary)
+    # def train_step(self, info, summary):
+    #     self.iteration += 1
+    #     self.append(info)
+    #     if self.iteration % self.log_iter == 0:
+    #         # self.log_training_info()
+    #         self.flush()
+    #         self.write_to_tensorboard(summary)
 
     def log_debug(self, *args, **kwargs):
         self.logger.debug(*args, **kwargs)
