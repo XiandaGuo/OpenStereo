@@ -199,10 +199,7 @@ class BaseTrainer:
             # reduce loss from all devices
             dist.all_reduce(total_loss, op=dist.ReduceOp.SUM)
             total_loss /= dist.get_world_size()
-        if self.warmup_scheduler is not None:
-            with self.warmup_scheduler.dampening():
-                self.epoch_scheduler.step()
-        else:
+        with self.warmup_scheduler.dampening():
             self.epoch_scheduler.step()
         return total_loss.item() / len(self.train_loader)
 
