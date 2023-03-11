@@ -14,6 +14,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 
 
 class NoOp:
+    """A no-op class for the case when we don't want to do anything."""
 
     def __call__(self, *args, **kwargs):
         pass
@@ -23,8 +24,14 @@ class NoOp:
 
         return no_op
 
-    def __enter__(self, *args, **kwargs):
-        return
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        pass
+
+    def __enter__(self):
+        pass
+
+    def dampening(self):
+        return self
 
 
 class Odict(OrderedDict):

@@ -149,17 +149,14 @@ class BaseTrainer:
             f" batches on each device: {len(self.train_loader)},"
             f" batch size: {self.train_loader.sampler.batch_size}"
         )
-
         if self.is_dist and self.rank == 0 or not self.is_dist:
             pbar = tqdm(total=len(self.train_loader), desc=f'Train epoch {self.current_epoch}')
         else:
             pbar = NoOp()
-
         # for distributed sampler to shuffle data
         # the first sampler is batch sampler and the second is distributed sampler
         if self.is_dist:
             self.train_loader.sampler.sampler.set_epoch(self.current_epoch)
-
         for i, data in enumerate(self.train_loader):
             self.optimizer.zero_grad()
             if self.fp16:
@@ -249,15 +246,12 @@ class BaseTrainer:
             for k, v in val_res.items():
                 v = v.item() if isinstance(v, torch.Tensor) else v
                 epoch_metrics[k] += v
-
             log_iter = self.trainer_cfg.get('log_iter', 10)
             if i % log_iter == 0:
                 pbar.update(log_iter)
                 pbar.set_postfix({
                     'epe': val_res['epe'].item(),
                 })
-
-
         pbar.close()
         for k in epoch_metrics.keys():
             epoch_metrics[k] = torch.tensor(epoch_metrics[k] / len(self.val_loader)).to(self.device)
