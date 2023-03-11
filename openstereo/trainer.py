@@ -11,83 +11,64 @@ from tqdm import tqdm
 
 from data.stereo_dataset_batch import StereoBatchDataset
 from evaluation.evaluator import OpenStereoEvaluator
-from modeling.common import ClipGrad, fix_bn
-from utils import NoOp, get_attr_from, get_valid_args, mkdir
+from utils import NoOp, get_attr_from, get_valid_args
 from utils.warmup import LinearWarmup
 
 
-class BaseTrainer:
+class Trainer:
     def __init__(
             self,
             model: nn.Module = None,
             trainer_cfg: dict = None,
             data_cfg: dict = None,
             is_dist: bool = True,
-            rank: int = None,
             device: torch.device = torch.device('cpu'),
+            rank: int = None,
             **kwargs
     ):
         self.msg_mgr = model.msg_mgr
         self.model = model
+        self.train_loader = None
+        self.val_loader = None
         self.trainer_cfg = trainer_cfg
         self.data_cfg = data_cfg
         self.optimizer_cfg = trainer_cfg['optimizer_cfg']
         self.scheduler_cfg = trainer_cfg['scheduler_cfg']
         self.evaluator_cfg = trainer_cfg['evaluator_cfg']
-        self.clip_grade_config = trainer_cfg['clip_grad_cfg']
-        self.optimizer = None
-        self.evaluator = NoOp()
+        self.optimizer = NoOp()
         self.warmup_scheduler = NoOp()
         self.epoch_scheduler = NoOp()
         self.batch_scheduler = NoOp()
-        self.clip_gard = NoOp()
+        self.evaluator = NoOp()
         self.is_dist = is_dist
         self.rank = rank if is_dist else None
         self.device = torch.device('cuda', rank) if is_dist else device
-        self.current_epoch = 1
-        self.current_iter = 1
+        self.fp16 = trainer_cfg.get('fp16', False)
         self.seed = 1024
-        self.save_path = os.path.join(
-            'output/', self.data_cfg['name'], self.model.model_name, self.trainer_cfg['save_name']
-        )
-        self.fp16 = self.trainer_cfg.get('fp16', False)
+        self.save_dir = './results'
+        self.current_epoch = 0
+        self.current_iter = 0
         if self.fp16:
             self.scaler = torch.cuda.amp.GradScaler()
-        self.train_loader = None
-        self.val_loader = None
-        self.test_loader = None
         self.build_model()
         self.build_data_loader()
         self.build_optimizer(self.optimizer_cfg)
         self.build_scheduler(self.scheduler_cfg)
         self.build_warmup_scheduler(self.scheduler_cfg)
+
         self.build_evaluator()
-        self.build_clip_grad()
 
-    def build_model(self, *args, **kwargs):
-        # apply sync batch norm
-        if self.is_dist and self.trainer_cfg.get('sync_bn', False):
-            self.msg_mgr.info('convert batch norm to sync batch norm')
-            self.model = nn.SyncBatchNorm.convert_sync_batchnorm(self.model)
-        # apply fix batch norm
-        if self.trainer_cfg.get('fix_bn', False):
-            self.msg_mgr.info('fix batch norm')
-            self.model = fix_bn(self.model)
-        # init parameters
-        if self.trainer_cfg.get('init_parameters', False):
-            self.msg_mgr.info('init parameters')
-            self.model.init_parameters()
-
-    def build_data_loader(self):
-        self.train_loader = self.get_data_loader(self.data_cfg, 'train')
-        self.val_loader = self.get_data_loader(self.data_cfg, 'val')
+    def build_model(self, checkpoint=None):
+        if checkpoint is not None:
+            self.load_model(checkpoint)
+        # self.model.to(self.device)
 
     def get_data_loader(self, data_cfg, scope):
         dataset = StereoBatchDataset(data_cfg, scope)
         batch_size = data_cfg.get(f'{scope}_batch_size', 1)
-        num_workers = data_cfg.get('num_workers', 4)
-        pin_memory = data_cfg.get('pin_memory', False)
-        shuffle = data_cfg.get(f'shuffle', False)
+        num_workers = data_cfg['num_workers']
+        pin_memory = data_cfg['pin_memory']
+        shuffle = data_cfg.get(f'shuffle', False) and scope == 'train'
         if self.is_dist:
             sampler = DistributedSampler(dataset, shuffle=shuffle)
         else:
@@ -102,6 +83,10 @@ class BaseTrainer:
         )
         return loader
 
+    def build_data_loader(self):
+        self.train_loader = self.get_data_loader(self.data_cfg, 'train')
+        self.val_loader = self.get_data_loader(self.data_cfg, 'val')
+
     def build_optimizer(self, optimizer_cfg):
         self.msg_mgr.log_info(optimizer_cfg)
         optimizer = get_attr_from([optim], optimizer_cfg['solver'])
@@ -111,9 +96,9 @@ class BaseTrainer:
 
     def build_scheduler(self, scheduler_cfg):
         self.msg_mgr.log_info(scheduler_cfg)
-        scheduler = get_attr_from([optim.lr_scheduler], scheduler_cfg['scheduler'])
-        valid_arg = get_valid_args(scheduler, scheduler_cfg, ['scheduler', 'warmup', 'on_epoch'])
-        scheduler = scheduler(self.optimizer, **valid_arg)
+        Scheduler = get_attr_from([optim.lr_scheduler], scheduler_cfg['scheduler'])
+        valid_arg = get_valid_args(Scheduler, scheduler_cfg, ['scheduler', 'warmup', 'on_epoch'])
+        scheduler = Scheduler(self.optimizer, **valid_arg)
         if scheduler_cfg.get('on_epoch', True):
             self.epoch_scheduler = scheduler
         else:
@@ -132,15 +117,6 @@ class BaseTrainer:
         metrics = self.evaluator_cfg.get('metrics', ['epe', 'd1_all', 'thres_1', 'thres_2', 'thres_3'])
         self.evaluator = OpenStereoEvaluator(metrics, use_np=False)
 
-    def build_clip_grad(self):
-        clip_type = self.clip_grade_config.get('type', None)
-        if clip_type is None:
-            return
-        clip_value = self.clip_grade_config.get('clip_value', 0.1)
-        max_norm = self.clip_grade_config.get('max_norm', 35)
-        norm_type = self.clip_grade_config.get('norm_type', 2)
-        self.clip_gard = ClipGrad(clip_type, clip_value, max_norm, norm_type)
-
     def train_epoch(self):
         total_loss = 0
         self.model.train()
@@ -153,31 +129,31 @@ class BaseTrainer:
             pbar = tqdm(total=len(self.train_loader), desc=f'Train epoch {self.current_epoch}')
         else:
             pbar = NoOp()
-
-        # for distributed sampler to shuffle data
-        # the first sampler is batch sampler and the second is distributed sampler
-        if self.is_dist:
-            self.train_loader.sampler.sampler.set_epoch(self.current_epoch)
-
         for i, data in enumerate(self.train_loader):
             self.optimizer.zero_grad()
             if self.fp16:
                 with autocast():
-                    outputs = self.model.forward_step(data, device=self.device)
-                    loss, loss_info = self.model.compute_loss(None, outputs)
-                self.scaler.scale(loss).backward()
-                # Unscales the gradients of optimizer's assigned params in-place
-                self.scaler.unscale_(self.optimizer)
-                # Since the gradients of optimizer's assigned params are unscaled, clips as usual
-                self.clip_gard(self.model)
-                self.scaler.step(self.optimizer)
-                # Updates the scale for next iteration
-                self.scaler.update()
+                    outputs = self.model.forward_step(data)
+                    loss = self.model.compute_loss(None, outputs)
+                    self.scaler.scale(loss).backward()
+                    scale = self.scaler.get_scale()
+                    # torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=35, norm_type=2)
+                    torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
+                    self.scaler.step(self.optimizer)
+                    # Updates the scale for next iteration
+                    self.scaler.update()
+                    if scale > self.scaler.get_scale():
+                        self.msg_mgr.log_debug(
+                            "Training step skip. Expected the former scale equals to the present, got {} and {}".format(
+                                scale, self.scaler.get_scale()))
+                        pbar.update(1)
+                        continue
             else:
-                outputs = self.model.forward_step(data, device=self.device)
-                loss, loss_info = self.model.compute_loss(None, outputs)
+                outputs = self.model.forward_step(data)
+                loss = self.model.compute_loss(None, outputs)
                 loss.backward()
-                self.clip_gard(self.model)
+                # torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=35, norm_type=2)
+                torch.nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
                 self.optimizer.step()
             self.current_iter += 1
             if self.warmup_scheduler is not None:
@@ -196,23 +172,20 @@ class BaseTrainer:
         total_loss = torch.tensor(total_loss, device=self.device)
         if self.is_dist:
             dist.barrier()
-            # reduce loss from all devices
-            dist.all_reduce(total_loss, op=dist.ReduceOp.SUM)
-            total_loss /= dist.get_world_size()
+            dist.all_reduce(total_loss, op=dist.ReduceOp.AVG)
         if self.warmup_scheduler is not None:
             with self.warmup_scheduler.dampening():
                 self.epoch_scheduler.step()
         else:
             self.epoch_scheduler.step()
-        return total_loss.item() / len(self.train_loader)
+        return total_loss / len(self.train_loader)
 
     def train_model(self, epochs=10):
         for epoch in range(epochs):
+            self.model.train()
             self.train_epoch()
-            if self.current_epoch % self.trainer_cfg['save_every'] == 0:
-                self.save_model()
-            if self.current_epoch % self.trainer_cfg['val_every'] == 0:
-                self.val_epoch()
+            self.save_model(os.path.join(self.save_dir, "checkpoints", f'epoch_{self.current_epoch}.pth'))
+            self.val_epoch()
             self.current_epoch += 1
         self.msg_mgr.log_info('Training finished.')
 
@@ -235,8 +208,9 @@ class BaseTrainer:
             pbar = tqdm(total=len(self.val_loader), desc=f'Eval epoch {self.current_epoch}')
         else:
             pbar = NoOp()
+
         for i, data in enumerate(self.val_loader):
-            batch_inputs = self.model.prepare_inputs(data, device=self.device)
+            batch_inputs = self.model.prepare_inputs(data)
             with autocast(enabled=self.fp16):
                 inference_disp = self.model.forward(batch_inputs)['inference_disp']
             val_data = {
@@ -266,11 +240,7 @@ class BaseTrainer:
         return epoch_metrics
 
     def load_model(self, path):
-        if not os.path.exists(path):
-            self.msg_mgr.log_warning(f"Checkpoint {path} not found.")
-            return
-        map_location = {'cuda:0': f'cuda:{self.rank}'} if self.is_dist else self.device
-        checkpoint = torch.load(path, map_location=map_location)
+        checkpoint = torch.load(path, map_location=self.device)
         self.current_epoch = checkpoint.get('epoch', -1) + 1
         self.current_iter = checkpoint.get('iter', -1) + 1
         try:
@@ -291,13 +261,10 @@ class BaseTrainer:
             self.warmup_scheduler.last_step = self.current_iter
         self.msg_mgr.log_info(f'Model loaded from {path}')
 
-    def save_model(self):
+    def save_model(self, path):
         # Only save model from master process
         if self.is_dist and self.rank != 0:
-            dist.barrier()
             return
-        mkdir(os.path.join(self.save_path, "checkpoints/"))
-        save_name = self.trainer_cfg['save_name']
         state_dict = {
             'model': self.model.state_dict(),
             'epoch': self.current_epoch,
@@ -311,11 +278,5 @@ class BaseTrainer:
         if not isinstance(self.epoch_scheduler, NoOp):
             self.msg_mgr.log_debug('Epoch scheduler saved.')
             state_dict['epoch_scheduler'] = self.epoch_scheduler.state_dict()
-        torch.save(
-            state_dict,
-            os.path.join(self.save_path, "checkpoints/", f'{save_name}_epoch_{self.current_epoch:0>3}.pt')
-        )
-        self.msg_mgr.log_info(f'Model saved to {save_name}_epoch_{self.current_epoch:0>3}.pt')
-        if self.is_dist:
-            # for distributed training, wait for all processes to finish saving
-            dist.barrier()
+        torch.save(state_dict, path)
+        self.msg_mgr.log_info(f'Model saved to {path}.')

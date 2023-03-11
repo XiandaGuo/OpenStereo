@@ -7,9 +7,8 @@ data_cfg:
   num_workers: 8
   train_batch_size: 16
   val_batch_size: 10
-  pin_memory: false
-  train_shuffle: true
-  val_shuffle: false
+  pin_memory: true
+  shuffle: true
 
   batch_uniform: false
   #  random_type: range
@@ -68,7 +67,7 @@ trainer_cfg:
   save_every: 1 # epoch
   val_every: 1 # epoch
   fp16: true
-  sync_bn: true
+  sync_bn: false
   fix_bn: false
   init_parameters: false
 
@@ -80,7 +79,7 @@ trainer_cfg:
   scheduler_cfg:
     scheduler: MultiStepLR
     gamma: 0.1
-    milestones: [ 7, 12 ]
+    milestones: [ 7 ]
     warmup:
       warmup_steps: 100
 

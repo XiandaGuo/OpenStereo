@@ -22,7 +22,6 @@ def arg_parse():
     parser.add_argument('--log_to_file', action='store_true',
                         help="log to file, default path is: output/<dataset>/<model>/<save_name>/<logs>/<Datetime>.txt")
     parser.add_argument('--device', type=str, default='cuda', help="device to use for non-distributed mode.")
-
     opt = parser.parse_args()
     return opt
 
@@ -39,7 +38,7 @@ def cleanup():
     torch.distributed.destroy_process_group()
 
 
-def initialization(opt, cfgs, scope):
+def initialization(opt, cfgs):
     msg_mgr = get_msg_mgr()
     engine_cfg = cfgs[f'trainer_cfg']
     output_path = os.path.join('output/', cfgs['data_cfg']['name'], cfgs['model_cfg']['model'], engine_cfg['save_name'])
@@ -56,7 +55,7 @@ def worker(rank, world_size, opt, cfgs):
     if is_dist:
         ddp_init(rank, world_size, opt.master_addr, opt.master_port)
     device = torch.device(f'cuda:{rank}') if is_dist else torch.device(opt.device)
-    initialization(opt, cfgs, opt.scope)
+    initialization(opt, cfgs)
     msg_mgr = get_msg_mgr()
     model_cfg = cfgs['model_cfg']
     data_cfg = cfgs['data_cfg']
