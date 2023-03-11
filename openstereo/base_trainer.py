@@ -181,10 +181,7 @@ class BaseTrainer:
                 self.clip_gard(self.model)
                 self.optimizer.step()
             self.current_iter += 1
-            if self.warmup_scheduler is not None:
-                with self.warmup_scheduler.dampening():
-                    self.batch_scheduler.step()
-            else:
+            with self.warmup_scheduler.dampening():
                 self.batch_scheduler.step()
             total_loss += loss.item() if not torch.isnan(loss) else 0
             self.msg_mgr.train_step(loss_info)
@@ -268,7 +265,8 @@ class BaseTrainer:
             dist.barrier()
             self.msg_mgr.log_debug("Start reduce metrics.")
             for k in epoch_metrics.keys():
-                dist.all_reduce(epoch_metrics[k], op=dist.ReduceOp.AVG)
+                dist.all_reduce(epoch_metrics[k], op=dist.ReduceOp.SUM)
+                epoch_metrics[k] /= dist.get_world_size()
         for k in epoch_metrics.keys():
             epoch_metrics[k] = epoch_metrics[k].item()
         visual_info = {}
