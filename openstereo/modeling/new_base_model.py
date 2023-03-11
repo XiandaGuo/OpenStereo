@@ -22,8 +22,6 @@ from . import disp_processor as disp_processors
 from .loss_aggregator import LossAggregator
 
 
-# from data.stereo_dataset import StereoDataset
-
 class MetaModel(metaclass=ABCMeta):
     """The necessary functions for the base model.
 
@@ -53,6 +51,11 @@ class MetaModel(metaclass=ABCMeta):
     @abstractmethod
     def forward(self, inputs):
         """Forward the network."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def forward_step(self, inputs):
+        """Forward the network for one step."""
         raise NotImplementedError
 
     @abstractmethod
@@ -175,7 +178,11 @@ class BaseModel(MetaModel, nn.Module):
                 processed_inputs[k] = v.to(device) if torch.is_tensor(v) else v
         return processed_inputs
 
-    #
+    def forward_step(self, batch_data, device=None) -> bool:
+        batch_inputs = self.prepare_inputs(batch_data, device)
+        outputs = self.forward(batch_inputs)
+        return outputs
+
     def compute_loss(self, inputs, outputs):
         """Compute the loss."""
         training_disp = outputs['training_disp']

@@ -16,7 +16,6 @@ def arg_parse():
                         help="path of config file")
     parser.add_argument('--scope', default='train', choices=['train', 'val', 'test_kitti'],
                         help="choose train or test scope")
-    # set distributed training store true
     parser.add_argument('--master_addr', type=str, default='localhost', help="master address")
     parser.add_argument('--master_port', type=str, default='12355', help="master port")
     parser.add_argument('--no_distribute', action='store_true', default=False, help="disable distributed training")
@@ -67,6 +66,8 @@ def worker(rank, world_size, opt, cfgs):
     model = Model(cfgs)
     model = model.to(device)
     if is_dist:
+        # for most models, make sure find_unused_parameters is False
+        # https://github.com/pytorch/pytorch/issues/43259#issuecomment-706486925
         find_unused_parameters = model_cfg.get('find_unused_parameters', False)
         model = DDPPassthrough(model, device_ids=[rank], find_unused_parameters=find_unused_parameters)  # DDPmodel
     msg_mgr.log_info(params_count(model))
@@ -81,8 +82,8 @@ def worker(rank, world_size, opt, cfgs):
         device=device,
     )
 
-    if trainer_cfg.get('resume_from', None):
-        model_trainer.load_model(trainer_cfg['resume_from'])
+    if trainer_cfg.get('restore_hint', None):
+        model_trainer.load_model(trainer_cfg['restore_hint'])
 
     if scope == 'train':
         model_trainer.train_model()

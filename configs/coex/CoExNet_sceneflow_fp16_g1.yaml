@@ -48,7 +48,7 @@ data_cfg:
 
 model_cfg:
   model: CoExNet
-  find_unused_parameters: true
+  find_unused_parameters: false
 
   base_config:
     max_disp: 192

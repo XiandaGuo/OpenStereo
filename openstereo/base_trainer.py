@@ -5,7 +5,8 @@ import torch.distributed as dist
 import torch.nn as nn
 import torch.optim as optim
 from torch.cuda.amp import autocast
-from torch.utils.data import DataLoader, DistributedSampler, RandomSampler, SequentialSampler, BatchSampler
+from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, BatchSampler
+from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
 
 from data.stereo_dataset_batch import StereoBatchDataset
@@ -34,7 +35,7 @@ class BaseTrainer:
         self.scheduler_cfg = trainer_cfg['scheduler_cfg']
         self.evaluator_cfg = trainer_cfg['evaluator_cfg']
         self.clip_grade_config = trainer_cfg['clip_grad_cfg']
-        self.optimizer = NoOp()
+        self.optimizer = None
         self.evaluator = NoOp()
         self.warmup_scheduler = NoOp()
         self.epoch_scheduler = NoOp()
@@ -108,9 +109,9 @@ class BaseTrainer:
 
     def build_scheduler(self, scheduler_cfg):
         self.msg_mgr.log_info(scheduler_cfg)
-        Scheduler = get_attr_from([optim.lr_scheduler], scheduler_cfg['scheduler'])
-        valid_arg = get_valid_args(Scheduler, scheduler_cfg, ['scheduler', 'warmup', 'on_epoch'])
-        scheduler = Scheduler(self.optimizer, **valid_arg)
+        scheduler = get_attr_from([optim.lr_scheduler], scheduler_cfg['scheduler'])
+        valid_arg = get_valid_args(scheduler, scheduler_cfg, ['scheduler', 'warmup', 'on_epoch'])
+        scheduler = scheduler(self.optimizer, **valid_arg)
         if scheduler_cfg.get('on_epoch', True):
             self.epoch_scheduler = scheduler
         else:
@@ -128,6 +129,15 @@ class BaseTrainer:
     def build_evaluator(self):
         metrics = self.evaluator_cfg.get('metrics', ['epe', 'd1_all', 'thres_1', 'thres_2', 'thres_3'])
         self.evaluator = OpenStereoEvaluator(metrics, use_np=False)
+
+    def build_clip_grad(self):
+        clip_type = self.clip_grade_config.get('type', None)
+        if clip_type is None:
+            return
+        clip_value = self.clip_grade_config.get('clip_value', 0.1)
+        max_norm = self.clip_grade_config.get('max_norm', 35)
+        norm_type = self.clip_grade_config.get('norm_type', 2)
+        self.clip_gard = ClipGrad(clip_type, clip_value, max_norm, norm_type)
 
     def train_epoch(self):
         total_loss = 0
@@ -149,11 +159,10 @@ class BaseTrainer:
 
         for i, data in enumerate(self.train_loader):
             self.optimizer.zero_grad()
-            batch_inputs = self.model.prepare_inputs(data, device=self.device)
             if self.fp16:
                 with autocast():
-                    outputs = self.model(batch_inputs)
-                    loss, loss_info = self.model.compute_loss(batch_inputs, outputs)
+                    outputs = self.model.forward_step(data, device=self.device)
+                    loss, loss_info = self.model.compute_loss(None, outputs)
                 self.scaler.scale(loss).backward()
                 # Unscales the gradients of optimizer's assigned params in-place
                 self.scaler.unscale_(self.optimizer)
@@ -162,15 +171,9 @@ class BaseTrainer:
                 self.scaler.step(self.optimizer)
                 # Updates the scale for next iteration
                 self.scaler.update()
-                # if scale > self.scaler.get_scale():
-                #     self.msg_mgr.log_debug(
-                #         "Training step skip. Expected the former scale equals to the present, got {} and {}".format(
-                #             scale, self.scaler.get_scale()))
-                #     pbar.update(1)
-                #     continue
             else:
-                outputs = self.model(batch_inputs)
-                loss, loss_info = self.model.compute_loss(batch_inputs, outputs)
+                outputs = self.model.forward_step(data, device=self.device)
+                loss, loss_info = self.model.compute_loss(None, outputs)
                 loss.backward()
                 self.clip_gard(self.model)
                 self.optimizer.step()
@@ -233,7 +236,7 @@ class BaseTrainer:
         for i, data in enumerate(self.val_loader):
             batch_inputs = self.model.prepare_inputs(data, device=self.device)
             with autocast(enabled=self.fp16):
-                inference_disp = self.model(batch_inputs)['inference_disp']
+                inference_disp = self.model.forward(batch_inputs)['inference_disp']
             val_data = {
                 'disp_est': inference_disp['disp_est'],
                 'disp_gt': batch_inputs['disp_gt'],
@@ -316,12 +319,3 @@ class BaseTrainer:
         if self.is_dist:
             # for distributed training, wait for all processes to finish saving
             dist.barrier()
-
-    def build_clip_grad(self):
-        clip_type = self.clip_grade_config.get('type', None)
-        if clip_type is None:
-            return
-        clip_value = self.clip_grade_config.get('clip_value', 0.1)
-        max_norm = self.clip_grade_config.get('max_norm', 35)
-        norm_type = self.clip_grade_config.get('norm_type', 2)
-        self.clip_gard = ClipGrad(clip_type, clip_value, max_norm, norm_type)
