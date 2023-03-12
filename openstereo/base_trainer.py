@@ -162,8 +162,8 @@ class BaseTrainer:
             self.optimizer.zero_grad()
             if self.amp:
                 with autocast():
-                    outputs = self.model.forward_step(data, device=self.device)
-                    loss, loss_info = self.model.compute_loss(None, outputs)
+                    training_disp, visual_summary = self.model.forward_step(data, device=self.device)
+                    loss, loss_info = self.model.compute_loss(None, training_disp)
                 self.scaler.scale(loss).backward()
                 # Unscales the gradients of optimizer's assigned params in-place
                 self.scaler.unscale_(self.optimizer)  # optional
@@ -172,8 +172,8 @@ class BaseTrainer:
                 # Updates the scale for next iteration
                 self.scaler.update()
             else:
-                outputs = self.model.forward_step(data, device=self.device)
-                loss, loss_info = self.model.compute_loss(None, outputs)
+                training_disp, visual_summary = self.model.forward_step(data, device=self.device)
+                loss, loss_info = self.model.compute_loss(None, training_disp)
                 loss.backward()
                 self.clip_gard(self.model)
                 self.optimizer.step()
@@ -181,16 +181,18 @@ class BaseTrainer:
             with self.warmup_scheduler.dampening():
                 self.batch_scheduler.step()
             total_loss += loss.item() if not torch.isnan(loss) else 0
-            self.msg_mgr.train_step(loss_info)
+
             log_iter = self.trainer_cfg.get('log_iter', 10)
             if i % log_iter == 0:
-                pbar.update(log_iter)
+                pbar.update(log_iter) if i != 0 else pbar.update(0)
                 pbar.set_postfix({
                     'loss': loss.item(),
                     'epoch_loss': total_loss / (i + 1),
                     'lr': self.optimizer.param_groups[0]['lr']
                 })
-                # self.msg_mgr.write_to_tensorboard(loss_info)
+                loss_info.update(visual_summary)
+
+            self.msg_mgr.train_step(loss_info)
         pbar.close()
         total_loss = torch.tensor(total_loss, device=self.device)
         if self.is_dist:
@@ -310,6 +312,7 @@ class BaseTrainer:
         checkpoint = torch.load(path, map_location=map_location)
         self.current_epoch = checkpoint.get('epoch', 0)
         self.current_iter = checkpoint.get('iter', 0)
+        self.msg_mgr.iteration = self.current_iter
         try:
             self.model.load_state_dict(checkpoint['model'])
         except RuntimeError:

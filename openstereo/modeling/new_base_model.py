@@ -178,14 +178,14 @@ class BaseModel(MetaModel, nn.Module):
                 processed_inputs[k] = v.to(device) if torch.is_tensor(v) else v
         return processed_inputs
 
-    def forward_step(self, batch_data, device=None) -> bool:
+    def forward_step(self, batch_data, device=None):
         batch_inputs = self.prepare_inputs(batch_data, device)
         outputs = self.forward(batch_inputs)
-        return outputs
+        training_disp, visual_summary = outputs['training_disp'], outputs['visual_summary']
+        return training_disp, visual_summary
 
-    def compute_loss(self, inputs, outputs):
+    def compute_loss(self, inputs, training_disp):
         """Compute the loss."""
-        training_disp = outputs['training_disp']
         loss, loss_info = self.loss_fn(training_disp)
         return loss, loss_info
 

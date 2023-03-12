@@ -5,6 +5,7 @@ from time import strftime, localtime
 
 import numpy as np
 import torch
+import torchvision.utils as vutils
 from torch.utils.tensorboard import SummaryWriter
 
 from .common import is_list, is_tensor, ts2np, mkdir, Odict, NoOp
@@ -56,14 +57,17 @@ class MessageManager:
         self.writer.flush()
 
     def train_step(self, summary):
-        self.iteration += 1
         self.write_to_tensorboard(summary, self.iteration)
+        self.iteration += 1
 
-    def write_to_tensorboard(self, summary, iteration):
+    def write_to_tensorboard(self, summary, iteration=None):
+        iteration = self.iteration if iteration is None else iteration
         for k, v in summary.items():
             module_name = k.split('/')[0]
             board_name = k.replace(module_name + "/", '')
             writer_module = getattr(self.writer, 'add_' + module_name)
+            v = v.detach() if is_tensor(v) else v
+            v = vutils.make_grid(v, normalize=True, scale_each=True) if 'image' in module_name else v
             writer_module(board_name, v, iteration)
 
     # def write_to_tensorboard(self, summary):

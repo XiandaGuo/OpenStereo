@@ -43,9 +43,8 @@ def initialization(opt, cfgs):
     msg_mgr = get_msg_mgr()
     engine_cfg = cfgs[f'trainer_cfg']
     output_path = os.path.join('output/', cfgs['data_cfg']['name'], cfgs['model_cfg']['model'], engine_cfg['save_name'])
-    iteration = engine_cfg['restore_hint'] if isinstance(engine_cfg['restore_hint'], int) else 0
     log_iter = engine_cfg['log_iter']
-    msg_mgr.init_manager(output_path, opt.log_to_file, log_iter, iteration)
+    msg_mgr.init_manager(output_path, opt.log_to_file, log_iter)
     msg_mgr.log_info(engine_cfg)
     seed = 0 if opt.no_distribute else dist.get_rank()
     init_seeds(seed)
