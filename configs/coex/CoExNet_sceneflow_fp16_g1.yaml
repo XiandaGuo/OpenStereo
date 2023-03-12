@@ -1,10 +1,10 @@
 data_cfg:
   name: SceneFlow
   root: data/SceneFlow
-  train_list: datasets/sceneflow/sceneflow_finalpass_train.txt
-  val_list: datasets/sceneflow/sceneflow_finalpass_test.txt
-  test_list: datasets/sceneflow/sceneflow_finalpass_test.txt
-  num_workers: 8
+  train_list: datasets/sceneflow/debug_train.txt
+  val_list: datasets/sceneflow/debug_val.txt
+  test_list: datasets/sceneflow/debug_val.txt
+  num_workers: 4
   train_batch_size: 16
   val_batch_size: 10
   pin_memory: true
@@ -21,11 +21,7 @@ data_cfg:
   transform:
     train:
       - type: RandomCrop
-        #        size: [ 288, 576 ]
-        size: [ 256, 512 ]
-
-      #- type: RandomHorizontalFlip
-      #  prob: 0.5
+        size: [ 288, 576 ]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -62,24 +58,28 @@ loss_cfg:
 
 trainer_cfg:
   save_name: CoExNet_SceneFlow
+  total_epoch: 12
   restore_hint: 0
-  log_iter: 10 # iter
+  optimizer_reset: 0
+  scheduler_reset: 0
+  warmup_reset: 0
+  log_iter: 1 # iter
   save_every: 1 # epoch
   val_every: 1 # epoch
-  fp16: true
+  amp: false
   sync_bn: false
-  fix_bn: false
+  fix_bn: true
   init_parameters: false
 
   optimizer_cfg:
-    solver: Adam
+    solver: RMSprop
     lr: 0.001
-    betas: [ 0.9, 0.999 ]
+#    betas: [ 0.9, 0.999 ]
 
   scheduler_cfg:
     scheduler: MultiStepLR
-    gamma: 0.1
-    milestones: [ 7 ]
+    gamma: 0.5
+    milestones: [ 5, 7, 9, 11 ]
     warmup:
       warmup_steps: 100
 
@@ -92,48 +92,9 @@ trainer_cfg:
       - thres_3
 
   clip_grad_cfg:
-    #    type: norm
-    #    max_norm: 35
-    #    norm_type: 2
-    type: value
-    clip_value: 0.1
-
-
-
-#  save_name: CoExNet_SceneFlow
-#  restore_hint: 0
-#  restore_ckpt_strict: true
-#  log_iter: 10
-#  with_test: true
-#  enable_float16: true
-#  save_iter: 1000
-#  sync_BN: true
-#  total_iter: 20000
-#  total_epoch: 15
-#  optimizer_reset: false
-#  scheduler_reset: false
-#  clip_grad_norm:
+#    type: norm
 #    max_norm: 35
 #    norm_type: 2
-#  sampler:
-#    batch_shuffle: true
-#    batch_size: 4
-#
-#
-#evaluator_cfg:
-#  save_name: CoExNet_SceneFlow
-#  eval_func: OpenStereoEvaluator
-#  restore_hint: 0
-#  metric:
-#    - d1_all
-#    - epe
-#    - thres_1
-#    - thres_2
-#    - thres_3
-#  enable_float16: true
-#  restore_ckpt_strict: true
-#  show_progress_bar: false
-#  sampler:
-#    batch_shuffle: false
-#    batch_size: 1
+    type: value
+    clip_value: 0.1
 

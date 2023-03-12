@@ -22,6 +22,7 @@ def arg_parse():
     parser.add_argument('--log_to_file', action='store_true',
                         help="log to file, default path is: output/<dataset>/<model>/<save_name>/<logs>/<Datetime>.txt")
     parser.add_argument('--device', type=str, default='cuda', help="device to use for non-distributed mode.")
+    parser.add_argument('--restore_hint', type=str, default=0, help="restore hint for loading checkpoint.")
     opt = parser.parse_args()
     return opt
 
@@ -82,8 +83,10 @@ def worker(rank, world_size, opt, cfgs):
     )
 
     # restore checkpoint
-    restore_hint = trainer_cfg.get('restore_hint', 0)
-    if restore_hint:
+    if opt.restore_hint != '0':
+        model_trainer.resume_ckpt(opt.restore_hint)
+    else:
+        restore_hint = trainer_cfg.get('restore_hint', 0)
         model_trainer.resume_ckpt(restore_hint)
 
     # run model

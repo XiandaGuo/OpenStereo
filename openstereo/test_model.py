@@ -59,7 +59,7 @@ def run_model(cfgs, scope):
     model.eval()
     x1 = torch.ones(1, 3, 256, 512)
     x2 = torch.ones(1, 3, 256, 512)
-    # enable fp16
+    # enable amp
     with torch.no_grad():
         model.eval()
         with autocast(enabled=model.engine_cfg['enable_float16']):

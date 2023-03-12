@@ -61,7 +61,7 @@ trainer_cfg:
   log_iter: 10 # iter
   save_every: 1 # epoch
   val_every: 1 # epoch
-  fp16: false
+  amp: false
   sync_bn: false
   fix_bn: false
   init_parameters: false

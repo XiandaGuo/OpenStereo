@@ -44,14 +44,13 @@ class BaseTrainer:
         self.is_dist = is_dist
         self.rank = rank if is_dist else None
         self.device = torch.device('cuda', rank) if is_dist else device
-        self.current_epoch = 1
-        self.current_iter = 1
-        self.seed = 1024
+        self.current_epoch = 0
+        self.current_iter = 0
         self.save_path = os.path.join(
             'output/', self.data_cfg['name'], self.model.model_name, self.trainer_cfg['save_name']
         )
-        self.fp16 = self.trainer_cfg.get('fp16', False)
-        if self.fp16:
+        self.amp = self.trainer_cfg.get('amp', False)
+        if self.amp:
             self.scaler = torch.cuda.amp.GradScaler()
         self.train_loader = None
         self.val_loader = None
@@ -87,7 +86,7 @@ class BaseTrainer:
         batch_size = data_cfg.get(f'{scope}_batch_size', 1)
         num_workers = data_cfg.get('num_workers', 4)
         pin_memory = data_cfg.get('pin_memory', False)
-        shuffle = data_cfg.get(f'shuffle', False)
+        shuffle = data_cfg.get(f'shuffle', False) if scope == 'train' else False
         if self.is_dist:
             sampler = DistributedSampler(dataset, shuffle=shuffle)
         else:
@@ -126,6 +125,7 @@ class BaseTrainer:
         self.warmup_scheduler = LinearWarmup(
             self.optimizer,
             warmup_period=warmup_cfg.get('warmup_steps', 1),
+            last_step=self.current_iter - 1,
         )
 
     def build_evaluator(self):
@@ -142,6 +142,7 @@ class BaseTrainer:
         self.clip_gard = ClipGrad(clip_type, clip_value, max_norm, norm_type)
 
     def train_epoch(self):
+        self.current_epoch += 1
         total_loss = 0
         self.model.train()
         self.msg_mgr.log_info(
@@ -159,14 +160,13 @@ class BaseTrainer:
             self.train_loader.sampler.sampler.set_epoch(self.current_epoch)
         for i, data in enumerate(self.train_loader):
             self.optimizer.zero_grad()
-            if self.fp16:
+            if self.amp:
                 with autocast():
                     outputs = self.model.forward_step(data, device=self.device)
                     loss, loss_info = self.model.compute_loss(None, outputs)
                 self.scaler.scale(loss).backward()
                 # Unscales the gradients of optimizer's assigned params in-place
-                self.scaler.unscale_(self.optimizer)
-                # Since the gradients of optimizer's assigned params are unscaled, clips as usual
+                self.scaler.unscale_(self.optimizer)  # optional
                 self.clip_gard(self.model)
                 self.scaler.step(self.optimizer)
                 # Updates the scale for next iteration
@@ -204,14 +204,15 @@ class BaseTrainer:
 
     def train_model(self):
         self.msg_mgr.log_info('Training started.')
-        total_epochs = self.trainer_cfg.get('total_epoch', 10)
-        while self.current_epoch < total_epochs:
+        total_epoch = self.trainer_cfg.get('total_epoch', 10)
+        while self.current_epoch <= total_epoch:
             self.train_epoch()
             if self.current_epoch % self.trainer_cfg['save_every'] == 0:
-                self.save_model()
+                self.save_ckpt()
             if self.current_epoch % self.trainer_cfg['val_every'] == 0:
                 self.val_epoch()
-            self.current_epoch += 1
+                # self.resume_ckpt(self.current_epoch)
+                # self.val_epoch()
         self.msg_mgr.log_info('Training finished.')
 
     @torch.no_grad()
@@ -235,7 +236,7 @@ class BaseTrainer:
             pbar = NoOp()
         for i, data in enumerate(self.val_loader):
             batch_inputs = self.model.prepare_inputs(data, device=self.device)
-            with autocast(enabled=self.fp16):
+            with autocast(enabled=self.amp):
                 inference_disp = self.model.forward(batch_inputs)['inference_disp']
             val_data = {
                 'disp_est': inference_disp['disp_est'],
@@ -270,54 +271,79 @@ class BaseTrainer:
         self.msg_mgr.log_info(f"Epoch {self.current_epoch} metrics: {epoch_metrics}")
         return epoch_metrics
 
-    def save_model(self):
+    def save_ckpt(self):
         # Only save model from master process
-        if self.is_dist and self.rank != 0:
-            dist.barrier()
-            return
-        mkdir(os.path.join(self.save_path, "checkpoints/"))
-        save_name = self.trainer_cfg['save_name']
-        state_dict = {
-            'model': self.model.state_dict(),
-            'epoch': self.current_epoch,
-            'iter': self.current_iter,
-        }
-        if not isinstance(self.optimizer, NoOp):
-            state_dict['optimizer'] = self.optimizer.state_dict()
-        if not isinstance(self.batch_scheduler, NoOp):
-            self.msg_mgr.log_debug('Batch scheduler saved.')
-            state_dict['batch_scheduler'] = self.batch_scheduler.state_dict()
-        if not isinstance(self.epoch_scheduler, NoOp):
-            self.msg_mgr.log_debug('Epoch scheduler saved.')
-            state_dict['epoch_scheduler'] = self.epoch_scheduler.state_dict()
-        torch.save(
-            state_dict,
-            os.path.join(self.save_path, "checkpoints/", f'{save_name}_epoch_{self.current_epoch:0>3}.pt')
-        )
-        self.msg_mgr.log_info(f'Model saved to {save_name}_epoch_{self.current_epoch:0>3}.pt')
+        if not self.is_dist or self.rank == 0:
+            mkdir(os.path.join(self.save_path, "checkpoints/"))
+            save_name = self.trainer_cfg['save_name']
+            state_dict = {
+                'model': self.model.state_dict(),
+                'epoch': self.current_epoch,
+                'iter': self.current_iter,
+            }
+            # for amp
+            if self.amp:
+                state_dict['scaler'] = self.scaler.state_dict()
+            if not isinstance(self.optimizer, NoOp):
+                state_dict['optimizer'] = self.optimizer.state_dict()
+            if not isinstance(self.batch_scheduler, NoOp):
+                self.msg_mgr.log_debug('Batch scheduler saved.')
+                state_dict['batch_scheduler'] = self.batch_scheduler.state_dict()
+            if not isinstance(self.epoch_scheduler, NoOp):
+                self.msg_mgr.log_debug('Epoch scheduler saved.')
+                state_dict['epoch_scheduler'] = self.epoch_scheduler.state_dict()
+            save_name = os.path.join(self.save_path, "checkpoints/", f'{save_name}_epoch_{self.current_epoch:0>3}.pt')
+            torch.save(
+                state_dict,
+                save_name
+            )
+            self.msg_mgr.log_info(f'Model saved to {save_name}')
         if self.is_dist:
             # for distributed training, wait for all processes to finish saving
             dist.barrier()
 
-    def load_model(self, path):
+    def load_ckpt(self, path):
         if not os.path.exists(path):
             self.msg_mgr.log_warning(f"Checkpoint {path} not found.")
             return
         map_location = {'cuda:0': f'cuda:{self.rank}'} if self.is_dist else self.device
         checkpoint = torch.load(path, map_location=map_location)
-        self.current_epoch = checkpoint.get('epoch', -1) + 1
-        self.current_iter = checkpoint.get('iter', -1) + 1
+        self.current_epoch = checkpoint.get('epoch', 0)
+        self.current_iter = checkpoint.get('iter', 0)
         try:
             self.model.load_state_dict(checkpoint['model'])
         except RuntimeError:
             self.msg_mgr.log_warning('Loaded model is not compatible with current model.')
             return
+        # for amp
+        if self.amp:
+            if 'scaler' not in checkpoint:
+                self.msg_mgr.log_warning('Loaded model is not compatible with current model.')
+            else:
+                self.scaler.load_state_dict(checkpoint['scaler'])
         try:
-            self.optimizer.load_state_dict(checkpoint['optimizer'])
-            if not isinstance(self.batch_scheduler, NoOp):
-                self.batch_scheduler.load_state_dict(checkpoint['batch_scheduler'])
-            if not isinstance(self.epoch_scheduler, NoOp):
-                self.epoch_scheduler.load_state_dict(checkpoint['epoch_scheduler'])
+            # load optimizer
+            if self.trainer_cfg.get('optimizer_reset', False):
+                self.msg_mgr.log_info('Optimizer reset.')
+                self.build_optimizer(self.optimizer_cfg)
+            else:
+                self.optimizer.load_state_dict(checkpoint['optimizer'])
+            # load scheduler
+            if self.trainer_cfg.get('scheduler_reset', False):
+                self.msg_mgr.log_info('Scheduler reset.')
+                self.build_scheduler(self.scheduler_cfg)
+            else:
+                if not isinstance(self.batch_scheduler, NoOp):
+                    self.batch_scheduler.load_state_dict(checkpoint['batch_scheduler'])
+                if not isinstance(self.epoch_scheduler, NoOp):
+                    self.epoch_scheduler.load_state_dict(checkpoint['epoch_scheduler'])
+            # load warmup scheduler
+            if self.trainer_cfg.get('warmup_reset', False):
+                self.msg_mgr.log_info('Warmup scheduler reset.')
+                self.build_warmup_scheduler(self.scheduler_cfg)
+            else:
+                self.warmup_scheduler.last_step = self.current_iter - 1
+
         except KeyError:
             self.msg_mgr.log_warning('Optimizer and scheduler not loaded.')
 
@@ -326,15 +352,12 @@ class BaseTrainer:
         self.msg_mgr.log_info(f'Model loaded from {path}')
 
     def resume_ckpt(self, restore_hint):
-        if isinstance(restore_hint, int):
+        restore_hint = str(restore_hint)
+        if restore_hint.isdigit():
             save_name = self.trainer_cfg['save_name']
             save_name = os.path.join(
-                self.save_path, 'checkpoints/{}-{:0>5}.pt'.format(save_name, restore_hint))
-            self.iteration = restore_hint
-        elif isinstance(restore_hint, str):
-            save_name = restore_hint
-            self.iteration = 0
+                self.save_path, "checkpoints/", f'{save_name}_epoch_{restore_hint:0>3}.pt'
+            )
         else:
-            raise ValueError(
-                "Error type for -Restore_Hint-, supported: int or string.")
-        self.load_model(save_name)
+            save_name = restore_hint
+        self.load_ckpt(save_name)
