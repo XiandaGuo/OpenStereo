@@ -36,7 +36,7 @@ def ddp_init(rank, world_size, master_addr, master_port):
 
 
 def cleanup():
-    torch.distributed.destroy_process_group()
+    dist.destroy_process_group()
 
 
 def initialization(opt, cfgs):
@@ -68,7 +68,8 @@ def worker(rank, world_size, opt, cfgs):
         # for most models, make sure find_unused_parameters is False
         # https://github.com/pytorch/pytorch/issues/43259#issuecomment-706486925
         find_unused_parameters = model_cfg.get('find_unused_parameters', False)
-        model = DDPPassthrough(model, device_ids=[rank], find_unused_parameters=find_unused_parameters)  # DDPmodel
+        model = DDPPassthrough(model, device_ids=[rank], output_device=rank,
+                               find_unused_parameters=find_unused_parameters)  # DDPmodel
     msg_mgr.log_info(params_count(model))
     msg_mgr.log_info("Model Initialization Finished!")
 

@@ -184,7 +184,7 @@ class BaseModel(MetaModel, nn.Module):
         training_disp, visual_summary = outputs['training_disp'], outputs['visual_summary']
         return training_disp, visual_summary
 
-    def compute_loss(self, inputs, training_disp):
+    def compute_loss(self, training_disp, inputs=None):
         """Compute the loss."""
         loss, loss_info = self.loss_fn(training_disp)
         return loss, loss_info

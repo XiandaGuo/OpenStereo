@@ -105,7 +105,7 @@ class BaseTrainer:
         self.msg_mgr.log_info(optimizer_cfg)
         optimizer = get_attr_from([optim], optimizer_cfg['solver'])
         valid_arg = get_valid_args(optimizer, optimizer_cfg, ['solver'])
-        optimizer = optimizer(params=self.model.parameters(), **valid_arg)
+        optimizer = optimizer(params=[p for p in self.model.parameters() if p.requires_grad], **valid_arg)
         self.optimizer = optimizer
 
     def build_scheduler(self, scheduler_cfg):
@@ -162,8 +162,15 @@ class BaseTrainer:
             self.optimizer.zero_grad()
             if self.amp:
                 with autocast():
-                    training_disp, visual_summary = self.model.forward_step(data, device=self.device)
-                    loss, loss_info = self.model.compute_loss(None, training_disp)
+                    # training_disp, visual_summary = self.model.forward_step(data, device=self.device)
+                    # training_disp, visual_summary = self.model.forward_step(data, device=self.device)
+                    # ISSUE:
+                    #   1. use forward_step will cause torch failed to find unused parameters
+                    #   this will cause the model can not sync properly in distributed training
+                    batch_inputs = self.model.prepare_inputs(data, device=self.device)
+                    outputs = self.model.forward(batch_inputs)
+                    training_disp, visual_summary = outputs['training_disp'], outputs['visual_summary']
+                    loss, loss_info = self.model.compute_loss(training_disp, inputs=batch_inputs)
                 self.scaler.scale(loss).backward()
                 # Unscales the gradients of optimizer's assigned params in-place
                 self.scaler.unscale_(self.optimizer)  # optional
@@ -172,8 +179,14 @@ class BaseTrainer:
                 # Updates the scale for next iteration
                 self.scaler.update()
             else:
-                training_disp, visual_summary = self.model.forward_step(data, device=self.device)
-                loss, loss_info = self.model.compute_loss(None, training_disp)
+                # training_disp, visual_summary = self.model.forward_step(data, device=self.device)
+                # ISSUE:
+                #   1. use forward_step will cause torch failed to find unused parameters
+                #   this will cause the model can not sync properly in distributed training
+                batch_inputs = self.model.prepare_inputs(data, device=self.device)
+                outputs = self.model.forward(batch_inputs)
+                training_disp, visual_summary = outputs['training_disp'], outputs['visual_summary']
+                loss, loss_info = self.model.compute_loss(training_disp, inputs=batch_inputs)
                 loss.backward()
                 self.clip_gard(self.model)
                 self.optimizer.step()
@@ -191,7 +204,6 @@ class BaseTrainer:
                     'lr': self.optimizer.param_groups[0]['lr']
                 })
                 loss_info.update(visual_summary)
-
             self.msg_mgr.train_step(loss_info)
         pbar.close()
         total_loss = torch.tensor(total_loss, device=self.device)
@@ -216,6 +228,9 @@ class BaseTrainer:
                 # self.resume_ckpt(self.current_epoch)
                 # self.val_epoch()
         self.msg_mgr.log_info('Training finished.')
+        # self.msg_mgr.log_info('Training finished. Testing final model.')
+        # self.resume_ckpt(total_epoch)
+        # self.val_epoch()
 
     @torch.no_grad()
     def val_epoch(self):
