@@ -134,7 +134,6 @@ class BaseTrainer:
 
     def build_clip_grad(self):
         clip_type = self.clip_grade_config.get('type', None)
-        print(clip_type)
         if clip_type is None:
             return
         clip_value = self.clip_grade_config.get('clip_value', 0.1)
@@ -163,7 +162,6 @@ class BaseTrainer:
             self.optimizer.zero_grad()
             if self.amp:
                 with autocast():
-                    # training_disp, visual_summary = self.model.forward_step(data, device=self.device)
                     # training_disp, visual_summary = self.model.forward_step(data, device=self.device)
                     # ISSUE:
                     #   1. use forward_step will cause torch failed to find unused parameters
