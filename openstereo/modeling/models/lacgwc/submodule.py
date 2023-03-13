@@ -1,7 +1,7 @@
-from __future__ import print_function
 import torch
 import torch.nn as nn
 import torch.utils.data
+
 from .affinity_feature import AffinityFeature
 
 
@@ -19,7 +19,6 @@ def convbn_3d(in_planes, out_planes, kernel_size, stride, pad):
 
 class BasicBlock(nn.Module):
     expansion = 1
-
     def __init__(self, inplanes, planes, stride, downsample, pad, dilation):
         super(BasicBlock, self).__init__()
 
@@ -41,7 +40,6 @@ class BasicBlock(nn.Module):
         out += x
 
         return out
-
 
 # class matchshifted(nn.Module):
 #     def __init__(self):

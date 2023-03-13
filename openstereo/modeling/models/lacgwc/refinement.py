@@ -10,8 +10,8 @@ def reconstruction(right, disp):
     y_base = torch.linspace(0, 1, h).repeat(b, w, 1).transpose(1, 2).type_as(right)
 
     flow_field = torch.stack((x_base - disp / w, y_base), dim=3)
-    # grid_sample and affine_grid behavior has changed to align_corners=False since 1.3.0.
-    recon_left = F.grid_sample(right, 2 * flow_field - 1, mode='bilinear', padding_mode='zeros', align_corners=True)
+
+    recon_left = F.grid_sample(right, 2 * flow_field - 1, mode='bilinear', padding_mode='zeros')
     return recon_left
 
 

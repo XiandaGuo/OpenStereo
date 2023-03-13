@@ -1,7 +1,8 @@
+import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
 
 
 class conv_block(nn.Module):

@@ -1,10 +1,13 @@
+import math
+
 import torch
 import torch.nn as nn
-import torch.utils.data
 import torch.nn.functional as F
-import math
-from .submodule import convbn_3d, feature_extraction, DisparityRegression
+import torch.utils.data
+
+from . import loss_functions as lf
 from .deformable_refine import DeformableRefineF
+from .submodule import convbn_3d, feature_extraction, DisparityRegression
 
 
 class hourglass(nn.Module):
@@ -82,6 +85,7 @@ class hourglass_gwcnet(nn.Module):
         self.redir2 = convbn_3d(inplanes * 2, inplanes * 2, kernel_size=1, stride=1, pad=0)
 
     def forward(self, x):
+
         conv1 = self.conv1(x)
         conv2 = self.conv2(conv1)
 
@@ -95,19 +99,15 @@ class hourglass_gwcnet(nn.Module):
 
 
 class PSMNet(nn.Module):
-    def __init__(self, maxdisp=192):
+    def __init__(self, maxdisp, struct_fea_c, fuse_mode, affinity_settings, udc, refine):
         super(PSMNet, self).__init__()
         self.maxdisp = maxdisp
-        self.sfc = 4
-        self.affinity_settings = {
-            'win_w': 3,
-            'win_h': 3,
-            'dilation': [1, 2, 4, 8]
-        }
-        self.udc = True
-        self.refine = 'csr'
+        self.sfc = struct_fea_c
+        self.affinity_settings = affinity_settings
+        self.udc = udc
+        self.refine = refine
 
-        self.feature_extraction = feature_extraction(self.sfc, 'separate', self.affinity_settings)
+        self.feature_extraction = feature_extraction(self.sfc, fuse_mode, affinity_settings)
 
         self.dres0 = nn.Sequential(convbn_3d(64, 32, 3, 1, 1),
                                    nn.ReLU(inplace=True),
@@ -133,8 +133,10 @@ class PSMNet(nn.Module):
         self.classif3 = nn.Sequential(convbn_3d(32, 32, 3, 1, 1),
                                       nn.ReLU(inplace=True),
                                       nn.Conv3d(32, 1, kernel_size=3, padding=1, stride=1, bias=False))
-
-        self.refine_module = DeformableRefineF(feature_c=64, node_n=2, modulation=True, cost=True)
+        if refine == 'csr':
+            self.refine_module = DeformableRefineF(feature_c=64, node_n=2, modulation=True, cost=True)
+        else:
+            self.refine_module = DeformableRefineF(feature_c=64, node_n=2, modulation=True, cost=False)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -175,7 +177,10 @@ class PSMNet(nn.Module):
         out2 = self.dres3(out1)
         out3 = self.dres4(out2)
 
-        win_s = 5
+        if self.udc:
+            win_s = 5
+        else:
+            win_s = 0
 
         if self.training:
             cost1 = self.classif1(out1)
@@ -201,11 +206,19 @@ class PSMNet(nn.Module):
         distribute3 = F.softmax(cost3, dim=1)
         pred3 = DisparityRegression(self.maxdisp, win_size=win_s)(distribute3)
 
-        costr, offset, m = self.refine_module(left, cost3.squeeze(1))
-        distributer = F.softmax(costr, dim=1)
-        predr = DisparityRegression(self.maxdisp, win_size=win_s)(distributer)
+        if self.refine == 'csr':
+            costr, offset, m = self.refine_module(left, cost3.squeeze(1))
+            distributer = F.softmax(costr, dim=1)
+            predr = DisparityRegression(self.maxdisp, win_size=win_s)(distributer)
+
+        else:
+            predr = self.refine_module(left, pred3.unsqueeze(1))
+            predr = predr.squeeze(1)
 
         if self.training:
             return pred1, pred2, pred3, distribute1, distribute2, distribute3, distributer, predr
         else:
-            return predr
+            if self.refine:
+                return predr
+            else:
+                return pred3

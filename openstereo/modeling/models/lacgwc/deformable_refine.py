@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .U_net import U_Net, U_Net_F_v2
+from .U_net import U_Net, U_Net_F, U_Net_F_v2
 
 
 class OffsetConv(nn.Module):
@@ -9,7 +9,7 @@ class OffsetConv(nn.Module):
         super(OffsetConv, self).__init__()
         self.modulation = modulation
 
-        self.p_conv = nn.Conv2d(inc, 2 * node_num, kernel_size=1, padding=0, stride=1)
+        self.p_conv = nn.Conv2d(inc, 2*node_num, kernel_size=1, padding=0, stride=1)
         nn.init.constant_(self.p_conv.weight, 0)
         self.p_conv.register_backward_hook(self._set_lr)
 
@@ -41,7 +41,7 @@ class OffsetConv(nn.Module):
         if self.modulation:
             m = torch.sigmoid(self.m_conv(x))
         else:
-            m = torch.ones(B, N // 2, H, W).to(x.device)
+            m = torch.ones(B, N//2, H, W).cuda()
 
         return offset, m
 
@@ -69,14 +69,13 @@ class GetValueV2(nn.Module):
         p = p.contiguous().permute(0, 2, 3, 1)
 
         # clip p
-        p_y = torch.clamp(p[..., :N], 0, h - 1) / (h - 1) * 2 - 1
-        p_x = torch.clamp(p[..., N:], 0, w - 1) / (w - 1) * 2 - 1
+        p_y = torch.clamp(p[..., :N], 0, h-1) / (h-1) * 2 - 1
+        p_x = torch.clamp(p[..., N:], 0, w-1) / (w-1) * 2 - 1
 
         x_offset = []
 
         for i in range(N):
-            # grid_sample and affine_grid behavior has changed to align_corners=False since 1.3.0.
-            get_x = F.grid_sample(x, torch.stack((p_x[:, :, :, i], p_y[:, :, :, i]), dim=3), mode='bilinear', align_corners=True)
+            get_x = F.grid_sample(x, torch.stack((p_x[:, :, :, i], p_y[:, :, :, i]), dim=3), mode='bilinear')
             x_offset.append(get_x)
 
         x_offset = torch.stack(x_offset, dim=4)
@@ -85,18 +84,18 @@ class GetValueV2(nn.Module):
 
     def _get_p_n(self, N, dtype):
         p_n_x, p_n_y = torch.meshgrid(
-            torch.arange(-(self.kernel_size - 1) // 2, (self.kernel_size - 1) // 2 + 1),
-            torch.arange(-(self.kernel_size - 1) // 2, (self.kernel_size - 1) // 2 + 1))
+            torch.arange(-(self.kernel_size-1)//2, (self.kernel_size-1)//2+1),
+            torch.arange(-(self.kernel_size-1)//2, (self.kernel_size-1)//2+1))
         # (2N, 1)
         p_n = torch.cat([torch.flatten(p_n_x), torch.flatten(p_n_y)], 0)
-        p_n = p_n.view(1, 2 * N, 1, 1).type(dtype)
+        p_n = p_n.view(1, 2*N, 1, 1).type(dtype)
 
         return p_n
 
     def _get_p_0(self, h, w, N, dtype):
         p_0_x, p_0_y = torch.meshgrid(
-            torch.arange(1, h * self.stride + 1, self.stride),
-            torch.arange(1, w * self.stride + 1, self.stride))
+            torch.arange(1, h*self.stride+1, self.stride),
+            torch.arange(1, w*self.stride+1, self.stride))
         p_0_x = torch.flatten(p_0_x).view(1, 1, h, w).repeat(1, N, 1, 1)
         p_0_y = torch.flatten(p_0_y).view(1, 1, h, w).repeat(1, N, 1, 1)
         p_0 = torch.cat([p_0_x, p_0_y], 1).type(dtype)
@@ -104,9 +103,10 @@ class GetValueV2(nn.Module):
         return p_0
 
     def _get_p(self, offset, dtype):
-        N, h, w = offset.size(1) // 2, offset.size(2), offset.size(3)
+        N, h, w = offset.size(1)//2, offset.size(2), offset.size(3)
+
         # (1, 2N, h, w)
-        p_0 = self._get_p_0(h, w, N, dtype).to(offset.device)
+        p_0 = self._get_p_0(h, w, N, dtype)
         p = p_0 + offset
         return p
 
@@ -118,7 +118,7 @@ class GetValueV2(nn.Module):
         x = x.contiguous().view(b, c, -1)
 
         # (b, h, w, N)
-        index = q[..., :N] * padded_w + q[..., N:]  # offset_x*w + offset_y
+        index = q[..., :N]*padded_w + q[..., N:]  # offset_x*w + offset_y
         # (b, c, h*w*N)
         index = index.contiguous().unsqueeze(dim=1).expand(-1, c, -1, -1, -1).contiguous().view(b, c, -1)
 
@@ -129,9 +129,8 @@ class GetValueV2(nn.Module):
     @staticmethod
     def _reshape_x_offset(x_offset, ks):
         b, c, h, w, N = x_offset.size()
-        x_offset = torch.cat([x_offset[..., s:s + ks].contiguous().view(b, c, h, w * ks) for s in range(0, N, ks)],
-                             dim=-1)
-        x_offset = x_offset.contiguous().view(b, c, h * ks, w * ks)
+        x_offset = torch.cat([x_offset[..., s:s+ks].contiguous().view(b, c, h, w*ks) for s in range(0, N, ks)], dim=-1)
+        x_offset = x_offset.contiguous().view(b, c, h*ks, w*ks)
 
         return x_offset
 

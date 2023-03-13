@@ -40,11 +40,28 @@ class LacGwcLoss:
 
 class LacGwcNet(BaseModel):
     def __init__(self, *args, **kwargs):
-        self.max_disp = 192
         super().__init__(*args, **kwargs)
 
     def build_network(self):
-        self.net = PSMNet(maxdisp=self.max_disp)
+        sfc = 4
+        affinity_settings = {
+            'win_w': 3,
+            'win_h': 3,
+            'dilation': [1, 2, 4, 8]
+        }
+        udc = True
+        refine = 'csr'
+        fuse_mode = 'separate'
+        self.net = PSMNet(
+            maxdisp=self.max_disp,
+            struct_fea_c=sfc,
+            fuse_mode=fuse_mode,
+            affinity_settings=affinity_settings,
+            udc=udc,
+            refine=refine
+        )
+
+
 
     def build_loss_fn(self, loss_cfg=None):
         self.loss_fn = LacGwcLoss(max_disp=self.max_disp)

@@ -83,11 +83,8 @@ def worker(rank, world_size, opt, cfgs):
     )
 
     # restore checkpoint
-    if opt.restore_hint != '0':
-        model_trainer.resume_ckpt(opt.restore_hint)
-    else:
-        restore_hint = trainer_cfg.get('restore_hint', 0)
-        model_trainer.resume_ckpt(restore_hint)
+    restore_hint = opt.restore_hint if str(opt.restore_hint) != "0" else trainer_cfg.get('restore_hint', 0)
+    model_trainer.resume_ckpt(restore_hint)
 
     # run model
     if scope == 'train':

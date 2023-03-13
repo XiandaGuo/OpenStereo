@@ -335,7 +335,7 @@ class BaseTrainer:
         # for amp
         if self.amp:
             if 'scaler' not in checkpoint:
-                self.msg_mgr.log_warning('Loaded model is not compatible with current model.')
+                self.msg_mgr.log_warning('Loaded model is not amp compatible.')
             else:
                 self.scaler.load_state_dict(checkpoint['scaler'])
         try:
