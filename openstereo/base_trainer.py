@@ -219,7 +219,7 @@ class BaseTrainer:
     def train_model(self):
         self.msg_mgr.log_info('Training started.')
         total_epoch = self.trainer_cfg.get('total_epoch', 10)
-        while self.current_epoch <= total_epoch:
+        while self.current_epoch < total_epoch:
             self.train_epoch()
             if self.current_epoch % self.trainer_cfg['save_every'] == 0:
                 self.save_ckpt()
@@ -228,9 +228,6 @@ class BaseTrainer:
                 # self.resume_ckpt(self.current_epoch)
                 # self.val_epoch()
         self.msg_mgr.log_info('Training finished.')
-        # self.msg_mgr.log_info('Training finished. Testing final model.')
-        # self.resume_ckpt(total_epoch)
-        # self.val_epoch()
 
     @torch.no_grad()
     def val_epoch(self):
@@ -254,7 +251,8 @@ class BaseTrainer:
         for i, data in enumerate(self.val_loader):
             batch_inputs = self.model.prepare_inputs(data, device=self.device)
             with autocast(enabled=self.amp):
-                inference_disp = self.model.forward(batch_inputs)['inference_disp']
+                out = self.model.forward(batch_inputs)
+                inference_disp, visual_summary = out['inference_disp'], out['visual_summary']
             val_data = {
                 'disp_est': inference_disp['disp_est'],
                 'disp_gt': batch_inputs['disp_gt'],
@@ -270,6 +268,8 @@ class BaseTrainer:
                 pbar.set_postfix({
                     'epe': val_res['epe'].item(),
                 })
+        # log to tensorboard
+        self.msg_mgr.write_to_tensorboard(visual_summary, self.current_epoch)
         pbar.close()
         for k in epoch_metrics.keys():
             epoch_metrics[k] = torch.tensor(epoch_metrics[k] / len(self.val_loader)).to(self.device)
@@ -371,7 +371,7 @@ class BaseTrainer:
 
     def resume_ckpt(self, restore_hint):
         restore_hint = str(restore_hint)
-        if restore_hint.isdigit():
+        if restore_hint.isdigit() and int(restore_hint) > 0:
             save_name = self.trainer_cfg['save_name']
             save_name = os.path.join(
                 self.save_path, "checkpoints/", f'{save_name}_epoch_{restore_hint:0>3}.pt'
