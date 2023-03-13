@@ -34,7 +34,7 @@ class BaseTrainer:
         self.optimizer_cfg = trainer_cfg['optimizer_cfg']
         self.scheduler_cfg = trainer_cfg['scheduler_cfg']
         self.evaluator_cfg = trainer_cfg['evaluator_cfg']
-        self.clip_grade_config = trainer_cfg['clip_grad_cfg']
+        self.clip_grade_config = trainer_cfg.get('clip_grad_cfg', {})
         self.optimizer = None
         self.evaluator = NoOp()
         self.warmup_scheduler = NoOp()
@@ -134,6 +134,7 @@ class BaseTrainer:
 
     def build_clip_grad(self):
         clip_type = self.clip_grade_config.get('type', None)
+        print(clip_type)
         if clip_type is None:
             return
         clip_value = self.clip_grade_config.get('clip_value', 0.1)

@@ -90,7 +90,7 @@ trainer_cfg:
       - thres_2
       - thres_3
 
-  #  clip_grad_cfg:
-  #    type: value
-  #    clip_value: 0.1
+#    clip_grad_cfg:
+#      type: value
+#      clip_value: 0.1
 
