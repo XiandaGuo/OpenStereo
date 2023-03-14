@@ -5,8 +5,8 @@ data_cfg:
   val_list: datasets/sceneflow/sceneflow_finalpass_test.txt
   test_list: datasets/sceneflow/sceneflow_finalpass_test.txt
   num_workers: 8
-  train_batch_size: 8
-  val_batch_size: 4
+  train_batch_size: 2
+  val_batch_size: 2
   pin_memory: true
   shuffle: true
 
@@ -21,7 +21,7 @@ data_cfg:
   transform:
     train:
       - type: RandomCrop
-        size: [ 512, 960 ]
+        size: [ 256, 512 ]
 #      - type: GetValidDisp
 #        max_disp: 192
       - type: TransposeImage

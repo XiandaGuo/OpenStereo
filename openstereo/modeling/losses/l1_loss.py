@@ -14,7 +14,7 @@ class Smooth_l1_Loss(BaseLoss):
             disp_gt[mask] if mask is not None else disp_gt,
             reduction=self.reduction
         )
-        # self.info.update({'loss': loss})
+        self.info.update({'loss': loss})
         return loss, self.info
 
 
@@ -33,5 +33,5 @@ class Weighted_Smooth_l1_Loss(BaseLoss):
                 disp_gt[mask] if mask is not None else disp_gt,
                 reduction=self.reduction
             )
-        # self.info.update({'loss': loss})
+        self.info.update({'loss': loss})
         return loss, self.info

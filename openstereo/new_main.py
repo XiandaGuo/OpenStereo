@@ -5,6 +5,7 @@ import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 
+from base_trainer import BaseTrainer
 from modeling import models
 from utils import config_loader, init_seeds, get_msg_mgr
 from utils.common import DDPPassthrough, params_count
@@ -54,6 +55,7 @@ def worker(rank, world_size, opt, cfgs):
     is_dist = not opt.no_distribute
     if is_dist:
         ddp_init(rank, world_size, opt.master_addr, opt.master_port)
+        torch.cuda.set_device(rank)
     device = torch.device(f'cuda:{rank}') if is_dist else torch.device(opt.device)
     initialization(opt, cfgs)
     msg_mgr = get_msg_mgr()
@@ -73,7 +75,7 @@ def worker(rank, world_size, opt, cfgs):
     msg_mgr.log_info(params_count(model))
     msg_mgr.log_info("Model Initialization Finished!")
 
-    model_trainer = model.Trainer(
+    model_trainer = BaseTrainer(
         model=model,
         trainer_cfg=trainer_cfg,
         data_cfg=data_cfg,
