@@ -213,6 +213,9 @@ class BaseTrainer:
             total_loss /= dist.get_world_size()
         with self.warmup_scheduler.dampening():
             self.epoch_scheduler.step()
+        # clear cache
+        if next(self.model.parameters()).is_cuda:
+            torch.cuda.empty_cache()
         return total_loss.item() / len(self.train_loader)
 
     def train_model(self):
@@ -224,8 +227,6 @@ class BaseTrainer:
                 self.save_ckpt()
             if self.current_epoch % self.trainer_cfg['val_every'] == 0:
                 self.val_epoch()
-                # self.resume_ckpt(self.current_epoch)
-                # self.val_epoch()
         self.msg_mgr.log_info('Training finished.')
 
     @torch.no_grad()
@@ -285,6 +286,9 @@ class BaseTrainer:
             visual_info[f'scalar/val/{k}'] = v
         self.msg_mgr.write_to_tensorboard(visual_info, self.current_epoch)
         self.msg_mgr.log_info(f"Epoch {self.current_epoch} metrics: {epoch_metrics}")
+        # clear cache
+        if next(self.model.parameters()).is_cuda:
+            torch.cuda.empty_cache()
         return epoch_metrics
 
     def save_ckpt(self):

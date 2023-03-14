@@ -1,7 +1,6 @@
-import torch
 import torch.nn.functional as F
 
-from .base import BaseLoss, gather_and_scale_wrapper
+from .base import BaseLoss
 
 
 class Smooth_l1_Loss(BaseLoss):
@@ -9,14 +8,13 @@ class Smooth_l1_Loss(BaseLoss):
         super().__init__(loss_term_weight)
         self.reduction = reduction
 
-    # @gather_and_scale_wrapper
     def forward(self, disp_ests, disp_gt, mask=None):
         loss = F.smooth_l1_loss(
             disp_ests[mask] if mask is not None else disp_ests,
             disp_gt[mask] if mask is not None else disp_gt,
             reduction=self.reduction
         )
-        self.info.update({'loss': loss})
+        # self.info.update({'loss': loss})
         return loss, self.info
 
 
@@ -26,7 +24,6 @@ class Weighted_Smooth_l1_Loss(BaseLoss):
         self.weights = weights
         self.reduction = reduction
 
-    # @gather_and_scale_wrapper
     def forward(self, disp_ests, disp_gt, mask=None):
         weights = self.weights
         loss = 0.
@@ -36,5 +33,5 @@ class Weighted_Smooth_l1_Loss(BaseLoss):
                 disp_gt[mask] if mask is not None else disp_gt,
                 reduction=self.reduction
             )
-        self.info.update({'loss': loss})
+        # self.info.update({'loss': loss})
         return loss, self.info
