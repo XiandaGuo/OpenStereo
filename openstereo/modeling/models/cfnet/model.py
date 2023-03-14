@@ -1,6 +1,6 @@
 import torch
 
-from modeling.base_model import BaseModel
+from modeling.new_base_model import BaseModel
 from .cfnet import CFNet as cfnet
 
 
@@ -8,10 +8,10 @@ class CFNet(BaseModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def build_network(self, model_cfg):
+    def build_network(self):
         self.net = cfnet(
-            model_cfg['base_config']['max_disp'],
-            model_cfg['replace_mish'],
+            self.max_disp,
+            self.model_cfg['replace_mish'],
         )
 
     def forward(self, inputs):

@@ -670,6 +670,7 @@ def CFNet(d, replace_mish=False):
     net = cfnet(d, use_concat_volume=True)
     if replace_mish:
         replace_layers(net, Mish, nn.ReLU(inplace=True))
+        print('replacing', Mish(), '->', nn.ReLU())
     return net
 
 
@@ -681,5 +682,4 @@ def replace_layers(model, old, new):
 
         if isinstance(module, old):
             ## simple module
-            print('replacing', old(), '->', new)
             setattr(model, n, new)
