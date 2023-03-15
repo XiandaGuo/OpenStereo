@@ -193,16 +193,17 @@ class BaseTrainer:
             with self.warmup_scheduler.dampening():
                 self.batch_scheduler.step()
             total_loss += loss.item() if not torch.isnan(loss) else 0
-
+            lr = self.optimizer.param_groups[0]['lr']
             log_iter = self.trainer_cfg.get('log_iter', 10)
             if i % log_iter == 0:
                 pbar.update(log_iter) if i != 0 else pbar.update(0)
                 pbar.set_postfix({
                     'loss': loss.item(),
                     'epoch_loss': total_loss / (i + 1),
-                    'lr': self.optimizer.param_groups[0]['lr']
+                    'lr': lr
                 })
                 loss_info.update(visual_summary)
+            loss_info.update({'lr': lr})
             self.msg_mgr.train_step(loss_info)
         pbar.close()
         total_loss = torch.tensor(total_loss, device=self.device)

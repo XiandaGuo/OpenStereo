@@ -22,8 +22,8 @@ data_cfg:
     train:
       - type: RandomCrop
         size: [ 256, 512 ]
-#      - type: GetValidDisp
-#        max_disp: 192
+      - type: GetValidDisp
+        max_disp: 192
       - type: TransposeImage
       - type: ToTensor
       - type: NormalizeImage
@@ -90,9 +90,7 @@ trainer_cfg:
       - thres_2
       - thres_3
 
-#  clip_grad_cfg:
-#    #    type: norm
-#    #    max_norm: 35
-#    #    norm_type: 2
-#    type: value
-#    clip_value: 0.1
+  clip_grad_cfg:
+    type: norm
+    max_norm: 35
+    norm_type: 2
