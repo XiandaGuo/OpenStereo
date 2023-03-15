@@ -67,7 +67,7 @@ trainer_cfg:
   save_every: 1 # epoch
   val_every: 1 # epoch
   amp: true
-  sync_bn: false
+  sync_bn: true
   fix_bn: false
   init_parameters: false
 

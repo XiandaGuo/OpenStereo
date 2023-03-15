@@ -65,10 +65,6 @@ class BaseTrainer:
         self.build_clip_grad()
 
     def build_model(self, *args, **kwargs):
-        # apply sync batch norm
-        if self.is_dist and self.trainer_cfg.get('sync_bn', False):
-            self.msg_mgr.log_info('convert batch norm to sync batch norm')
-            self.model = nn.SyncBatchNorm.convert_sync_batchnorm(self.model)
         # apply fix batch norm
         if self.trainer_cfg.get('fix_bn', False):
             self.msg_mgr.log_info('fix batch norm')
