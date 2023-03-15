@@ -1,10 +1,9 @@
 from .CoEx import CoEx
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
-from modeling.new_base_model import BaseModel
+from modeling.base_model import BaseModel
 
 
 class CoExNet(BaseModel):

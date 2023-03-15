@@ -2,6 +2,7 @@ import torch
 
 from modeling.base_model import BaseModel
 from utils import Odict
+from .gwcnet import GwcNet
 from .loss import stereo_psmnet_loss
 from .psmnet import PSMNet
 
@@ -18,8 +19,8 @@ class CasStereoLoss:
         mask = training_disp['mask']
         loss_info = Odict()
         loss = stereo_psmnet_loss(pred_disp, disp_gt, mask, self.dlossw)
-        loss_info['scalar/disp_loss'] = loss
-        loss_info['scalar/loss_sum'] = loss
+        loss_info['scalar/train/loss_disp'] = loss
+        loss_info['scalar/train/loss_sum'] = loss
         return loss, loss_info
 
 
@@ -38,30 +39,33 @@ class CasStereoNet(BaseModel):
     def init_parameters(self):
         return
 
-    def build_network(self, model_cfg):
+    def build_network(self):
         """Build the network."""
-        self.net = PSMNet(
-            maxdisp=self.maxdisp,
-            ndisps=self.ndisps,
-            disp_interval_pixel=self.disp_interval_pixel,
-            using_ns=self.using_ns,
-            ns_size=self.ns_size,
-            grad_method=self.grad_method,
-            cr_base_chs=self.cr_base_chs
-        )
-        # self.net = GwcNet(
-        #     maxdisp=self.maxdisp,
-        #     ndisps=self.ndisps,
-        #     disp_interval_pixel=self.disp_interval_pixel,
-        #     using_ns=self.using_ns,
-        #     ns_size=self.ns_size,
-        #     grad_method=self.grad_method,
-        #     cr_base_chs=self.cr_base_chs
-        # )
+        model_type = self.model_cfg['model_type']
+        if model_type == 'psmnet':
+            self.net = PSMNet(
+                maxdisp=self.maxdisp,
+                ndisps=self.ndisps,
+                disp_interval_pixel=self.disp_interval_pixel,
+                using_ns=self.using_ns,
+                ns_size=self.ns_size,
+                grad_method=self.grad_method,
+                cr_base_chs=self.cr_base_chs
+            )
+        elif model_type == 'gwcnet':
+            self.net = GwcNet(
+                maxdisp=self.maxdisp,
+                ndisps=self.ndisps,
+                disp_interval_pixel=self.disp_interval_pixel,
+                using_ns=self.using_ns,
+                ns_size=self.ns_size,
+                grad_method=self.grad_method,
+                cr_base_chs=self.cr_base_chs
+            )
 
-    def get_loss_func(self, loss_cfg):
+    def build_loss_fn(self):
         """Build the loss."""
-        return CasStereoLoss(dlossw=self.dlossw)
+        self.loss_fn = CasStereoLoss(dlossw=self.dlossw)
 
     def forward(self, inputs):
         """Forward the network."""

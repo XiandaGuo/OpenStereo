@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 
-from modeling.new_base_model import BaseModel
+from modeling.base_model import BaseModel
 from .stackhourglass import PSMNet
 from . import loss_functions as lf
 

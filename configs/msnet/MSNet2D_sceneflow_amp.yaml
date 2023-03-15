@@ -5,12 +5,15 @@ data_cfg:
   val_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
   test_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
   num_workers: 8
-  train_batch_size: 4
-  val_batch_size: 1
+  train_batch_size: 8
+  val_batch_size: 4
   pin_memory: true
   shuffle: true
 
   batch_uniform: false
+  #  random_type: range
+  #  w_range: [ 0.5, 2.0 ]
+  #  h_range: [ 0.5, 2.0 ]
   #  random_type: choice
   #  h_range: [ 256, 288, 320, 352 ]
   #  w_range: [ 480, 512, 544, 576 ]
@@ -19,10 +22,8 @@ data_cfg:
     train:
       - type: RandomCrop
         size: [ 256, 512 ]
-      #- type: RandomHorizontalFlip
-      #  prob: 0.5
       - type: GetValidDisp
-        max_disp: 256
+        max_disp: 192
       - type: TransposeImage
       - type: ToTensor
       - type: NormalizeImage
@@ -41,23 +42,21 @@ data_cfg:
 
 
 model_cfg:
-  model: CFNet
-  replace_mish: true # replace mish with relu in the first 10 epochs
-  find_unused_parameters: true
+  model: MSNet
+  model_type: 2D
 
   base_config:
-    max_disp: 256
-
+    max_disp: 192
 
 loss_cfg:
   - log_prefix: disp
-    type: Weighted_Smooth_l1_Loss
     loss_term_weight: 1
-    weights: [0.25, 0.35, 0.5, 0.5, 0.7, 1.0, 1.0, 1.4, 2]
+    type: Weighted_Smooth_l1_Loss
+    weights: [ 0.5, 0.5, 0.7, 1.0 ]
 
 
 trainer_cfg:
-  save_name: SceneFlow
+  save_name: MSNet2D_SceneFlow
   total_epoch: 20
   restore_hint: 0
   optimizer_reset: false
@@ -66,22 +65,22 @@ trainer_cfg:
   log_iter: 50 # iter
   save_every: 1 # epoch
   val_every: 1 # epoch
-  amp: false
+  amp: true
   sync_bn: false
   fix_bn: false
   init_parameters: false
 
   optimizer_cfg:
-    solver: RMSprop
+    solver: Adam
     lr: 0.001
-#    betas: [ 0.9, 0.999 ]
+    betas: [ 0.9, 0.999 ]
 
   scheduler_cfg:
     scheduler: MultiStepLR
-    gamma: 0.1
-    milestones: [ 10 ]
+    gamma: 0.5
+    milestones: [ 10, 12, 14, 16 ]
     warmup:
-      warmup_steps: 500
+      warmup_steps: 100
 
   evaluator_cfg:
     metric:

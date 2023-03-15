@@ -1,6 +1,6 @@
 import torch
 
-from modeling.new_base_model import BaseModel
+from modeling.base_model import BaseModel
 from .cfnet import CFNet as cfnet
 
 

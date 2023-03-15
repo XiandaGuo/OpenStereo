@@ -1,6 +1,6 @@
 import torch
 
-from modeling.new_base_model import BaseModel
+from modeling.base_model import BaseModel
 from .MSNet2D import MSNet2D
 from .MSNet3D import MSNet3D
 

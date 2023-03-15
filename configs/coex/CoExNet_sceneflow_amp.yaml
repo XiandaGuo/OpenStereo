@@ -1,9 +1,9 @@
 data_cfg:
   name: SceneFlow
   root: data/SceneFlow
-  train_list: datasets/sceneflow/sceneflow_finalpass_train.txt
-  val_list: datasets/sceneflow/sceneflow_finalpass_test.txt
-  test_list: datasets/sceneflow/sceneflow_finalpass_test.txt
+  train_list: datasets/SceneFlow/sceneflow_finalpass_train.txt
+  val_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
+  test_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
   num_workers: 8
   train_batch_size: 16
   val_batch_size: 10
@@ -74,7 +74,6 @@ trainer_cfg:
   optimizer_cfg:
     solver: RMSprop
     lr: 0.001
-#    betas: [ 0.9, 0.999 ]
 
   scheduler_cfg:
     scheduler: MultiStepLR

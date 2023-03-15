@@ -13,6 +13,7 @@ from data.stereo_dataset_batch import StereoBatchDataset
 from evaluation.evaluator import OpenStereoEvaluator
 from modeling.common import ClipGrad, fix_bn
 from utils import NoOp, get_attr_from, get_valid_args, mkdir
+from utils.common import convert_state_dict
 from utils.warmup import LinearWarmup
 
 
@@ -203,7 +204,7 @@ class BaseTrainer:
                     'lr': lr
                 })
                 loss_info.update(visual_summary)
-            loss_info.update({'lr': lr})
+            loss_info.update({'scalar/train/lr': lr})
             self.msg_mgr.train_step(loss_info)
         pbar.close()
         total_loss = torch.tensor(total_loss, device=self.device)
@@ -332,11 +333,9 @@ class BaseTrainer:
         self.current_epoch = checkpoint.get('epoch', 0)
         self.current_iter = checkpoint.get('iter', 0)
         self.msg_mgr.iteration = self.current_iter
-        try:
-            self.model.load_state_dict(checkpoint['model'])
-        except RuntimeError:
-            self.msg_mgr.log_warning('Loaded model is not compatible with current model.')
-            return
+        # convert state dict for or not for distributed training
+        model_state_dict = convert_state_dict(checkpoint['model'], is_dist=self.is_dist)
+        self.model.load_state_dict(model_state_dict)
         # for amp
         if self.amp:
             if 'scaler' not in checkpoint:

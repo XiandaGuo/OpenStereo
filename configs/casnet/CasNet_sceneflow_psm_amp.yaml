@@ -1,15 +1,15 @@
 data_cfg:
   name: SceneFlow
   root: data/SceneFlow
-  train_list: datasets/sceneflow/sceneflow_cleanpass_train.txt
-  val_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
-  test_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
+  train_list: datasets/SceneFlow/sceneflow_finalpass_train.txt
+  val_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
+  test_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
   num_workers: 8
-  train_batch_size: 10
+  train_batch_size: 12
   val_batch_size: 10
   pin_memory: true
-  train_shuffle: true
-  val_shuffle: false
+  shuffle: true
+
 
   batch_uniform: false
   #  random_type: range
@@ -23,8 +23,6 @@ data_cfg:
     train:
       - type: RandomCrop
         size: [ 256, 512 ]
-      #- type: RandomHorizontalFlip
-      #  prob: 0.5
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -33,8 +31,8 @@ data_cfg:
         mean: [ 0.485, 0.456, 0.406 ]
         std: [ 0.229, 0.224, 0.225 ]
     test:
-      - type: StereoPad
-        size: [ 544, 960 ]
+      - type: TestCrop
+        size: [ 512, 960 ]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -44,52 +42,42 @@ data_cfg:
         std: [ 0.229, 0.224, 0.225 ]
 
 
+
 model_cfg:
-  model: PSMNet
+  model: CasStereoNet
+  model_type: psmnet
 
   base_config:
     max_disp: 192
 
-  # Backbone
-  backbone_cfg:
-    type: PSMNet
-
-  # VolumeCostProcessor
-  cost_processor_cfg:
-    type: PSMCostProcessor
-
-  # DispProcessor
-  disp_processor_cfg:
-    type: PSMDispProcessor
-
-
-optimizer_cfg:
-  solver: RMSprop
-  lr: 0.001
 
 loss_cfg:
-  - log_prefix: disp
-    loss_term_weight: 1
-    type: Weighted_Smooth_l1_Loss
-    weights: [ 0.5, 0.7, 1.0 ]
+  type: CasStereoLoss # user defined loss
 
 
 trainer_cfg:
-  save_name: PSMNet_SceneFlow
-  sync_bn: true
-  fp16: true
+  save_name: CasNet_PSM_SceneFlow
+  total_epoch: 20
   restore_hint: 0
-  log_iter: 10
+  optimizer_reset: false
+  scheduler_reset: false
+  warmup_reset: false
+  log_iter: 50 # iter
+  save_every: 1 # epoch
+  val_every: 1 # epoch
+  amp: true
+  sync_bn: false
+  fix_bn: false
+  init_parameters: false
 
   optimizer_cfg:
-    solver: Adam
+    solver: RMSprop
     lr: 0.001
-    betas: [ 0.9, 0.999 ]
 
   scheduler_cfg:
     scheduler: MultiStepLR
-    gamma: 0.1
-    milestones: [ 7, 12 ]
+    gamma: 0.5
+    milestones: [ 10, 12, 14, 16 ]
     warmup:
       warmup_steps: 100
 

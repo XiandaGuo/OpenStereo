@@ -154,10 +154,10 @@ def clones(module, N):
 def config_loader(path):
     with open(path, 'r') as stream:
         src_cfgs = yaml.safe_load(stream)
-    with open("./configs/default.yaml", 'r') as stream:
-        dst_cfgs = yaml.safe_load(stream)
-    MergeCfgsDict(src_cfgs, dst_cfgs)
-    return dst_cfgs
+    # with open("./configs/default.yaml", 'r') as stream:
+    #     dst_cfgs = yaml.safe_load(stream)
+    # MergeCfgsDict(src_cfgs, dst_cfgs)
+    return src_cfgs
 
 
 def init_seeds(seed=0, cuda_deterministic=True):
@@ -219,3 +219,22 @@ def get_ddp_module(module, **kwargs):
 def params_count(net):
     n_parameters = sum(p.numel() for p in net.parameters())
     return 'Parameters Count: {:.5f}M'.format(n_parameters / 1e6)
+
+
+def convert_state_dict(ori_state_dict, is_dist=True):
+    new_state_dict = OrderedDict()
+    if is_dist:
+        if not next(iter(ori_state_dict)).startswith('module'):
+            for k, v in ori_state_dict.items():
+                new_state_dict[f'module.{k}'] = v
+        else:
+            new_state_dict = ori_state_dict
+    else:
+        if not next(iter(ori_state_dict)).startswith('module'):
+            new_state_dict = ori_state_dict
+        else:
+            for k, v in ori_state_dict.items():
+                k = k.replace('module.', '')
+                new_state_dict[k] = v
+
+    return new_state_dict

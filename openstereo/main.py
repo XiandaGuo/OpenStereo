@@ -2,90 +2,108 @@ import argparse
 import os
 
 import torch
-import torch.nn as nn
+import torch.distributed as dist
+import torch.multiprocessing as mp
 
+from base_trainer import BaseTrainer
 from modeling import models
-from utils import config_loader, get_ddp_module, init_seeds, params_count, get_msg_mgr
-
-parser = argparse.ArgumentParser(description='Main program for opengait.')
-parser.add_argument('--local_rank', type=int, default=0,
-                    help="passed by torch.distributed.launch module")
-parser.add_argument('--cfgs', type=str,
-                    default='configs/default.yaml', help="path of config file")
-parser.add_argument('--phase', default='train',
-                    choices=['train', 'test', 'val', 'test_kitti'], help="choose train or test phase")
-parser.add_argument('--log_to_file', action='store_true',
-                    help="log to file, default path is: output/<dataset>/<model>/<save_name>/<logs>/<Datetime>.txt")
-parser.add_argument('--iter', default=0, help="iter to restore")
-opt = parser.parse_args()
+from utils import config_loader, init_seeds, get_msg_mgr
+from utils.common import DDPPassthrough, params_count
 
 
-# def set_ddp_env(rank, world_size):
-#     torch.cuda.set_device(opt.local_rank)
-#     torch.distributed.init_process_group(backend='nccl', init_method='env://', rank=rank, world_size=world_size)
-#     torch.backends.cudnn.benchmark = True
-#
-#
-# def cleanup():
-#     torch.distributed.destroy_process_group()
+def arg_parse():
+    parser = argparse.ArgumentParser(description='Main program for OpenStereo.')
+    parser.add_argument('--config', type=str, default='configs/coex/CoExNet_sceneflow_fp16_g1.yaml',
+                        help="path of config file")
+    parser.add_argument('--scope', default='train', choices=['train', 'val', 'test_kitti'],
+                        help="choose train or test scope")
+    parser.add_argument('--master_addr', type=str, default='localhost', help="master address")
+    parser.add_argument('--master_port', type=str, default='12355', help="master port")
+    parser.add_argument('--no_distribute', action='store_true', default=False, help="disable distributed training")
+    parser.add_argument('--log_to_file', action='store_true',
+                        help="log to file, default path is: output/<dataset>/<model>/<save_name>/<logs>/<Datetime>.txt")
+    parser.add_argument('--device', type=str, default='cuda', help="device to use for non-distributed mode.")
+    parser.add_argument('--restore_hint', type=str, default=0, help="restore hint for loading checkpoint.")
+    opt = parser.parse_args()
+    return opt
 
 
-def initialization(cfgs, training):
+def ddp_init(rank, world_size, master_addr, master_port):
+    if master_addr is not None:
+        os.environ["MASTER_ADDR"] = master_addr
+    if master_port is not None:
+        os.environ["MASTER_PORT"] = master_port
+    dist.init_process_group(backend="nccl", rank=rank, world_size=world_size)
+
+
+def initialization(opt, cfgs):
     msg_mgr = get_msg_mgr()
-    engine_cfg = cfgs['trainer_cfg'] if training else cfgs['evaluator_cfg']
+    engine_cfg = cfgs[f'trainer_cfg']
     output_path = os.path.join('output/', cfgs['data_cfg']['name'], cfgs['model_cfg']['model'], engine_cfg['save_name'])
-    iteration = engine_cfg['restore_hint'] if isinstance(engine_cfg['restore_hint'], int) else 0
-    log_iter = engine_cfg['log_iter'] if training else 1
-    msg_mgr.init_manager(output_path, opt.log_to_file, log_iter, iteration)
+    log_iter = engine_cfg['log_iter']
+    msg_mgr.init_manager(output_path, opt.log_to_file, log_iter)
     msg_mgr.log_info(engine_cfg)
-    seed = torch.distributed.get_rank()
+    seed = 0 if opt.no_distribute else dist.get_rank()
     init_seeds(seed)
 
 
-def run_model(cfgs, scope):
-    is_train = scope == 'train'
+def worker(rank, world_size, opt, cfgs):
+    is_dist = not opt.no_distribute
+    if is_dist:
+        ddp_init(rank, world_size, opt.master_addr, opt.master_port)
+        torch.cuda.set_device(rank)
+    device = torch.device(f'cuda:{rank}') if is_dist else torch.device(opt.device)
+    initialization(opt, cfgs)
     msg_mgr = get_msg_mgr()
     model_cfg = cfgs['model_cfg']
-    msg_mgr.log_info(model_cfg)
+    data_cfg = cfgs['data_cfg']
+    trainer_cfg = cfgs['trainer_cfg']
+    scope = opt.scope
     Model = getattr(models, model_cfg['model'])
-    model = Model(cfgs, scope)
-    if is_train and cfgs['trainer_cfg']['sync_BN']:
-        model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
-    if cfgs['trainer_cfg']['fix_BN']:
-        model.fix_BN()
-    model = get_ddp_module(model, find_unused_parameters=model_cfg['find_unused_parameters'])
-
-    # if '_set_static_graph' in model_cfg.keys():
-    #     if model_cfg['_set_static_graph']:
-    #         model._set_static_graph()
-
+    model = Model(cfgs)
+    model = model.to(device)
+    if is_dist:
+        # for most models, make sure find_unused_parameters is False
+        # https://github.com/pytorch/pytorch/issues/43259#issuecomment-706486925
+        find_unused_parameters = model_cfg.get('find_unused_parameters', False)
+        model = DDPPassthrough(model, device_ids=[rank], output_device=rank,
+                               find_unused_parameters=find_unused_parameters)  # DDPmodel
     msg_mgr.log_info(params_count(model))
     msg_mgr.log_info("Model Initialization Finished!")
+
+    model_trainer = BaseTrainer(
+        model=model,
+        trainer_cfg=trainer_cfg,
+        data_cfg=data_cfg,
+        is_dist=is_dist,
+        rank=rank,
+        device=device,
+    )
+
+    # restore checkpoint
+    restore_hint = opt.restore_hint if str(opt.restore_hint) != "0" else trainer_cfg.get('restore_hint', 0)
+    model_trainer.resume_ckpt(restore_hint)
+
+    # run model
     if scope == 'train':
-        model.run_train(model)
+        model_trainer.train_model()
     elif scope == 'val':
-        res = model.run_val(model)
-        msg_mgr.log_info(res)
-    elif scope == 'test':
-        model.run_test(model)
-    elif scope == 'test_kitti':
-        model.run_test_kitti(model)
+        model_trainer.val_epoch()
     else:
-        raise ValueError("Scope should be one of ['train', 'val', 'test', 'test_kitti'].")
+        raise ValueError(f"Unknown scope: {scope}")
+
+    if is_dist:
+        dist.destroy_process_group()
 
 
 if __name__ == '__main__':
-    torch.distributed.init_process_group('nccl', init_method='env://')
-    if torch.distributed.get_world_size() != torch.cuda.device_count():
-        raise ValueError("Expect number of availuable GPUs({}) equals to the world size({}).".format(
-            torch.cuda.device_count(), torch.distributed.get_world_size()))
-    cfgs = config_loader(opt.cfgs)
-    if opt.iter != 0:
-        cfgs['evaluator_cfg']['restore_hint'] = int(opt.iter)
-        cfgs['trainer_cfg']['restore_hint'] = int(opt.iter)
-
-    assert opt.phase.lower() in ['train', 'val', 'test', 'test_kitti']
-    is_train = (opt.phase == 'train')
-
-    initialization(cfgs, is_train)
-    run_model(cfgs, opt.phase.lower())
+    opt = arg_parse()
+    cfgs = config_loader(opt.config)
+    is_dist = not opt.no_distribute
+    if is_dist:
+        print("Distributed mode.")
+        world_size = torch.cuda.device_count()
+        mp.spawn(worker, args=(world_size, opt, cfgs), nprocs=world_size)
+    else:
+        print("Non-distributed mode.")
+        worker(None, None, opt, cfgs)

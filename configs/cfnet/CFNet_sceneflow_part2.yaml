@@ -1,9 +1,9 @@
 data_cfg:
   name: SceneFlow
   root: data/SceneFlow
-  train_list: datasets/sceneflow/sceneflow_finalpass_train.txt
-  val_list: datasets/sceneflow/sceneflow_finalpass_test.txt
-  test_list: datasets/sceneflow/sceneflow_finalpass_test.txt
+  train_list: datasets/SceneFlow/sceneflow_finalpass_train.txt
+  val_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
+  test_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
   num_workers: 8
   train_batch_size: 4
   val_batch_size: 1
@@ -22,7 +22,7 @@ data_cfg:
       #- type: RandomHorizontalFlip
       #  prob: 0.5
       - type: GetValidDisp
-        max_disp: 192
+        max_disp: 256
       - type: TransposeImage
       - type: ToTensor
       - type: NormalizeImage
