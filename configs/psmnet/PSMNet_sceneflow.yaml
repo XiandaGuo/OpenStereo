@@ -5,7 +5,7 @@ data_cfg:
   val_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
   test_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
   num_workers: 8
-  train_batch_size: 8
+  train_batch_size: 4
   val_batch_size: 1
   pin_memory: true
   shuffle: true
@@ -88,7 +88,7 @@ trainer_cfg:
   scheduler_cfg:
     scheduler: MultiStepLR
     gamma: 0.1
-    milestones: [ 9 ]
+    milestones: [ 7 , 10 ]
     warmup:
       warmup_steps: 500
 
