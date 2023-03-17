@@ -1,9 +1,9 @@
 data_cfg:
   name: SceneFlow
   root: data/SceneFlow
-  train_list: datasets/sceneflow/sceneflow_cleanpass_train.txt
-  val_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
-  test_list: datasets/sceneflow/sceneflow_cleanpass_test.txt
+  train_list: datasets/SceneFlow/sceneflow_cleanpass_train.txt
+  val_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
+  test_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
   num_workers: 8
   train_batch_size: 8
   val_batch_size: 1
@@ -76,7 +76,7 @@ trainer_cfg:
   log_iter: 50 # iter
   save_every: 1 # epoch
   val_every: 1 # epoch
-  amp: true
+  amp: false
   sync_bn: true
   fix_bn: false
   init_parameters: false
