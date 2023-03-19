@@ -4,7 +4,6 @@ import os
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
-from timm.models import convert_sync_batchnorm
 
 from base_trainer import BaseTrainer
 from modeling import models
@@ -14,7 +13,7 @@ from utils.common import DDPPassthrough, params_count
 
 def arg_parse():
     parser = argparse.ArgumentParser(description='Main program for OpenStereo.')
-    parser.add_argument('--config', type=str, default='configs/coex/CoExNet_sceneflow_fp16_g1.yaml',
+    parser.add_argument('--config', type=str, default='configs/psmnet/PSMNet_sceneflow.yaml',
                         help="path of config file")
     parser.add_argument('--scope', default='train', choices=['train', 'val', 'test_kitti'],
                         help="choose train or test scope")
@@ -65,7 +64,7 @@ def worker(rank, world_size, opt, cfgs):
 
     if is_dist and trainer_cfg.get('sync_bn', False):
         msg_mgr.log_info('convert batch norm to sync batch norm')
-        model = convert_sync_batchnorm(model)
+        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     model = model.to(device)
     if is_dist:

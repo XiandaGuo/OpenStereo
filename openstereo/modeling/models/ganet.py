@@ -1,11 +1,10 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+from torch.nn import BatchNorm2d, BatchNorm3d
+
 from libs.GANet.modules.GANet import DisparityRegression, GetCostVolume
 from libs.GANet.modules.GANet import SGA, LGA, LGA2, LGA3, MyLoss2
-
-from torch.nn import BatchNorm2d, BatchNorm3d
-import torch.nn.functional as F
-
 from modeling.base_model import BaseModel
 from utils import Odict
 
@@ -440,24 +439,24 @@ class GaLoss:
                    + F.smooth_l1_loss(disp2[mask], disp_gt[mask], reduction='mean')
 
         loss_info = Odict()
-        loss_info['scalar/disp_loss'] = loss
-        loss_info['scalar/loss_sum'] = loss
+        loss_info['scalar/train/loss_disp'] = loss
+        loss_info['scalar/train/loss_sum'] = loss
         return loss, loss_info
 
 
 class GANet(BaseModel):
     def __init__(self, *args, **kwargs):
-        self.maxdisp = 192
         super().__init__(*args, **kwargs)
 
-    def get_loss_func(self, loss_cfg):
+    def build_loss_fn(self):
         """Build the loss."""
+        loss_cfg = self.cfg['loss_cfg']
         is_kitti = loss_cfg.get("is_kitti", False)
-        return GaLoss(is_kitti)
+        self.loss_fn = GaLoss(is_kitti)
 
-    def build_network(self, model_cfg):
+    def build_network(self):
         """Build the network."""
-        self.net = GaNet(maxdisp=self.maxdisp)
+        self.net = GaNet(maxdisp=self.max_disp)
 
     def init_parameters(self):
         return

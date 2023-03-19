@@ -4,12 +4,11 @@ data_cfg:
   train_list: datasets/SceneFlow/sceneflow_cleanpass_train.txt
   val_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
   test_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
-  num_workers: 8
-  train_batch_size: 4
-  val_batch_size: 1
+  num_workers: 4
+  train_batch_size: 12
+  val_batch_size: 10
   pin_memory: true
-  train_shuffle: true
-  val_shuffle: false
+  shuffle: true
 
   batch_uniform: false
   #  random_type: range
@@ -76,11 +75,15 @@ loss_cfg:
 
 trainer_cfg:
   save_name: PSMNet_SceneFlow
-  sync_bn: true
-  amp: true
+  total_epoch: 15
   restore_hint: 0
-  log_iter: 10
-
+  log_iter: 50 # iter
+  save_every: 1 # epoch
+  val_every: 1 # epoch
+  amp: true
+  sync_bn: false
+  fix_bn: false
+  init_parameters: false
   optimizer_cfg:
     solver: RMSprop
     lr: 0.001
@@ -90,7 +93,7 @@ trainer_cfg:
     gamma: 0.1
     milestones: [ 7, 12 ]
     warmup:
-      warmup_steps: 100
+      warmup_steps: 500
 
   evaluator_cfg:
     metric:
