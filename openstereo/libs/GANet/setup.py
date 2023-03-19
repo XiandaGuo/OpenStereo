@@ -7,8 +7,7 @@ setup(
     ext_modules=[
         CUDAExtension('GANet', [
             'src/GANet_cuda.cpp',
-            'src/GANet_kernel_share.cu',
-            'src/NLF_kernel.cu',
+            'src/GANet_kernel.cu',
         ])
     ],
     cmdclass={
