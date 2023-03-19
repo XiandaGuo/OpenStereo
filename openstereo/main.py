@@ -4,7 +4,6 @@ import os
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
-from timm.models import convert_sync_batchnorm
 
 from base_trainer import BaseTrainer
 from modeling import models
@@ -65,7 +64,7 @@ def worker(rank, world_size, opt, cfgs):
 
     if is_dist and trainer_cfg.get('sync_bn', False):
         msg_mgr.log_info('convert batch norm to sync batch norm')
-        model = convert_sync_batchnorm(model)
+        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     model = model.to(device)
     if is_dist:
