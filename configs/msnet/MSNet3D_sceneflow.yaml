@@ -78,9 +78,9 @@ trainer_cfg:
   scheduler_cfg:
     scheduler: MultiStepLR
     gamma: 0.5
-    milestones: [ 10, 12, 14, 16 ]
+    milestones: [ 5, 10, 14, 16 ]
     warmup:
-      warmup_steps: 100
+      warmup_steps: 500
 
   evaluator_cfg:
     metric:
