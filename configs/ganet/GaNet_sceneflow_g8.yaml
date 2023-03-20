@@ -1,0 +1,97 @@
+data_cfg:
+  name: SceneFlow
+  root: data/SceneFlow
+  train_list: datasets/sceneflow/sceneflow_finalpass_train.txt
+  val_list: datasets/sceneflow/sceneflow_finalpass_test.txt
+  test_list: datasets/sceneflow/sceneflow_finalpass_test.txt
+  num_workers: 32
+
+  transform:
+    train:
+      - type: RandomCrop
+        size: [ 240, 528 ]
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+    test:
+      - type: StereoPad
+        size: [ 576, 960 ]
+      - type: GetValidDispNOcc
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+
+
+
+model_cfg:
+  model: GANet
+  find_unused_parameters: true
+
+  base_config:
+    max_disp: 192
+
+
+optimizer_cfg:
+  solver: Adam
+  lr: 0.001
+  betas: [ 0.9, 0.999 ]
+
+
+loss_cfg:
+  is_kitti: false
+
+scheduler_cfg:
+  gamma: 0.1
+  milestones: # Learning Rate Reduction at each milestones
+    - 15000
+    - 24000
+  scheduler: MultiStepLR
+  warmup:
+    type: LinearWarmup
+    warmup_period: 100
+
+trainer_cfg:
+  save_name: GANet_SceneFlow
+  restore_hint: 0
+  restore_ckpt_strict: true
+  log_iter: 1
+  with_test: true
+  enable_float16: false
+  sync_BN: true
+  save_iter: 2000
+  total_iter: 20000
+  total_epoch: 15
+  optimizer_reset: false
+  scheduler_reset: false
+
+  sampler:
+#    type: BasicStereoSampler
+    batch_shuffle: true
+    batch_size: 2
+
+
+evaluator_cfg:
+  eval_func: OpenStereoEvaluator
+  save_name: GANet_SceneFlow
+  restore_hint: 0
+  metric:
+    - d1_all
+    - epe
+    - thres_1
+    - thres_2
+    - thres_3
+  restore_ckpt_strict: true
+  enable_float16: false
+
+  sampler:
+    type: BasicStereoSampler
+    batch_shuffle: false
+    batch_size: 1
