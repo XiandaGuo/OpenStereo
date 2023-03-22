@@ -23,7 +23,7 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
 ## Authors:
 **Open Stereo Team (OST)**
 - [Xianda Guo (国显达)](https://scholar.google.com.hk/citations?hl=zh-CN&user=jPvOqgYAAAAJ), xianda_guo@163.com
-- [Juntao Lu (陆俊陶)](), juntao.lu@student.unimelb.edu.au
+- [Juntao Lu (陆俊陶)](https://github.com/ralph0813), juntao.lu@student.unimelb.edu.au
 - [Yiqi Wang (王仪琦)](), wangyiqi18@mails.ucas.edu.cn
 - [Yiqun Duan (段逸群)](https://github.com/duanyiqun), duanyiquncc@gmail.com
 
