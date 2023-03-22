@@ -330,18 +330,25 @@ class BaseTrainer:
             return
         map_location = {'cuda:0': f'cuda:{self.rank}'} if self.is_dist else self.device
         checkpoint = torch.load(path, map_location=map_location)
-        self.current_epoch = checkpoint.get('epoch', 0)
-        self.current_iter = checkpoint.get('iter', 0)
-        self.msg_mgr.iteration = self.current_iter
         # convert state dict for or not for distributed training
         model_state_dict = convert_state_dict(checkpoint['model'], is_dist=self.is_dist)
         self.model.load_state_dict(model_state_dict)
+        self.msg_mgr.log_info(f'Model loaded from {path}')
         # for amp
         if self.amp:
             if 'scaler' not in checkpoint:
                 self.msg_mgr.log_warning('Loaded model is not amp compatible.')
             else:
                 self.scaler.load_state_dict(checkpoint['scaler'])
+
+        # skip loading optimizer and scheduler if resume is False
+        if not self.trainer_cfg.get('resume', True):
+            return
+
+        self.current_epoch = checkpoint.get('epoch', 0)
+        self.current_iter = checkpoint.get('iter', 0)
+        self.msg_mgr.iteration = self.current_iter
+
         try:
             # load optimizer
             if self.trainer_cfg.get('optimizer_reset', False):
@@ -370,7 +377,6 @@ class BaseTrainer:
 
         if not isinstance(self.warmup_scheduler, NoOp):
             self.warmup_scheduler.last_step = self.current_iter
-        self.msg_mgr.log_info(f'Model loaded from {path}')
 
     def resume_ckpt(self, restore_hint):
         restore_hint = str(restore_hint)
