@@ -55,54 +55,40 @@ class ACVNet(BaseModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def build_network(self):
-        model_cfg = self.model_cfg
+    def build_network(self, model_cfg):
         maxdisp = model_cfg['base_config']['max_disp']
         attn_weights_only = model_cfg['base_config']['attn_weights_only']
         freeze_attn_weights = model_cfg['base_config']['freeze_attn_weights']
         self.net = ACV_Net(maxdisp, attn_weights_only, freeze_attn_weights)
         # self.net.freeze_bn() # legacy, could be removed
-    
-    """
-    def get_loss_func(self, loss_cfg):
-        self.loss_fn = ACVLoss()
-    """
-    
-    def build_loss_fn(self):
-        loss_cfg = self.cfg['loss_cfg']
-        self.loss_fn = ACVLoss()
 
-    def prepare_inputs(self, inputs, device=None):
+    def get_loss_func(self, loss_cfg):
+        return ACVLoss()
+    
+    def inputs_pretreament(self, inputs):
         """Reorganize input data for different models
 
         Args:
             inputs: the input data.
-            device: the device to put the data.
         Returns:
             dict: training data including ref_img, tgt_img, disp image,
                   and other meta data.
         """
-        processed_inputs = {
+        # asure the disp_gt has the shape of [B, H, W]
+        disp_gt = inputs['disp']
+        if len(disp_gt.shape) == 4:
+            disp_gt = disp_gt.squeeze(1)
+
+        # compute the mask of valid disp_gt
+        max_disp = self.cfgs['model_cfg']['base_config']['max_disp']
+        mask = (disp_gt < max_disp) & (disp_gt > 0)
+
+        return {
             'left': inputs['left'],
             'right': inputs['right'],
+            'disp_gt': disp_gt,
+            'mask': mask,
         }
-        if 'disp' in inputs.keys():
-            disp_gt = inputs['disp']
-            # compute the mask of valid disp_gt
-            mask = (disp_gt < self.max_disp) & (disp_gt > 0)
-            processed_inputs.update({
-                'disp_gt': disp_gt,
-                'mask': mask,
-            })
-        if not self.training:
-            for k in ['pad', 'name']:
-                if k in inputs.keys():
-                    processed_inputs[k] = inputs[k]
-        if device is not None:
-            # move data to device
-            for k, v in processed_inputs.items():
-                processed_inputs[k] = v.to(device) if torch.is_tensor(v) else v
-        return processed_inputs
 
     def forward(self, inputs):
         """Forward the network."""
@@ -122,10 +108,9 @@ class ACVNet(BaseModel):
             }
         else:
             pred2 = self.net(left, right, training=False)
-            # print(pred2[0].shape)
             output = {
                 "inference_disp": {
-                    "disp_est": pred2[0]
+                    "disp_est": pred2
                 },
                 "visual_summary": {}
             }

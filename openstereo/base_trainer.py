@@ -73,9 +73,6 @@ class BaseTrainer:
         if self.trainer_cfg.get('init_parameters', False):
             self.msg_mgr.log_info('init parameters')
             self.model.init_parameters()
-        # for some models, we need to set static graph eg: STTR
-        if self.is_dist and self.model.model_cfg.get('_set_static_graph', False):
-            self.model._set_static_graph()
 
     def build_data_loader(self):
         self.train_loader = self.get_data_loader(self.data_cfg, 'train')
@@ -373,8 +370,6 @@ class BaseTrainer:
 
     def resume_ckpt(self, restore_hint):
         restore_hint = str(restore_hint)
-        if restore_hint == '0':
-            return
         if restore_hint.isdigit() and int(restore_hint) > 0:
             save_name = self.trainer_cfg['save_name']
             save_name = os.path.join(

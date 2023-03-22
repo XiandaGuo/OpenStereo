@@ -1,12 +1,18 @@
-import torch
+import torch.nn.functional as F
+import torch 
 import torch.optim as optim
 
 from modeling.base_model import BaseModel
-from utils import get_valid_args, get_attr_from
-from .loss import build_criterion
 from .sttr import STTR
 from .utilities import Map
 from .utilities.misc import NestedTensor
+from .loss import build_criterion
+# from data.dataset import DataSet
+from evaluation import evaluator as eval_functions
+from utils import NoOp
+from utils import Odict, mkdir, ddp_all_gather
+from utils import get_msg_mgr
+from utils import get_valid_args, is_list, is_dict, ts2np, get_attr_from
 
 
 class STTRLoss:
@@ -16,7 +22,6 @@ class STTRLoss:
         self.criterion = build_criterion(loss_cfg)
 
     """ Loss function defined over sequence of flow predictions """
-
     def __call__(self, training_output):
         outputs = training_output["disp"]["outputs"]
         inputs = training_output["disp"]["inputs"]
@@ -29,15 +34,15 @@ class STTRLoss:
         #     print("{} value is {}".format(key, losses[key]))
         total_loss = losses['aggregated']
 
-        self.info['scalar/loss/aggregated'] = losses['aggregated'].item()
-        self.info['scalar/loss/rr'] = losses['rr'].item()
-        self.info['scalar/loss/l1_raw'] = losses['l1_raw'].item()
-        self.info['scalar/loss/l1'] = losses['l1'].item()
-        self.info['scalar/loss/occ_be'] = losses['occ_be'].item()
-        self.info['scalar/loss/error_px'] = losses['error_px']
-        self.info['scalar/loss/total_px'] = losses['total_px']
-        self.info['scalar/loss/epe'] = losses['epe']
-        self.info['scalar/loss/iou'] = losses['iou']
+        self.info['scalar/aggregated'] = losses['aggregated'].item()
+        self.info['scalar/rr'] = losses['rr'].item()
+        self.info['scalar/l1_raw'] = losses['l1_raw'].item()
+        self.info['scalar/l1'] = losses['l1'].item()
+        self.info['scalar/occ_be'] = losses['occ_be'].item()
+        self.info['scalar/error_px'] = losses['error_px']
+        self.info['scalar/total_px'] = losses['total_px']
+        self.info['scalar/epe'] = losses['epe']
+        self.info['scalar/iou'] = losses['iou']
 
         return total_loss, self.info
 
@@ -46,17 +51,15 @@ class STTRNet(BaseModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def build_network(self):
-        model_cfg = self.model_cfg
+    def build_network(self, model_cfg):
         maxdisp = model_cfg['base_config']['max_disp']
         args = Map(model_cfg['base_config'])
         self.downsample = model_cfg['base_config']['downsample']
         self.net = STTR(args)
         # self.net.freeze_bn() # legacy, could be removed
 
-    def build_loss_fn(self):
-        loss_cfg = self.cfg['loss_cfg']
-        self.loss_fn = STTRLoss(loss_cfg)
+    def get_loss_func(self, loss_cfg):
+        return STTRLoss(loss_cfg)
 
     def get_optimizer(self, optimizer_cfg):
         self.msg_mgr.log_info(optimizer_cfg)
@@ -66,7 +69,7 @@ class STTRNet(BaseModel):
         param_dicts = [
             {"params": [p for n, p in self.net.named_parameters() if
                         "backbone" not in n and "regression" not in n and p.requires_grad],
-             "lr": args.lr, },
+                        "lr": args.lr,},
             {
                 "params": [p for n, p in self.net.named_parameters() if "backbone" in n and p.requires_grad],
                 "lr": args.lr_backbone,
@@ -78,43 +81,43 @@ class STTRNet(BaseModel):
         ]
         optimizer = optimizer(params=param_dicts, **valid_arg)
         return optimizer
+    
+    def inputs_pretreament(self, inputs):
+        """Reorganize input data for different models
 
-    # def prepare_inputs(self, inputs, device=None):
-    #     """Reorganize input data for different models
-    #
-    #     Args:
-    #         inputs: the input data.
-    #     Returns:
-    #         dict: training data including ref_img, tgt_img, disp image,
-    #               and other meta data.
-    #     """
-    #     # asure the disp_gt has the shape of [B, H, W]
-    #     disp_gt = inputs['disp']
-    #     if len(disp_gt.shape) == 4:
-    #         disp_gt = disp_gt.squeeze(1)
-    #
-    #     # compute the mask of valid disp_gt
-    #     max_disp = self.cfgs['model_cfg']['base_config']['max_disp']
-    #     mask = (disp_gt < max_disp) & (disp_gt > 0)
-    #     # fake occ
-    #
-    #     return {
-    #         'left': inputs['left'],
-    #         'right': inputs['right'],
-    #         'disp_gt': disp_gt,
-    #         'mask': mask,
-    #     }
+        Args:
+            inputs: the input data.
+        Returns:
+            dict: training data including ref_img, tgt_img, disp image,
+                  and other meta data.
+        """
+        # asure the disp_gt has the shape of [B, H, W]
+        disp_gt = inputs['disp']
+        if len(disp_gt.shape) == 4:
+            disp_gt = disp_gt.squeeze(1)
+
+        # compute the mask of valid disp_gt
+        max_disp = self.cfgs['model_cfg']['base_config']['max_disp']
+        mask = (disp_gt < max_disp) & (disp_gt > 0)
+        # fake occ 
+        
+
+        return {
+            'left': inputs['left'],
+            'right': inputs['right'],
+            'disp_gt': disp_gt,
+            'mask': mask,
+        }
 
     def forward(self, inputs):
         """Forward the network."""
         # fake occ
-        # print(inputs.keys())
         occ_mask = inputs['mask']
         occ_mask_right = inputs['mask']
         # read data
-        left, right = inputs['ref_img'], inputs['tgt_img']
+        left, right = inputs['left'], inputs['right']
         disp, occ_mask, occ_mask_right = inputs['disp_gt'], occ_mask, occ_mask_right
-
+        
         # if need to downsample, sample with a provided stride
         device = left.get_device()
         downsample = self.downsample
@@ -130,10 +133,10 @@ class STTRNet(BaseModel):
 
         # build the input
         inputs_tensor = NestedTensor(left, right, sampled_cols=sampled_cols, sampled_rows=sampled_rows, disp=disp,
-                                     occ_mask=occ_mask, occ_mask_right=occ_mask_right)
+                            occ_mask=occ_mask, occ_mask_right=occ_mask_right)
         # input_data['occ_mask'] = np.zeros_like(disp).astype(np.bool)
         # currently fake occ for debug warting for juntao.lu add data streaming
-
+        
         if self.training:
             outputs = self.net(inputs_tensor)
             output = {
@@ -149,12 +152,10 @@ class STTRNet(BaseModel):
                 "visual_summary": {},
             }
         else:
-            inputs_tensor = NestedTensor(left, right, sampled_cols=sampled_cols, sampled_rows=sampled_rows, disp=disp,
-                                     occ_mask=occ_mask, occ_mask_right=occ_mask_right)
-            outputs = self.net(inputs_tensor)
+            pred2 = self.net(left, right)
             output = {
                 "inference_disp": {
-                    "disp_est": outputs['disp_pred']
+                    "disp_est": pred2
                 },
                 "visual_summary": {}
             }

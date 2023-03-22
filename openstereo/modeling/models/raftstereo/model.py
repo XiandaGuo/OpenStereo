@@ -1,8 +1,9 @@
-import torch
+import torch.nn.functional as F
+import torch 
+import numpy as np
 
 from modeling.base_model import BaseModel
 from .raft_stereo import RAFTStereo
-from .utils.augmentor import SparseFlowAugmentor, FlowAugmentor
 
 
 class RAFTLoss:
@@ -60,25 +61,23 @@ class RAFTLoss:
             '3px': (epe < 3).float().mean().item(),
             '5px': (epe < 5).float().mean().item(),
         }
-        self.info['scalar/loss/sequenceloss'] = flow_loss.item()
-        self.info['scalar/loss/epemean'] = epe.mean().item()
-        self.info['scalar/loss/epe1px'] = (epe < 1).float().mean().item()
-        self.info['scalar/loss/epe3px'] = (epe < 3).float().mean().item()
-        self.info['scalar/loss/epe5px'] = (epe < 5).float().mean().item()
+        self.info['scalar/sequenceloss'] = flow_loss.item()
+        self.info['scalar/epemean'] = epe.mean().item()
+        self.info['scalar/epe1px'] = (epe < 1).float().mean().item()
+        self.info['scalar/epe3px'] = (epe < 3).float().mean().item()
+        self.info['scalar/epe5px'] = (epe < 5).float().mean().item()
 
         return flow_loss, self.info
 
 
 class RAFT_Stereo(BaseModel):
     def __init__(self, *args, **kwargs):
-        self.sparse = False
         super().__init__(*args, **kwargs)
 
-    def build_network(self):
-        model_cfg = self.model_cfg
+    def build_network(self, model_cfg):
         if model_cfg['base_config']['aug_params'] is not None and "crop_size" in model_cfg['base_config']['aug_params']:
             aug_params = model_cfg['base_config']['aug_params']
-            if self.sparse:
+            if sparse:
                 self.augmentor = SparseFlowAugmentor(**aug_params)
             else:
                 self.augmentor = FlowAugmentor(**aug_params)
@@ -87,10 +86,10 @@ class RAFT_Stereo(BaseModel):
         self.net = RAFTStereo(model_cfg['base_config'])
         self.net.freeze_bn() # legacy, could be removed
 
-    def build_loss_fn(self):
-        self.loss_fn = RAFTLoss(loss_gamma=0.9, max_flow=700)
+    def get_loss_func(self, loss_cfg):
+        return RAFTLoss(loss_gamma=0.9, max_flow=700)
     
-    def prepare_inputs(self, inputs, device=None):
+    def inputs_pretreament(self, inputs):
         """Reorganize input data for different models
 
         Args:
@@ -110,7 +109,7 @@ class RAFT_Stereo(BaseModel):
         # valid = disp < 512
         # flow = torch.cat([-disp_gt, np.zeros_like(disp)], dim=-1)
         flow = disp_gt
-        max_disp = self.model_cfg['base_config']['max_disp']
+        max_disp = self.cfgs['model_cfg']['base_config']['max_disp']
         mask = (disp_gt < max_disp) & (disp_gt > 0)
 
         """
@@ -135,8 +134,6 @@ class RAFT_Stereo(BaseModel):
             'img2': img2,
             'flow': disp_gt,
             'valid': mask,
-            'disp_gt': disp_gt.unsqueeze(1).to(device),
-            'mask': mask.unsqueeze(1).to(device),
         }
 
     def forward(self, inputs):
@@ -156,7 +153,7 @@ class RAFT_Stereo(BaseModel):
                 "visual_summary": {},
             }
         else:
-            cor_dis, flow = self.net(img1, img2, self.train_iters, test_mode = True)
+            cor_dis, flow = self.net(rimg1, img2, self.train_iters, test_mode = True)
             output = {
                 "inference_disp": {
                     "disp_est": flow
