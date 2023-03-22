@@ -51,11 +51,7 @@ class FADNet(BaseModel):
     def forward(self, inputs,enabled_tensorrt=False):
         # parse batch
         ref_img = inputs["ref_img"]
-
-        #print("ref_img",ref_img.shape)
         tgt_img = inputs["tgt_img"]
-        # ref_img, tgt_img = left, right
-        #print("ref_img",ref_img)
 
         # extract image feature
         conv1_l, conv2_l, conv3a_l, conv3a_r  = self.backbone(ref_img, tgt_img)

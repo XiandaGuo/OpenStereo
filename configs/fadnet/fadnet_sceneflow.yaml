@@ -39,7 +39,7 @@ data_cfg:
 
 model_cfg:
   model: FADNet
-  find_unused_parameters: true
+  find_unused_parameters: false
 
   base_config:
     max_disp: 192
@@ -115,7 +115,7 @@ trainer_cfg:
   log_iter: 50 # iter
   save_every: 1 # epoch
   val_every: 1 # epoch
-  amp: true
+  amp: false
   sync_bn: true
   fix_bn: false
   init_parameters: false
