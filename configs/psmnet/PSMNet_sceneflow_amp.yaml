@@ -5,8 +5,8 @@ data_cfg:
   val_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
   test_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
   num_workers: 8
-  train_batch_size: 10
-  val_batch_size: 10
+  train_batch_size: 4
+  val_batch_size: 1
   pin_memory: true
   train_shuffle: true
   val_shuffle: false
@@ -82,9 +82,8 @@ trainer_cfg:
   log_iter: 10
 
   optimizer_cfg:
-    solver: Adam
+    solver: RMSprop
     lr: 0.001
-    betas: [ 0.9, 0.999 ]
 
   scheduler_cfg:
     scheduler: MultiStepLR
