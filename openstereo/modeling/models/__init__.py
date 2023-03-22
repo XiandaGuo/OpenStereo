@@ -11,3 +11,4 @@ from .msnet import MSNet
 from .psmnet import PSMNet
 from .raftstereo import RAFT_Stereo
 from .sttr import STTRNet
+from .fadnet import FADNet

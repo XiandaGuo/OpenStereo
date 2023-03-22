@@ -77,7 +77,7 @@ def worker(rank, world_size, opt, cfgs):
     msg_mgr.log_info(params_count(model))
     msg_mgr.log_info("Model Initialization Finished!")
 
-    model_trainer = BaseTrainer(
+    model_trainer = model.Trainer(
         model=model,
         trainer_cfg=trainer_cfg,
         data_cfg=data_cfg,
