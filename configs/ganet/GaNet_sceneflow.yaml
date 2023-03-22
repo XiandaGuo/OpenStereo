@@ -57,7 +57,7 @@ loss_cfg:
 
 
 trainer_cfg:
-  save_name: PSMNet_SceneFlow
+  save_name: GANet_SceneFlow
   total_epoch: 15
   restore_hint: 0
   log_iter: 50 # iter

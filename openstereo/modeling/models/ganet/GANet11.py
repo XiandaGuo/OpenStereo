@@ -1,13 +1,11 @@
 import torch
 import torch.nn as nn
-from libs.GANet.modules.GANet import DisparityRegression, GetCostVolume
-from libs.GANet.modules.GANet import SGA, LGA, LGA2, LGA3, MyLoss2
-
-from torch.nn import BatchNorm2d, BatchNorm3d
 import torch.nn.functional as F
+from torch.nn import BatchNorm2d, BatchNorm3d
 
-from modeling.base_model import BaseModel
-from utils import Odict
+from libs.GANet.modules.GANet import DisparityRegression, GetCostVolume
+from libs.GANet.modules.GANet import LGA, LGA2, LGA3
+from libs.GANet.modules.GANet import SGA
 
 
 class BasicConv(nn.Module):
@@ -147,23 +145,16 @@ class Guidance(nn.Module):
             BasicConv(32, 32, kernel_size=3, padding=1))
 
         self.conv2 = BasicConv(32, 32, kernel_size=3, padding=1)
-        self.conv3 = BasicConv(32, 32, kernel_size=3, padding=1)
 
-        #        self.conv11 = Conv2x(32, 48)
         self.conv11 = nn.Sequential(BasicConv(32, 48, kernel_size=3, stride=2, padding=1),
                                     BasicConv(48, 48, kernel_size=3, padding=1))
         self.conv12 = BasicConv(48, 48, kernel_size=3, padding=1)
-        self.conv13 = BasicConv(48, 48, kernel_size=3, padding=1)
-        self.conv14 = BasicConv(48, 48, kernel_size=3, padding=1)
 
         self.weight_sg1 = nn.Conv2d(32, 640, (3, 3), (1, 1), (1, 1), bias=False)
         self.weight_sg2 = nn.Conv2d(32, 640, (3, 3), (1, 1), (1, 1), bias=False)
-        self.weight_sg3 = nn.Conv2d(32, 640, (3, 3), (1, 1), (1, 1), bias=False)
 
         self.weight_sg11 = nn.Conv2d(48, 960, (3, 3), (1, 1), (1, 1), bias=False)
         self.weight_sg12 = nn.Conv2d(48, 960, (3, 3), (1, 1), (1, 1), bias=False)
-        self.weight_sg13 = nn.Conv2d(48, 960, (3, 3), (1, 1), (1, 1), bias=False)
-        self.weight_sg14 = nn.Conv2d(48, 960, (3, 3), (1, 1), (1, 1), bias=False)
 
         self.weight_lg1 = nn.Sequential(BasicConv(16, 16, kernel_size=3, padding=1),
                                         nn.Conv2d(16, 75, (3, 3), (1, 1), (1, 1), bias=False))
@@ -177,17 +168,11 @@ class Guidance(nn.Module):
         sg1 = self.weight_sg1(x)
         x = self.conv2(x)
         sg2 = self.weight_sg2(x)
-        x = self.conv3(x)
-        sg3 = self.weight_sg3(x)
 
         x = self.conv11(x)
         sg11 = self.weight_sg11(x)
         x = self.conv12(x)
         sg12 = self.weight_sg12(x)
-        x = self.conv13(x)
-        sg13 = self.weight_sg13(x)
-        x = self.conv14(x)
-        sg14 = self.weight_sg14(x)
 
         lg1 = self.weight_lg1(rem)
         lg2 = self.weight_lg2(rem)
@@ -195,11 +180,8 @@ class Guidance(nn.Module):
         return dict([
             ('sg1', sg1),
             ('sg2', sg2),
-            ('sg3', sg3),
             ('sg11', sg11),
             ('sg12', sg12),
-            ('sg13', sg13),
-            ('sg14', sg14),
             ('lg1', lg1),
             ('lg2', lg2)])
 
@@ -298,29 +280,16 @@ class CostAggregation(nn.Module):
 
         self.deconv1a = Conv2x(48, 32, deconv=True, is_3d=True, relu=False)
         self.deconv2a = Conv2x(64, 48, deconv=True, is_3d=True)
-        #        self.deconv3a = Conv2x(96, 64, deconv=True, is_3d=True)
-
-        self.conv1b = Conv2x(32, 48, is_3d=True)
-        self.conv2b = Conv2x(48, 64, is_3d=True)
-        #        self.conv3b = Conv2x(64, 96, is_3d=True)
-
-        self.deconv1b = Conv2x(48, 32, deconv=True, is_3d=True, relu=False)
-        self.deconv2b = Conv2x(64, 48, deconv=True, is_3d=True)
-        #        self.deconv3b = Conv2x(96, 64, deconv=True, is_3d=True)
-        self.deconv0b = Conv2x(8, 8, deconv=True, is_3d=True)
+        #        self.deconv0a = Conv2x(8, 8, deconv=True, is_3d=True)
 
         self.sga1 = SGABlock(refine=True)
         self.sga2 = SGABlock(refine=True)
-        self.sga3 = SGABlock(refine=True)
 
         self.sga11 = SGABlock(channels=48, refine=True)
         self.sga12 = SGABlock(channels=48, refine=True)
-        self.sga13 = SGABlock(channels=48, refine=True)
-        self.sga14 = SGABlock(channels=48, refine=True)
 
         self.disp0 = Disp(self.maxdisp)
-        self.disp1 = Disp(self.maxdisp)
-        self.disp2 = DispAgg(self.maxdisp)
+        self.disp1 = DispAgg(self.maxdisp)
 
     def forward(self, x, g):
 
@@ -335,44 +304,21 @@ class CostAggregation(nn.Module):
         x = self.sga11(x, g['sg11'])
         rem1 = x
         x = self.conv2a(x)
-        rem2 = x
-        #        x = self.conv3a(x)
-        #        rem3 = x
-
-        #        x = self.deconv3a(x, rem2)
-        #        rem2 = x
         x = self.deconv2a(x, rem1)
         x = self.sga12(x, g['sg12'])
-        rem1 = x
         x = self.deconv1a(x, rem0)
         x = self.sga2(x, g['sg2'])
-        rem0 = x
+        disp1 = self.disp1(x, g['lg1'], g['lg2'])
+
         if self.training:
-            disp1 = self.disp1(x)
-
-        x = self.conv1b(x, rem1)
-        x = self.sga13(x, g['sg13'])
-        rem1 = x
-        x = self.conv2b(x, rem2)
-        #        rem2 = x
-        #        x = self.conv3b(x, rem3)
-
-        #        x = self.deconv3b(x, rem2)
-        x = self.deconv2b(x, rem1)
-        x = self.sga14(x, g['sg14'])
-        x = self.deconv1b(x, rem0)
-        x = self.sga3(x, g['sg3'])
-
-        disp2 = self.disp2(x, g['lg1'], g['lg2'])
-        if self.training:
-            return disp0, disp1, disp2
+            return disp0, disp1
         else:
-            return disp2
+            return disp1
 
 
-class GaNet(nn.Module):
+class GANet(nn.Module):
     def __init__(self, maxdisp=192):
-        super(GaNet, self).__init__()
+        super(GANet, self).__init__()
         self.maxdisp = maxdisp
         self.conv_start = nn.Sequential(BasicConv(3, 16, kernel_size=3, padding=1),
                                         BasicConv(16, 32, kernel_size=3, padding=1))
@@ -411,92 +357,5 @@ class GaNet(nn.Module):
         x1 = self.bn_relu(x1)
         g = torch.cat((g, x1), 1)
         g = self.guidance(g)
-        if self.training:
-            disp0, disp1, disp2 = self.cost_agg(x, g)
-            return disp0, disp1, disp2
-        else:
-            return self.cost_agg(x, g)
 
-
-class GaLoss:
-    def __init__(self, is_kitti=False):
-        super(GaLoss, self).__init__()
-        self.is_kitti = is_kitti
-        self.criterion = MyLoss2(thresh=3, alpha=2)
-
-    def __call__(self, training_output):
-        training_disp = training_output['disp']
-        pred_disp = training_disp['disp_ests']
-        disp_gt = training_disp['disp_gt']
-        mask = training_disp['mask']
-        disp0, disp1, disp2 = pred_disp
-        if self.is_kitti:
-            loss = 0.2 * F.smooth_l1_loss(disp0[mask], disp_gt[mask], reduction='mean') \
-                   + 0.6 * F.smooth_l1_loss(disp1[mask], disp_gt[mask], reduction='mean') \
-                   + self.criterion(disp2[mask], disp_gt[mask])
-        else:
-            loss = 0.2 * F.smooth_l1_loss(disp0[mask], disp_gt[mask], reduction='mean') \
-                   + 0.6 * F.smooth_l1_loss(disp1[mask], disp_gt[mask], reduction='mean') \
-                   + F.smooth_l1_loss(disp2[mask], disp_gt[mask], reduction='mean')
-
-        loss_info = Odict()
-        loss_info['scalar/disp_loss'] = loss
-        loss_info['scalar/loss_sum'] = loss
-        return loss, loss_info
-
-
-class GANet(BaseModel):
-    def __init__(self, *args, **kwargs):
-        self.maxdisp = 192
-        super().__init__(*args, **kwargs)
-
-    def get_loss_func(self, loss_cfg):
-        """Build the loss."""
-        is_kitti = loss_cfg.get("is_kitti", False)
-        return GaLoss(is_kitti)
-
-    def build_network(self, model_cfg):
-        """Build the network."""
-        self.net = GaNet(maxdisp=self.maxdisp)
-
-    def init_parameters(self):
-        return
-
-    def forward(self, inputs):
-        """Forward the network."""
-        ref_img = inputs["ref_img"]
-        tgt_img = inputs["tgt_img"]
-        res = self.net(ref_img, tgt_img)
-
-        if self.training:
-            [disp0, disp1, disp2] = res
-            output = {
-                "training_disp": {
-                    "disp": {
-                        "disp_ests": [disp0, disp1, disp2],
-                        "disp_gt": inputs['disp_gt'],
-                        "mask": inputs['mask']
-                    },
-                },
-                "visual_summary": {
-                    'image/train/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
-                    'image/train/disp_c': torch.cat([inputs['disp_gt'][0], res[-1][0]], dim=0),
-                },
-            }
-        else:
-            output = {
-                "inference_disp": {
-                    "disp_est": res
-                },
-                "visual_summary": {
-                    'image/test/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
-                    'image/test/disp_c': res[0],
-                }
-            }
-            if 'disp_gt' in inputs:
-                output['visual_summary'] = {
-                    'image/val/disp_c': torch.cat([inputs['disp_gt'][0], res[0]], dim=0),
-                    'image/val/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
-                }
-
-        return output
+        return self.cost_agg(x, g)

@@ -1,14 +1,22 @@
 data_cfg:
-  name: SceneFlow
-  root: data/SceneFlow
-  train_list: datasets/SceneFlow/sceneflow_finalpass_train.txt
-  val_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
-  test_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
+  name: DrivingStereo
+  root: data/DrivingStereo
+  train_list: datasets/DrivingStereo/driving_stereo_train.txt
+  val_list: datasets/DrivingStereo/driving_stereo_full_test.txt
+  test_list: datasets/DrivingStereo/driving_stereo_full_test.txt
   num_workers: 8
-  train_batch_size: 8
-  val_batch_size: 2
+  train_batch_size: 16
+  val_batch_size: 10
   pin_memory: true
   shuffle: true
+
+  batch_uniform: false
+  #  random_type: range
+  #  w_range: [ 0.5, 2.0 ]
+  #  h_range: [ 0.5, 2.0 ]
+  #  random_type: choice
+  #  h_range: [ 256, 288, 320, 352 ]
+  #  w_range: [ 480, 512, 544, 576 ]
 
   transform:
     train:
@@ -24,8 +32,8 @@ data_cfg:
         mean: [ 0.485, 0.456, 0.406 ]
         std: [ 0.229, 0.224, 0.225 ]
     test:
-      - type: StereoPad
-        size: [ 576, 960 ]
+      - type: CropOrPad
+        size: [ 800, 1760 ]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -36,58 +44,33 @@ data_cfg:
 
 
 model_cfg:
-  model: GwcNet
+  model: CoExNet
+  find_unused_parameters: true
 
   base_config:
     max_disp: 192
-    downsample: 4
-    num_groups: 40
-    use_concat_volume: true
-    concat_channels: 12
-
-  # Backbone
-  backbone_cfg:
-    type: GwcNet
-
-  # VolumeCostProcessor
-  cost_processor_cfg:
-    type: GwcVolumeCostProcessor
-
-  # DispProcessor
-  disp_processor_cfg:
-    type: GwcDispProcessor
 
 
 loss_cfg:
   - log_prefix: disp
+    loss_term_weight: 0.77  # 1/1.3
     type: Weighted_Smooth_l1_Loss
-    loss_term_weight: 1
-    weights: [ 0.5,0.5,0.7,1.0 ]
+    weights: [ 1.0, 0.3 ]
 
-scheduler_cfg:
-  gamma: 0.5
-  milestones: # Learning Rate Reduction at each milestones
-    - 10000
-    - 15000
-    - 20000
-    - 25000
-  scheduler: MultiStepLR
-  warmup:
-    type: LinearWarmup
-    warmup_period: 500
 
 trainer_cfg:
-  save_name: GwcNet_SceneFlow
-  total_epoch: 20
-  restore_hint: 0
-  optimizer_reset: false
-  scheduler_reset: false
+  save_name: CoExNet_DrivingStereo
+  total_epoch: 10
+  restore_hint: output/SceneFlow/CoExNet/CoExNet_SceneFlow/checkpoints/CoExNet_SceneFlow_epoch_012.pt
+  resume: false
+  optimizer_reset: true
+  scheduler_reset: true
   warmup_reset: false
   log_iter: 50 # iter
   save_every: 1 # epoch
   val_every: 1 # epoch
   amp: true
-  sync_bn: true
+  sync_bn: false
   fix_bn: false
   init_parameters: false
 
@@ -98,7 +81,7 @@ trainer_cfg:
   scheduler_cfg:
     scheduler: MultiStepLR
     gamma: 0.5
-    milestones: [ 10, 12, 14 , 16 ]
+    milestones: [ 5, 7, 9 ]
     warmup:
       warmup_steps: 100
 
@@ -111,6 +94,8 @@ trainer_cfg:
       - thres_3
 
   clip_grad_cfg:
-    type: norm
-    max_norm: 35
-    norm_type: 2
+    #    type: norm
+    #    max_norm: 35
+    #    norm_type: 2
+    type: value
+    clip_value: 0.1

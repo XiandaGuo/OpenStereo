@@ -157,6 +157,8 @@ class StereoBatchDataset(Dataset):
                 transform_compose.append(ST.CenterCrop(trans['size']))
             if trans['type'] == 'TestCrop':
                 transform_compose.append(ST.TestCrop(trans['size']))
+            if trans['type'] == 'CropOrPad':
+                transform_compose.append(ST.CropOrPad(trans['size']))
             if trans['type'] == 'StereoPad':
                 transform_compose.append(ST.StereoPad(trans['size']))
             if trans['type'] == 'DivisiblePad':

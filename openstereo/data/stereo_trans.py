@@ -1,7 +1,7 @@
 import random
+
 import numpy as np
 import torch
-
 import torchvision.transforms.functional as TF
 
 
@@ -44,6 +44,32 @@ class TestCrop(object):
         for k in sample.keys():
             if k in ['left', 'right', 'disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
                 sample[k] = sample[k][h - crop_h:h, w - crop_w: w]
+        return sample
+
+
+class CropOrPad(object):
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, sample):
+        h, w = sample['left'].shape[:2]
+        th, tw = self.size
+        if th > h or tw > w:
+            pad_left = 0
+            pad_right = tw - w
+            pad_top = th - h
+            pad_bottom = 0
+            for k in sample.keys():
+                if k in ['left', 'right']:
+                    sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), 'constant',
+                                       constant_values=0)
+                elif k in ['disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
+                    sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right)), 'constant',
+                                       constant_values=0)
+        else:
+            for k in sample.keys():
+                if k in ['left', 'right', 'disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
+                    sample[k] = sample[k][h - th:h, w - tw: w]
         return sample
 
 
