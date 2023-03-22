@@ -1,1 +1,1 @@
-CUDA_VISIBLE_DEVICES=1,3 python -m torch.distributed.launch --nproc_per_node=2 openstereo/main.py --cfgs ./configs/raft/RAFT_SceneFlow.yaml --phase train 2>&1 |tee logs/raft_stereo.txt
+CUDA_VISIBLE_DEVICES=1,3 python openstereo/main.py --config ./configs/raft/RAFT_SceneFlow.yaml 2>&1 |tee logs/raft_stereo_new.txt

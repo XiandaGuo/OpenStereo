@@ -14,7 +14,7 @@ from utils.common import DDPPassthrough, params_count
 
 def arg_parse():
     parser = argparse.ArgumentParser(description='Main program for OpenStereo.')
-    parser.add_argument('--config', type=str, default='configs/coex/CoExNet_sceneflow_fp16_g1.yaml',
+    parser.add_argument('--config', type=str, default='configs/psmnet/PSMNet_sceneflow.yaml',
                         help="path of config file")
     parser.add_argument('--scope', default='train', choices=['train', 'val', 'test_kitti'],
                         help="choose train or test scope")
