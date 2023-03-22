@@ -1,9 +1,9 @@
 data_cfg:
   name: KITTI2015
   root: data/kitti15
-  train_list: datasets/kitti15/kitti15_train165.txt
-  val_list: datasets/kitti15/kitti15_val35.txt
-  test_list: datasets/kitti15/kitti15_test.txt
+  train_list: datasets/KITTI15/kitti15_train165.txt
+  val_list: datasets/KITTI15/kitti15_val35.txt
+  test_list: datasets/KITTI15/kitti15_test.txt
   num_workers: 4
 
 

@@ -1,9 +1,9 @@
 data_cfg:
   name: KITTI2012
   root: data/kitti12
-  train_list: datasets/kitti12/kitti12_train165.txt
-  val_list: datasets/kitti12/kitti12_val29.txt
-  test_list: datasets/kitti1/kitti12_test.txt
+  train_list: datasets/KITTI12/kitti12_train165.txt
+  val_list: datasets/KITTI12/kitti12_val29.txt
+  test_list: datasets/KITTI12/kitti12_test.txt
   num_workers: 32
 
   batch_uniform: false

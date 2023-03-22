@@ -13,8 +13,10 @@ class DrivingReader(BaseReader):
         left_img = self.image_loader(left_img_path)
         right_img = self.image_loader(right_img_path)
         disp_img = self.disp_loader(disp_img_path)
-        half = True if 'half' in disp_img_path else False
-        disp_img = disp_img / 128 if half else disp_img / 256
+        # for validation, full resolution disp need to be divided by 128 instead of 256
+        full = True if 'full' in disp_img_path else False
+        scale = 128.0 if full else 256.0
+        disp_img = disp_img / scale
         sample = {
             'left': left_img,
             'right': right_img,

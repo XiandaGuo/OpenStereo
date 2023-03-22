@@ -91,8 +91,5 @@ trainer_cfg:
       - thres_3
 
   clip_grad_cfg:
-    #    type: norm
-    #    max_norm: 35
-    #    norm_type: 2
     type: value
     clip_value: 0.1
