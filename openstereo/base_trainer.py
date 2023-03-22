@@ -78,6 +78,7 @@ class BaseTrainer:
             self.model._set_static_graph()
 
     def build_data_loader(self):
+        self.msg_mgr.log_info(self.data_cfg)
         self.train_loader = self.get_data_loader(self.data_cfg, 'train')
         self.val_loader = self.get_data_loader(self.data_cfg, 'val')
 

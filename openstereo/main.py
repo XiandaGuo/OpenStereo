@@ -60,6 +60,7 @@ def worker(rank, world_size, opt, cfgs):
     scope = opt.scope
     Model = getattr(models, model_cfg['model'])
     model = Model(cfgs)
+    Trainer = model.Trainer
 
     if is_dist and trainer_cfg.get('sync_bn', False):
         msg_mgr.log_info('convert batch norm to sync batch norm')
@@ -75,7 +76,7 @@ def worker(rank, world_size, opt, cfgs):
     msg_mgr.log_info(params_count(model))
     msg_mgr.log_info("Model Initialization Finished!")
 
-    model_trainer = Model.Trainer(
+    model_trainer = Trainer(
         model=model,
         trainer_cfg=trainer_cfg,
         data_cfg=data_cfg,
