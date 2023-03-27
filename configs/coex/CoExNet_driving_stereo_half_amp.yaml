@@ -1,9 +1,9 @@
 data_cfg:
   name: DrivingStereo
   root: data/DrivingStereo
-  train_list: datasets/DrivingStereo/driving_stereo_train.txt
-  val_list: datasets/DrivingStereo/driving_stereo_half_test.txt
-  test_list: datasets/DrivingStereo/driving_stereo_half_test.txt
+  train_list: datasets/DrivingStereo/driving_stereo_phigent_train.txt
+  val_list: datasets/DrivingStereo/driving_stereo_phigent_test.txt
+  test_list: datasets/DrivingStereo/driving_stereo_phigent_test.txt
   num_workers: 8
   train_batch_size: 16
   val_batch_size: 10
@@ -83,7 +83,7 @@ trainer_cfg:
     gamma: 0.5
     milestones: [ 5, 7, 9 ]
     warmup:
-      warmup_steps: 100
+      warmup_steps: 500
 
   evaluator_cfg:
     metric:
