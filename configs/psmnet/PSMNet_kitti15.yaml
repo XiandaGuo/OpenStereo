@@ -33,7 +33,7 @@ data_cfg:
         std: [ 0.229, 0.224, 0.225 ]
     val:
       - type: CropOrPad
-        size: [ 376, 1240 ]
+        size: [ 384, 1240 ]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
