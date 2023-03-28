@@ -30,4 +30,18 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
 
 
 ## Acknowledgement
+- [OpenGait](https://github.com/ShiqiYu/OpenGait)
+- [DenseMatching](https://github.com/DeepMotionAIResearch/DenseMatchingBenchmark)
+- [AANet](https://github.com/haofeixu/aanet)
+- [ACVNet](https://github.com/gangweiX/ACVNet)
+- [CascadeStereo](https://github.com/alibaba/cascade-stereo)
+- [CFNet](https://github.com/gallenszl/CFNet)
+- [COEX](https://github.com/antabangun/coex)
+- [FADNet](https://github.com/HKBU-HPML/FADNet)
+- [GANet](https://github.com/feihuzhang/GANet)
+- [GwcNet](https://github.com/xy-guo/GwcNet)
+- [LacGwcNet](https://github.com/SpadeLiu/Lac-GwcNet)
+- [MSNet](https://github.com/cogsys-tuebingen/mobilestereonet)
 - [PSMNet](https://github.com/JiaRenChang/PSMNet)
+- [RAFT](https://github.com/princeton-vl/RAFT-Stereo)
+- [STTR](https://github.com/mli0603/stereo-transformer)
