@@ -111,12 +111,17 @@ class StereoBatchDataset(Dataset):
 
     def build_transform(self):
         transform_config = self.data_cfg['transform']
-        if self.scope == 'test_kitti':
-            config = transform_config['test_kitti']
-        elif self.scope == 'train':
+        if self.scope == 'train':
             config = transform_config['train']
-        else:
+        elif self.scope == 'val':
+            if 'val' in transform_config:
+                config = transform_config['val']
+            else:
+                config = transform_config['test']
+        elif self.scope == 'test':
             config = transform_config['test']
+        else:
+            raise NotImplementedError(f'{self.scope} is not supported yet.')
         self.transform = self.build_transform_by_cfg(config)
 
     def __getitem__(self, indexs):

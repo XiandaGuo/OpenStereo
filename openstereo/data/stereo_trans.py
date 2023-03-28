@@ -146,8 +146,7 @@ class DivisiblePad(object):
             elif k in ['disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
                 sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right)), 'constant',
                                    constant_values=0)
-        sample['pad_top'] = pad_top
-        sample['pad_right'] = pad_right
+        sample['pad'] = [pad_top, pad_right, 0, 0]
         return sample
 
 

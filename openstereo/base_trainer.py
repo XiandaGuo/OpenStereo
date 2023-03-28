@@ -4,6 +4,7 @@ import torch
 import torch.distributed as dist
 import torch.nn as nn
 import torch.optim as optim
+from PIL import Image
 from torch.cuda.amp import autocast
 from torch.utils.data import BatchSampler, DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
@@ -292,6 +293,32 @@ class BaseTrainer:
         if next(self.model.parameters()).is_cuda:
             torch.cuda.empty_cache()
         return epoch_metrics
+
+    @torch.no_grad()
+    def test_kitti(self):
+        self.model.eval()
+        model_name = self.model.model_name
+        data_name = self.data_cfg['name']
+        output_dir = f"output/{data_name}_submit/{model_name}/disp_0"
+        os.makedirs(output_dir, exist_ok=True)
+        self.msg_mgr.log_info("Start testing...")
+        for i, inputs in enumerate(self.test_loader):
+            ipts = self.model.prepare_inputs(inputs, device=self.device)
+            with autocast(enabled=self.amp):
+                output = self.model.forward(ipts)
+            inference_disp, visual_summary = output['inference_disp'], output['visual_summary']
+            disp_est = inference_disp['disp_est']
+            # crop padding
+            if 'pad' in ipts:
+                pad_top, pad_right, _, _ = ipts['pad']
+                disp_est = disp_est[:, pad_top:, :-pad_right]
+            # save to file
+            img = disp_est.squeeze(0).cpu().numpy()
+            img = (img * 256).astype('uint16')
+            img = Image.fromarray(img)
+            name = inputs['name']
+            img.save(os.path.join(output_dir, name))
+        self.msg_mgr.log_info("Testing finished.")
 
     def save_ckpt(self):
         # Only save model from master process
