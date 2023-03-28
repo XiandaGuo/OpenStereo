@@ -12,7 +12,7 @@ from .psmnet import PSMNet
 from .raftstereo import RAFT_Stereo
 from .sttr import STTRNet
 from .fadnet import FADNet
-try:
-    from .aanet import AANet
-except ImportError:
-    print('AANet is not available')
+# try:
+#     from .aanet import AANet
+# except ImportError:
+#     print('AANet is not available')
