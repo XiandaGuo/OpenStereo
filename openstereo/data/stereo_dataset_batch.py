@@ -111,17 +111,22 @@ class StereoBatchDataset(Dataset):
 
     def build_transform(self):
         transform_config = self.data_cfg['transform']
-        if self.scope == 'test_kitti':
-            config = transform_config['test_kitti']
-        elif self.scope == 'train':
+        if self.scope == 'train':
             config = transform_config['train']
-        else:
+        elif self.scope == 'val':
+            if 'val' in transform_config:
+                config = transform_config['val']
+            else:
+                config = transform_config['test']
+        elif self.scope == 'test':
             config = transform_config['test']
+        else:
+            raise NotImplementedError(f'{self.scope} is not supported yet.')
         self.transform = self.build_transform_by_cfg(config)
 
     def __getitem__(self, indexs):
         # set the image_size for this batch
-        if self.batch_uniform:
+        if self.batch_uniform and self.scope == 'train':
             base_size = self.transform.transforms[self.random_crop_index].size
             size = self.get_crop_size(base_size)
             self.transform.transforms[self.random_crop_index].size = size
@@ -187,8 +192,8 @@ class StereoBatchDataset(Dataset):
             w = random.randint(self.w_range[0] * base_size[1], self.w_range[1] * base_size[1])
             h = random.randint(self.h_range[0] * base_size[0], self.h_range[1] * base_size[0])
         elif self.random_type == 'choice':
-            w = random.choice(self.w_range)
-            h = random.choice(self.h_range)
+            w = random.choice(self.w_range) if isinstance(self.w_range, list) else self.w_range
+            h = random.choice(self.h_range) if isinstance(self.h_range, list) else self.h_range
         else:
             raise NotImplementedError
         return int(h), int(w)
