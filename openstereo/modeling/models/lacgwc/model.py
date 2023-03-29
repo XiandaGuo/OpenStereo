@@ -2,8 +2,8 @@ import torch
 import torch.nn.functional as F
 
 from modeling.base_model import BaseModel
-from .stackhourglass import PSMNet
 from . import loss_functions as lf
+from .stackhourglass import PSMNet
 
 
 class LacGwcLoss:
@@ -94,9 +94,15 @@ class LacGwcNet(BaseModel):
                 "inference_disp": {
                     "disp_est": res
                 },
-                "visual_summary": {
+            }
+            if 'disp_gt' in inputs:
+                output['visual_summary'] = {
                     'image/val/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
                     'image/val/disp_c': torch.cat([inputs['disp_gt'][0], res[0]], dim=0),
                 }
-            }
+            else:
+                output['visual_summary'] = {
+                    'image/val/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
+                    'image/val/disp_c': res[0]
+                }
         return output
