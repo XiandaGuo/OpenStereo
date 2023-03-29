@@ -1,7 +1,7 @@
 ## What's New
 
 ## Highlighted features
-- **Mutiple Dataset supported**: OpenGait supports six popular stereo datasets: [sceneflow](?), [kitti12](?), [kitti15](?), [Middlebury](?), [ETH3D](?) and  [DrivingStereo](?) .
+- **Mutiple Dataset supported**: OpenStereo supports six popular stereo datasets: [sceneflow](?), [kitti12](?), [kitti15](?), [Middlebury](?), [ETH3D](?) and  [DrivingStereo](?) .
 - **Multiple Models Support**: We reproduced several SOTA methods, and reached the same or even the better performance. 
 - **DDP Support**: The officially recommended [`Distributed Data Parallel (DDP)`](https://pytorch.org/tutorials/intermediate/ddp_tutorial.html) mode is used during both the training and testing phases.
 - **AMP Support**: The [`Auto Mixed Precision (AMP)`](https://pytorch.org/tutorials/recipes/recipes/amp_recipe.html?highlight=amp) option is available.
@@ -21,7 +21,7 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
 
 
 ## Authors:
-**Open Stereo Team (OST)**
+**OpenStereo Team (OST)**
 - [Xianda Guo (国显达)](https://scholar.google.com.hk/citations?hl=zh-CN&user=jPvOqgYAAAAJ), xianda_guo@163.com
 - [Juntao Lu (陆俊陶)](https://github.com/ralph0813), juntao.lu@student.unimelb.edu.au
 - [Yiqi Wang (王仪琦)](), wangyiqi18@mails.ucas.edu.cn
