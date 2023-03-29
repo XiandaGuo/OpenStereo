@@ -4,8 +4,8 @@ data_cfg:
   train_list: datasets/KITTI12/kitti12_train165.txt
   val_list: datasets/KITTI12/kitti12_val29.txt
   test_list: datasets/KITTI12/kitti12_test.txt
-  num_workers: 8
-  train_batch_size: 4
+  num_workers: 4
+  train_batch_size: 8
   val_batch_size: 1
   pin_memory: true
   shuffle: true
@@ -22,10 +22,10 @@ data_cfg:
     train:
       - type: RandomCrop
         size: [ 256, 512 ]
-      #- type: RandomHorizontalFlip
-      #  prob: 0.5
+      #      - type: RandomHorizontalFlip
+      #        prob: 0.5
       - type: GetValidDisp
-        max_disp: 192
+        max_disp: 256
       - type: TransposeImage
       - type: ToTensor
       - type: NormalizeImage
@@ -50,40 +50,24 @@ data_cfg:
         mean: [ 0.485, 0.456, 0.406 ]
         std: [ 0.229, 0.224, 0.225 ]
 
+
+
 model_cfg:
-  model: GwcNet
+  model: CasStereoNet
+  model_type: psmnet
 
   base_config:
     max_disp: 192
-    downsample: 4
-    num_groups: 40
-    use_concat_volume: True
-    concat_channels: 12
-
-  # Backbone
-  backbone_cfg:
-    type: GwcNet
-
-  # VolumeCostProcessor
-  cost_processor_cfg:
-    type: GwcVolumeCostProcessor
-
-  # DispProcessor
-  disp_processor_cfg:
-    type: GwcDispProcessor
 
 
 loss_cfg:
-  - log_prefix: disp
-    type: Weighted_Smooth_l1_Loss
-    loss_term_weight: 1
-    weights: [ 0.5,0.5,0.7,1.0 ]
+  type: CasStereoLoss # user defined loss
 
 
 trainer_cfg:
-  save_name: GwcNet_KITTI12
-  total_epoch: 300
-  restore_hint: 'output/SceneFlow/GwcNet/GwcNet_SceneFlow/checkpoints/GwcNet_SceneFlow_epoch_20.pt'
+  save_name: CasNet_KITTI12
+  total_epoch: 200
+  restore_hint: './output/SceneFlow/CasNet/CasNet_SceneFlow/checkpoints/CasNet_PSM_SceneFlow_epoch_020.pt'
   resume: false
   optimizer_reset: true
   scheduler_reset: true
@@ -91,7 +75,7 @@ trainer_cfg:
   log_iter: 5 # iter
   save_every: 50 # epoch
   val_every: 10 # epoch
-  amp: false
+  amp: true
   sync_bn: true
   fix_bn: false
   init_parameters: false
@@ -105,7 +89,7 @@ trainer_cfg:
     gamma: 0.1
     milestones: [ 200 ]
     warmup:
-      warmup_steps: 500
+      warmup_steps: 100
 
   evaluator_cfg:
     metric:

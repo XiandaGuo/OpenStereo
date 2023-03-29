@@ -1,7 +1,7 @@
 data_cfg:
   name: KITTI2015
   root: data/KITTI/kitti_stereo_2015
-  train_list: datasets/KITTI15/kitti15_train200.txt
+  train_list: datasets/KITTI15/kitti15_train165.txt
   val_list: datasets/KITTI15/kitti15_val35.txt
   test_list: datasets/KITTI15/kitti15_test.txt
   num_workers: 8
@@ -81,7 +81,7 @@ loss_cfg:
 
 
 trainer_cfg:
-  save_name: PSMNet_SceneFlow
+  save_name: GwcNet_KITTI15
   total_epoch: 300
   restore_hint: 'output/SceneFlow/GwcNet/GwcNet_SceneFlow/checkpoints/GwcNet_SceneFlow_epoch_20.pt'
   resume: false

@@ -57,8 +57,8 @@ loss_cfg:
 
 
 trainer_cfg:
-  save_name: SceneFlow
-  total_epoch: 15
+  save_name: CFNet_SceneFlow
+  total_epoch: 40
   restore_hint: 20
   optimizer_reset: true
   scheduler_reset: true

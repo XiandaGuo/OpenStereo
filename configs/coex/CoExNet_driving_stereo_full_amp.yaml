@@ -1,9 +1,9 @@
 data_cfg:
   name: DrivingStereo
   root: data/DrivingStereo
-  train_list: datasets/DrivingStereo/driving_stereo_train.txt
-  val_list: datasets/DrivingStereo/driving_stereo_full_test.txt
-  test_list: datasets/DrivingStereo/driving_stereo_full_test.txt
+  train_list: datasets/DrivingStereo/driving_stereo_phigent_train.txt
+  val_list: datasets/DrivingStereo/driving_stereo_phigent_test.txt
+  test_list: datasets/DrivingStereo/driving_stereo_phigent_test.txt
   num_workers: 8
   train_batch_size: 16
   val_batch_size: 10
@@ -31,7 +31,7 @@ data_cfg:
       - type: NormalizeImage
         mean: [ 0.485, 0.456, 0.406 ]
         std: [ 0.229, 0.224, 0.225 ]
-    test:
+    val:
       - type: CropOrPad
         size: [ 800, 1760 ]
       - type: GetValidDisp
