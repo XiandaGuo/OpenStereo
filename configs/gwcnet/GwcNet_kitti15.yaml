@@ -1,11 +1,22 @@
 data_cfg:
   name: KITTI2015
-  root: data/kitti15
+  root: data/KITTI/kitti_stereo_2015
   train_list: datasets/KITTI15/kitti15_train165.txt
   val_list: datasets/KITTI15/kitti15_val35.txt
   test_list: datasets/KITTI15/kitti15_test.txt
-  num_workers: 4
+  num_workers: 8
+  train_batch_size: 4
+  val_batch_size: 1
+  pin_memory: true
+  shuffle: true
 
+  batch_uniform: false
+  #  random_type: range
+  #  w_range: [ 0.5, 2.0 ]
+  #  h_range: [ 0.5, 2.0 ]
+  #  random_type: choice
+  #  h_range: [ 256, 288, 320, 352 ]
+  #  w_range: [ 480, 512, 544, 576 ]
 
   transform:
     train:
@@ -20,11 +31,19 @@ data_cfg:
       - type: NormalizeImage
         mean: [ 0.485, 0.456, 0.406 ]
         std: [ 0.229, 0.224, 0.225 ]
-    test:
-      - type: StereoPad
+    val:
+      - type: CropOrPad
         size: [ 384, 1248 ]
       - type: GetValidDisp
         max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+    test:
+      - type: DivisiblePad
+        by: 16
       - type: TransposeImage
       - type: ToTensor
       - type: NormalizeImage
@@ -53,11 +72,6 @@ model_cfg:
   disp_processor_cfg:
     type: GwcDispProcessor
 
-optimizer_cfg:
-  solver: Adam
-  lr: 0.001
-  betas: [ 0.9, 0.999 ]
-
 
 loss_cfg:
   - log_prefix: disp
@@ -65,47 +79,43 @@ loss_cfg:
     loss_term_weight: 1
     weights: [ 0.5,0.5,0.7,1.0 ]
 
-scheduler_cfg:
-  gamma: 0.1
-  milestones: # Learning Rate Reduction at each milestones
-    - 6000
-  scheduler: MultiStepLR
-  warmup:
-    type: LinearWarmup
-    warmup_period: 500
 
 trainer_cfg:
-  save_name: GwcNet_kitti15
-  restore_hint: 'output/SceneFlow/GwcNet/GwcNet_SceneFlow/checkpoints/GwcNet_SceneFlow-20000.pt'
-  restore_ckpt_strict: true
-  log_iter: 1
-  with_test: true
-  enable_float16: false
-  save_iter: 200
-  sync_BN: true
-  total_iter: 20000
-  total_epoch: 400
+  save_name: GwcNet_KITTI15
+  total_epoch: 300
+  restore_hint: 'output/SceneFlow/GwcNet/GwcNet_SceneFlow/checkpoints/GwcNet_SceneFlow_epoch_20.pt'
+  resume: false
   optimizer_reset: true
   scheduler_reset: true
+  warmup_reset: true
+  log_iter: 5 # iter
+  save_every: 50 # epoch
+  val_every: 10 # epoch
+  amp: false
+  sync_bn: true
+  fix_bn: false
+  init_parameters: false
 
-  sampler:
-    batch_shuffle: true
-    batch_size: 4
+  optimizer_cfg:
+    solver: RMSprop
+    lr: 0.001
 
+  scheduler_cfg:
+    scheduler: MultiStepLR
+    gamma: 0.1
+    milestones: [ 200 ]
+    warmup:
+      warmup_steps: 500
 
-evaluator_cfg:
-  eval_func: OpenStereoEvaluator
-  save_name: GwcNet_kitti15
-  restore_hint: 'output/SceneFlow/GwcNet/GwcNet_SceneFlow/checkpoints/GwcNet_SceneFlow-20000.pt'
-  metric:
-    - d1_all
-    - epe
-    - thres_1
-    - thres_2
-    - thres_3
-  enable_float16: False
-  restore_ckpt_strict: true
+  evaluator_cfg:
+    metric:
+      - d1_all
+      - epe
+      - thres_1
+      - thres_2
+      - thres_3
 
-  sampler:
-    batch_shuffle: false
-    batch_size: 1
+  clip_grad_cfg:
+    type: norm
+    max_norm: 35
+    norm_type: 2
