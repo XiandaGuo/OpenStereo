@@ -1,7 +1,7 @@
 ## What's New
 
 ## Highlighted features
-- **Mutiple Dataset supported**: OpenStereo supports four popular stereo datasets: [sceneflow](?), [kitti12](?), and [kitti15](?).
+- **Mutiple Dataset supported**: OpenStereo supports six popular stereo datasets: SceneFlow, kitti12,kitti15, Middlebury, ETH3D and DrivingStereo.
 - **Multiple Models Support**: We reproduced several SOTA methods, and reached the same or even the better performance. 
 - **DDP Support**: The officially recommended [`Distributed Data Parallel (DDP)`](https://pytorch.org/tutorials/intermediate/ddp_tutorial.html) mode is used during both the training and testing phases.
 - **AMP Support**: The [`Auto Mixed Precision (AMP)`](https://pytorch.org/tutorials/recipes/recipes/amp_recipe.html?highlight=amp) option is available.
@@ -21,16 +21,15 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
 
 
 ## Authors:
-**Open Stereo Team (OST)**
+**OpenStereo Team (OST)**
 - [Xianda Guo (国显达)](https://scholar.google.com.hk/citations?hl=zh-CN&user=jPvOqgYAAAAJ), xianda_guo@163.com
 - [Juntao Lu (陆俊陶)](https://github.com/ralph0813), juntao.lu@student.unimelb.edu.au
 - [Yiqi Wang (王仪琦)](), wangyiqi18@mails.ucas.edu.cn
 - [Yiqun Duan (段逸群)](https://github.com/duanyiqun), duanyiquncc@gmail.com
-
+- [Zheng Zhu (朱政)](https://scholar.google.com.hk/citations?user=NmwjI0AAAAAJ&hl=zh-CN),zhengzhu@ieee.org
 
 
 ## Acknowledgement
-- [OpenGait](https://github.com/ShiqiYu/OpenGait)
 - [DenseMatching](https://github.com/DeepMotionAIResearch/DenseMatchingBenchmark)
 - [AANet](https://github.com/haofeixu/aanet)
 - [ACVNet](https://github.com/gangweiX/ACVNet)
@@ -45,3 +44,4 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
 - [PSMNet](https://github.com/JiaRenChang/PSMNet)
 - [RAFT](https://github.com/princeton-vl/RAFT-Stereo)
 - [STTR](https://github.com/mli0603/stereo-transformer)
+- [OpenGait](https://github.com/ShiqiYu/OpenGait)
