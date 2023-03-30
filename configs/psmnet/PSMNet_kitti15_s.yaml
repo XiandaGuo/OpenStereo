@@ -11,19 +11,14 @@ data_cfg:
   shuffle: true
 
   batch_uniform: true
-#  random_type: range
-#  w_range: [ 0.5, 2.0 ]
-#  h_range: [ 0.5, 2.0 ]
   random_type: choice
-  h_range: [ 256, 288, 320, 352 ]
-  w_range: [ 480, 512, 544, 576 ]
+  h_range: [ 256, 288, 320 ]
+  w_range: [ 480, 512, 544 ]
 
   transform:
     train:
       - type: RandomCrop
         size: [ 256, 512 ]
-#      - type: RandomHorizontalFlip
-#        prob: 0.5
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -88,7 +83,7 @@ trainer_cfg:
   log_iter: 5 # iter
   save_every: 50 # epoch
   val_every: 10 # epoch
-  amp: true
+  amp: false
   sync_bn: true
   fix_bn: false
   init_parameters: false
