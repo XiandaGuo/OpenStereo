@@ -108,7 +108,7 @@ trainer_cfg:
   save_name: Fadnet_SceneFlow_g8b96_lamb0004
   total_round: 4
   total_epoch: [20,20,20,30]
-  restore_hint: 0
+  restore_hint: "/mnt/cfs/algorithm/youmin.zhang/output/SceneFlow/FADNet/Fadnet_SceneFlow_g8b96_lamb0004/checkpoints/Fadnet_SceneFlow_g8b96_lamb0004-33300.pt"
   optimizer_reset: false
   scheduler_reset: false
   warmup_reset: false
