@@ -1,45 +1,46 @@
 # Prepare SceneFlow dataset
 
 Scene Flow Datasets is available at the Scene Flow [official website](https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html).
-Please download the following parts of FlyingThings3D dataset and place it in the `datasets/sceneflow` directory.
-- RGB images (finalpass)	
+Please download the following parts of FlyingThings3D, Driving, Monkaa and place it in the `datasets/sceneflow` directory.
+- RGB images (finalpass)
+- RGB images (cleanpass)
 - Disparity
+
+And for FlyingThings3D subset, you need to download the following parts:
+- RGB images (cleanpass)
+- Disparity
+- Disparity Occlusions
 
 The directory structure should be as follows:
 ```text
 data
 |   SceneFlow
-|   ├── FlyingThings3D
-|   |   ├── frames_finalpass
-|   |   |   ├── TRAIN
-|   |   |   |   ├── A
-|   |   |   |   |   ├── 0000
-|   |   |   |   |   |   ├── left
-|   |   |   |   |   |   |   ├── 0006.png
-|   |   |   |   |   |   |   ├── 0007.png
-...
-|   |   |   |   |   |   ├── right
-|   |   |   |   |   |   |   ├── 0006.png
-|   |   |   |   |   |   |   ├── 0007.png
-...
-|   |   |   |   |   |   ├── disparity
-|   |   |   |   |   |   |   ├── 0006.pfm
-|   |   |   |   |   |   |   ├── 0007.pfm
-...
-|   |   |   ├── TEST
-|   |   |   |   ├── A
-|   |   |   |   |   ├── 0000
-|   |   |   |   |   |   ├── left
-|   |   |   |   |   |   |   ├── 0006.png
-|   |   |   |   |   |   |   ├── 0007.png
-...
 |   ├── Driving
 |   |   ├── frames_finalpass
+|   |   ├── frames_cleanpass
+|   |   ├── disparity
 ...
 |   ├── Monkaa
 |   |   ├── frames_finalpass
+|   |   ├── frames_cleanpass
+|   |   ├── disparity
 ...
+|   ├── FlyingThings3D
+|   |   ├── frames_finalpass
+|   |   ├── frames_cleanpass
+|   |   ├── disparity
+...
+|   ├── FlyingThings3D_subset
+|   |   ├── train
+|   |   |   ├── frames_cleanpass
+|   |   |   ├── disparity
+|   |   |   ├── disparity_occlusions
+|   |   ├── test
+|   |   |   ├── frames_cleanpass
+|   |   |   ├── disparity
+|   |   |   ├── disparity_occlusions
 ```
+
 
 _Optionally you can write your own txt file and use all the parts of the dataset._ 
 
