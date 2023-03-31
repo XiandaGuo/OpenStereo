@@ -1,4 +1,10 @@
+<img src="./misc/OpenStereo.png" alt="logo" />
+
+------------------------------------------
+OpenStereo is a flexible and extensible project for stereo matching.
+
 ## What's New
+- **[March 2023]**:OpenStereo is available!!!
 
 ## Highlighted features
 - **Mutiple Dataset supported**: OpenStereo supports six popular stereo datasets: [SceneFlow](datasets/SceneFlow/README.md), [KITTI12](datasets/KITTI12/README.md) & [KITTI15](datasets/KITTI15/README.md), 

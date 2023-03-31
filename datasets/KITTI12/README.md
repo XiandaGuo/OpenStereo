@@ -7,19 +7,25 @@ The directory structure should be as follows:
 ```text
 data
 |   kitti12
-|   |   ├── training
-|   |   |   ├── colmap
-|   |   |   |   ├── 000000
-|   |   |   |   |   ├── 000000.png
-|   |   |   |   |   ├── 000001.png
-|   |   |   |   |   ├── 000002.png
+|   |   ├── calib
+|   |   |   ├── calib
+|   |   |   ├── colored_0
+|   |   |   ├── colored_1
+|   |   |   ├── disp_noc
+|   |   |   ├── disp_occ
+|   |   |   ├── disp_refl_noc
+|   |   |   ├── disp_refl_occ
+|   |   |   ├── flow_noc
+|   |   |   ├── flow_occ
+|   |   |   ├── image_0
+|   |   |   ├── image_1
 ...
 |   |   ├── testing
-|   |   |   ├── colmap
-|   |   |   |   ├── 000000
-|   |   |   |   |   ├── 000000.png
-|   |   |   |   |   ├── 000001.png
-|   |   |   |   |   ├── 000002.png
+|   |   |   ├── calib
+|   |   |   ├── colored_0
+|   |   |   ├── colored_1
+|   |   |   ├── image_0
+|   |   |   ├── image_1
 ...
 ```
 
