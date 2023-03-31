@@ -10,20 +10,18 @@ data_cfg:
   pin_memory: true
   shuffle: true
 
-  batch_uniform: true
-#  random_type: range
-#  w_range: [ 0.5, 2.0 ]
-#  h_range: [ 0.5, 2.0 ]
-  random_type: choice
-  h_range: [ 256, 288, 320, 352 ]
-  w_range: [ 480, 512, 544, 576 ]
+  batch_uniform: false
+  #  random_type: range
+  #  w_range: [ 0.5, 2.0 ]
+  #  h_range: [ 0.5, 2.0 ]
+  #  random_type: choice
+  #  h_range: [ 256, 288, 320, 352 ]
+  #  w_range: [ 480, 512, 544, 576 ]
 
   transform:
     train:
       - type: RandomCrop
         size: [ 256, 512 ]
-#      - type: RandomHorizontalFlip
-#        prob: 0.5
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
