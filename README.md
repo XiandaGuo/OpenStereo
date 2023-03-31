@@ -1,7 +1,7 @@
-<img src="./assets/logo2.png" width = "320" height = "110" alt="logo" />
+<img src="./misc/OpenStereo.png" alt="logo" />
 
 ------------------------------------------
-OpenStereo is a flexible and extensible stereo matching project.
+OpenStereo is a flexible and extensible project for stereo matching.
 
 ## What's New
 - **[March 2023]**:OpenStereo is available!!!
