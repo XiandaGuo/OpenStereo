@@ -77,11 +77,10 @@ loss_cfg:
 scheduler_cfg:
   warmup_iters: 0
 
-#/mnt/cfs/algorithm/youmin.zhang/output/SceneFlow/AANet/AANet_SceneFlow_lamb_b64_288_4e3/checkpoints/AANet_SceneFlow_lamb_b64_288_4e3-35456.pt
 trainer_cfg:
   save_name: AANet_SceneFlow_lamb_b64_288_4e3
   total_epoch: 64
-  restore_hint: "/mnt/cfs/algorithm/youmin.zhang/output/SceneFlow/AANet/AANet_SceneFlow_lamb_b64_288_4e3/checkpoints/AANet_SceneFlow_lamb_b64_288_4e3-35456.pt"
+  restore_hint: 0
   optimizer_reset: false
   scheduler_reset: false
   warmup_reset: false

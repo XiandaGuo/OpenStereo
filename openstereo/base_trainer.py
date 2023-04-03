@@ -208,7 +208,9 @@ class BaseTrainer:
             loss_info.update({'scalar/train/lr': lr})
             self.msg_mgr.train_step(loss_info)
         # update rest pbar
-        pbar.update(len(self.train_loader) - pbar.n)
+        # print('len(self.train_loader)', len(self.train_loader))
+        # print('pbar.n', pbar.n)
+        #pbar.update(len(self.train_loader) - pbar.n)
         pbar.close()
         total_loss = torch.tensor(total_loss, device=self.device)
         if self.is_dist:
@@ -276,7 +278,7 @@ class BaseTrainer:
         # log to tensorboard
         self.msg_mgr.write_to_tensorboard(visual_summary, self.current_epoch)
         # update rest pbar
-        pbar.update(len(self.val_loader) - pbar.n)
+        #pbar.update(len(self.val_loader) - pbar.n)
         pbar.close()
         for k in epoch_metrics.keys():
             epoch_metrics[k] = torch.tensor(epoch_metrics[k] / len(self.val_loader)).to(self.device)
