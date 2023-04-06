@@ -57,6 +57,24 @@ model_cfg:
 
   base_config:
     max_disp: 192
+    spixel_branch_channels: [ 32, 48 ]
+    chans: [ 16, 24, 32, 96, 160 ]
+
+  backbone_cfg:
+    type: CoExBackbone
+
+  cost_processor_cfg:
+    type: CoExCostProcessor
+    matching_weighted: False
+    matching_head: 1
+    gce: true
+    aggregation_disp_strides: 2
+    aggregation_channels: [16, 32, 48]
+    aggregation_blocks_num: [2, 2, 2]
+
+  disp_processor_cfg:
+    type: CoExDispProcessor
+    regression_topk: 2
 
 
 loss_cfg:
@@ -78,7 +96,7 @@ trainer_cfg:
   save_every: 50 # epoch
   val_every: 10 # epoch
   amp: true
-  sync_bn: true
+  sync_bn: false
   fix_bn: false
   init_parameters: false
 

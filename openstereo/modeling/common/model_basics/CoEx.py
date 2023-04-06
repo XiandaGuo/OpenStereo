@@ -1,12 +1,43 @@
-#!/usr/bin/env python
-from __future__ import print_function
 from typing import Callable, Optional, List
+
 import torch
-from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
+from torch import Tensor
 
-import pdb
+
+def convbn(in_planes, out_planes, kernel_size, stride, pad, dilation):
+    return nn.Sequential(
+        nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride,
+                  padding=dilation if dilation > 1 else pad, dilation=dilation, bias=False),
+        nn.BatchNorm2d(out_planes)
+    )
+
+
+class PSMBasicBlock(nn.Module):
+    expansion = 1
+
+    def __init__(self, inplanes, planes, stride, downsample, pad, dilation):
+        super(PSMBasicBlock, self).__init__()
+
+        self.conv1 = nn.Sequential(convbn(inplanes, planes, 3, stride, pad, dilation),
+                                   nn.ReLU(inplace=True))
+
+        self.conv2 = convbn(planes, planes, 3, 1, pad, dilation)
+
+        self.downsample = downsample
+        self.stride = stride
+
+    def forward(self, x):
+        out = self.conv1(x)
+        out = self.conv2(out)
+
+        if self.downsample is not None:
+            x = self.downsample(x)
+
+        out += x
+
+        return out
 
 
 class BasicConv(nn.Module):
@@ -35,17 +66,18 @@ class BasicConv(nn.Module):
         if self.use_bn:
             x = self.bn(x)
         if self.relu:
-            x = self.LeakyReLU(x)#, inplace=True)
+            x = self.LeakyReLU(x)  # , inplace=True)
         return x
 
 
 class Conv2x(nn.Module):
 
-    def __init__(self, in_channels, out_channels, deconv=False, is_3d=False, concat=True, keep_concat=True, bn=True, relu=True, keep_dispc=False):
+    def __init__(self, in_channels, out_channels, deconv=False, is_3d=False, concat=True, keep_concat=True, bn=True,
+                 relu=True, keep_dispc=False):
         super(Conv2x, self).__init__()
         self.concat = concat
-        self.is_3d = is_3d 
-        if deconv and is_3d: 
+        self.is_3d = is_3d
+        if deconv and is_3d:
             kernel = (4, 4, 4)
         elif deconv:
             kernel = 4
@@ -56,15 +88,19 @@ class Conv2x(nn.Module):
             kernel = (1, 4, 4)
             stride = (1, 2, 2)
             padding = (0, 1, 1)
-            self.conv1 = BasicConv(in_channels, out_channels, deconv, is_3d, bn=True, relu=True, kernel_size=kernel, stride=stride, padding=padding)
+            self.conv1 = BasicConv(in_channels, out_channels, deconv, is_3d, bn=True, relu=True, kernel_size=kernel,
+                                   stride=stride, padding=padding)
         else:
-            self.conv1 = BasicConv(in_channels, out_channels, deconv, is_3d, bn=True, relu=True, kernel_size=kernel, stride=2, padding=1)
+            self.conv1 = BasicConv(in_channels, out_channels, deconv, is_3d, bn=True, relu=True, kernel_size=kernel,
+                                   stride=2, padding=1)
 
-        if self.concat: 
+        if self.concat:
             mul = 2 if keep_concat else 1
-            self.conv2 = BasicConv(out_channels*2, out_channels*mul, False, is_3d, bn, relu, kernel_size=3, stride=1, padding=1)
+            self.conv2 = BasicConv(out_channels * 2, out_channels * mul, False, is_3d, bn, relu, kernel_size=3,
+                                   stride=1, padding=1)
         else:
-            self.conv2 = BasicConv(out_channels, out_channels, False, is_3d, bn, relu, kernel_size=3, stride=1, padding=1)
+            self.conv2 = BasicConv(out_channels, out_channels, False, is_3d, bn, relu, kernel_size=3, stride=1,
+                                   padding=1)
 
     def forward(self, x, rem):
         x = self.conv1(x)
@@ -75,7 +111,7 @@ class Conv2x(nn.Module):
                 mode='nearest')
         if self.concat:
             x = torch.cat((x, rem), 1)
-        else: 
+        else:
             x = x + rem
         x = self.conv2(x)
         return x
@@ -133,15 +169,15 @@ class BasicBlock(nn.Module):
     expansion: int = 1
 
     def __init__(
-        self,
-        inplanes: int,
-        planes: int,
-        stride: int = 1,
-        downsample: Optional[nn.Module] = None,
-        groups: int = 1,
-        base_width: int = 64,
-        dilation: int = 1,
-        norm_layer: Optional[Callable[..., nn.Module]] = None
+            self,
+            inplanes: int,
+            planes: int,
+            stride: int = 1,
+            downsample: Optional[nn.Module] = None,
+            groups: int = 1,
+            base_width: int = 64,
+            dilation: int = 1,
+            norm_layer: Optional[Callable[..., nn.Module]] = None
     ) -> None:
         super(BasicBlock, self).__init__()
         if norm_layer is None:
@@ -177,15 +213,16 @@ class BasicBlock(nn.Module):
 
         return out
 
+
 class ConvBNReLU3d(nn.Sequential):
     def __init__(
-        self,
-        in_planes: int,
-        out_planes: int,
-        kernel_size: int = 3,
-        stride: int = 1,
-        groups: int = 1,
-        norm_layer: Optional[Callable[..., nn.Module]] = None
+            self,
+            in_planes: int,
+            out_planes: int,
+            kernel_size: int = 3,
+            stride: int = 1,
+            groups: int = 1,
+            norm_layer: Optional[Callable[..., nn.Module]] = None
     ) -> None:
         padding = (kernel_size - 1) // 2
         if norm_layer is None:
@@ -196,14 +233,15 @@ class ConvBNReLU3d(nn.Sequential):
             nn.ReLU6(inplace=True)
         )
 
+
 class InvertedResidual3d(nn.Module):
     def __init__(
-        self,
-        inp: int,
-        oup: int,
-        stride: int,
-        expand_ratio: int,
-        norm_layer: Optional[Callable[..., nn.Module]] = None
+            self,
+            inp: int,
+            oup: int,
+            stride: int,
+            expand_ratio: int,
+            norm_layer: Optional[Callable[..., nn.Module]] = None
     ) -> None:
         super(InvertedResidual3d, self).__init__()
         self.stride = stride
@@ -234,17 +272,22 @@ class InvertedResidual3d(nn.Module):
         else:
             return self.conv(x)
 
+
 class AtrousBlock(nn.Module):
 
     def __init__(self, in_channels, out_channels, stride=1, bn=True, relu=True):
         super(AtrousBlock, self).__init__()
 
-        dilations = [2,4,6]
-        self.conv_1 = BasicConv(in_channels,out_channels//4,is_3d=True,kernel_size=3,stride=stride,padding=1,dilation=1)
-        self.conv_2 = BasicConv(in_channels,out_channels//4,is_3d=True,kernel_size=3,stride=stride,padding=(1,dilations[0],dilations[0]),dilation=(1,dilations[0],dilations[0]))
-        self.conv_3 = BasicConv(in_channels,out_channels//4,is_3d=True,kernel_size=3,stride=stride,padding=(1,dilations[1],dilations[1]),dilation=(1,dilations[1],dilations[1]))
-        self.conv_4 = BasicConv(in_channels,out_channels//4,is_3d=True,kernel_size=3,stride=stride,padding=(1,dilations[2],dilations[2]),dilation=(1,dilations[2],dilations[2]))
+        dilations = [2, 4, 6]
+        self.conv_1 = BasicConv(in_channels, out_channels // 4, is_3d=True, kernel_size=3, stride=stride, padding=1,
+                                dilation=1)
+        self.conv_2 = BasicConv(in_channels, out_channels // 4, is_3d=True, kernel_size=3, stride=stride,
+                                padding=(1, dilations[0], dilations[0]), dilation=(1, dilations[0], dilations[0]))
+        self.conv_3 = BasicConv(in_channels, out_channels // 4, is_3d=True, kernel_size=3, stride=stride,
+                                padding=(1, dilations[1], dilations[1]), dilation=(1, dilations[1], dilations[1]))
+        self.conv_4 = BasicConv(in_channels, out_channels // 4, is_3d=True, kernel_size=3, stride=stride,
+                                padding=(1, dilations[2], dilations[2]), dilation=(1, dilations[2], dilations[2]))
 
     def forward(self, x):
-        x = torch.cat((self.conv_1(x),self.conv_2(x),self.conv_3(x),self.conv_4(x)),1)
+        x = torch.cat((self.conv_1(x), self.conv_2(x), self.conv_3(x), self.conv_4(x)), 1)
         return x
