@@ -288,6 +288,7 @@ cython_debug/
 .github/
 .idea/
 output/
+.DS_Store
 
 /data/
 /weights/
