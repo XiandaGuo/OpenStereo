@@ -37,6 +37,7 @@ class BaseTrainer:
         self.scheduler_cfg = trainer_cfg['scheduler_cfg']
         self.evaluator_cfg = trainer_cfg['evaluator_cfg']
         self.clip_grade_config = trainer_cfg.get('clip_grad_cfg', {})
+        self.load_state_dict_strict = trainer_cfg.get('load_state_dict_strict', True)
         self.optimizer = None
         self.evaluator = NoOp()
         self.warmup_scheduler = NoOp()
@@ -363,7 +364,7 @@ class BaseTrainer:
         checkpoint = torch.load(path, map_location=map_location)
         # convert state dict for or not for distributed training
         model_state_dict = convert_state_dict(checkpoint['model'], is_dist=self.is_dist)
-        self.model.load_state_dict(model_state_dict)
+        self.model.load_state_dict(model_state_dict, strict=self.load_state_dict_strict)
         self.msg_mgr.log_info(f'Model loaded from {path}')
         # for amp
         if self.amp:
@@ -373,7 +374,7 @@ class BaseTrainer:
                 self.scaler.load_state_dict(checkpoint['scaler'])
 
         # skip loading optimizer and scheduler if resume is False
-        if not self.trainer_cfg.get('resume', True):
+        if not self.trainer_cfg.get('resume', True) or not self.load_state_dict_strict:
             return
 
         self.current_epoch = checkpoint.get('epoch', 0)
