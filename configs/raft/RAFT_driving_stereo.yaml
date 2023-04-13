@@ -59,7 +59,7 @@ loss_cfg:
 
 
 trainer_cfg:
-  save_name: RAFT-driving_stereo_newright
+  save_name: RAFT-ds
   total_epoch: 30
   restore_hint: 0
   log_iter: 50 # iter
