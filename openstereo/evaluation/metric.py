@@ -5,9 +5,7 @@ import torch
 def d1_metric_np(disp_est, disp_gt, mask):
     """
     Compute the D1 metric for disparity estimation.
-    The metric is defined as:
-        Percentage of stereo disparity outliers in first frame.
-        Outliers are defined as pixels with disparity error > 3 pixels.
+    The D1 error is the percentage of pixels with disparity error larger than 3 px and 5% of the ground truth.
     Args:
         disp_est: estimated disparity map
         disp_gt: ground truth disparity map
@@ -16,7 +14,7 @@ def d1_metric_np(disp_est, disp_gt, mask):
         float: D1 metric value
     """
     if mask.sum() == 0:
-        return torch.tensor(0.0).to(disp_est.device)
+        return np.mean(0.0)
     disp_est, disp_gt = disp_est[mask], disp_gt[mask]
     E = np.abs(disp_gt - disp_est)
     err_mask = (E > 3) & (E / np.abs(disp_gt) > 0.05)
@@ -26,9 +24,7 @@ def d1_metric_np(disp_est, disp_gt, mask):
 def d1_metric(disp_est, disp_gt, mask):
     """
     Compute the D1 metric for disparity estimation.
-    The metric is defined as:
-        Percentage of stereo disparity outliers in first frame.
-        Outliers are defined as pixels with disparity error > 3 pixels.
+    The D1 error is the percentage of pixels with disparity error larger than 3px and 5% of the ground truth.
     Args:
         disp_est: estimated disparity map
         disp_gt: ground truth disparity map
@@ -58,7 +54,7 @@ def threshold_metric_np(disp_est, disp_gt, mask, threshold):
         float: threshold metric value
     """
     if mask.sum() == 0:
-        return torch.tensor(0.0).to(disp_est.device)
+        return np.mean(0.0)
     disp_est, disp_gt = disp_est[mask], disp_gt[mask]
     E = np.abs(disp_gt - disp_est)
     err_mask = E > threshold
@@ -98,7 +94,7 @@ def epe_metric_np(disp_est, disp_gt, mask):
         float: EPE metric value
     """
     if mask.sum() == 0:
-        return torch.tensor(0.0).to(disp_est.device)
+        return np.mean(0.0)
     disp_est, disp_gt = disp_est[mask], disp_gt[mask]
     E = np.abs(disp_gt - disp_est)
     return np.mean(E)

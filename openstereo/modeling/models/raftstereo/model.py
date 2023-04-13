@@ -90,7 +90,7 @@ class RAFT_Stereo(BaseModel):
     def build_loss_fn(self):
         self.loss_fn = RAFTLoss(loss_gamma=0.9, max_flow=700)
     
-    def prepare_inputs(self, inputs, device=None):
+    def prepare_inputs(self, inputs, device=None, **kwargs):
         """Reorganize input data for different models
 
         Args:

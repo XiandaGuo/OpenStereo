@@ -209,9 +209,8 @@ class BaseTrainer:
             loss_info.update({'scalar/train/lr': lr})
             self.msg_mgr.train_step(loss_info)
         # update rest pbar
-        # print('len(self.train_loader)', len(self.train_loader))
-        # print('pbar.n', pbar.n)
-        #pbar.update(len(self.train_loader) - pbar.n)
+        rest_iters = len(self.train_loader) - pbar.n if self.is_dist and self.rank == 0 or not self.is_dist else 0
+        pbar.update(rest_iters)
         pbar.close()
         total_loss = torch.tensor(total_loss, device=self.device)
         if self.is_dist:
@@ -241,6 +240,9 @@ class BaseTrainer:
     def val_epoch(self):
         self.model.eval()
 
+        # init evaluator
+        apply_max_disp = self.evaluator_cfg.get('apply_max_disp', True)
+
         # init metrics
         epoch_metrics = {}
         for k in self.evaluator.metrics:
@@ -256,8 +258,9 @@ class BaseTrainer:
             pbar = tqdm(total=len(self.val_loader), desc=f'Eval epoch {self.current_epoch}')
         else:
             pbar = NoOp()
+
         for i, data in enumerate(self.val_loader):
-            batch_inputs = self.model.prepare_inputs(data, device=self.device)
+            batch_inputs = self.model.prepare_inputs(data, device=self.device, apply_max_disp=apply_max_disp)
             with autocast(enabled=self.amp):
                 out = self.model.forward(batch_inputs)
                 inference_disp, visual_summary = out['inference_disp'], out['visual_summary']
@@ -279,7 +282,8 @@ class BaseTrainer:
         # log to tensorboard
         self.msg_mgr.write_to_tensorboard(visual_summary, self.current_epoch)
         # update rest pbar
-        #pbar.update(len(self.val_loader) - pbar.n)
+        rest_iters = len(self.val_loader) - pbar.n if self.is_dist and self.rank == 0 or not self.is_dist else 0
+        pbar.update(rest_iters)
         pbar.close()
         for k in epoch_metrics.keys():
             epoch_metrics[k] = torch.tensor(epoch_metrics[k] / len(self.val_loader)).to(self.device)

@@ -94,23 +94,6 @@ METRICS = {
 }
 
 
-def OpenStereoEvaluator(data, metric=None, use_np=False):
-    """compute the error metrics for SceneFlow dataset"""
-    if metric is None:
-        metric = ['epe', 'd1_all']
-    disp_est = data['disp_est']
-    disp_gt = data['disp_gt']
-    mask = data['mask']
-    res = {}
-    for m in metric:
-        if m not in METRICS:
-            raise ValueError("Unknown metric: {}".format(m))
-        else:
-            metric_func = METRICS[m] if not use_np else METRICS_NP[m]
-            res[f"scalar/val/{m}"] = metric_func(disp_est, disp_gt, mask)
-    return res
-
-
 class OpenStereoEvaluator:
     def __init__(self, metrics=None, use_np=False):
         if metrics is None:
