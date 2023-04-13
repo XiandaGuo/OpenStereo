@@ -37,50 +37,65 @@ data_cfg:
 
 
 model_cfg:
-  model: RAFT_Stereo
-#  find_unused_parameters: true
+  model: STTRNet
+  _set_static_graph: true
+  find_unused_parameters: false
   base_config:
-    hidden_dims: [128, 128, 128]
-    n_gru_layers: 3
-    n_downsample: 2
-    slow_fast_gru: False
     max_disp: 192
-    aug_params: []
-    train_iters: 12
-    corr_levels: 4
-    corr_radius: 4
-    shared_backbone: True
-    corr_implementation: reg
-    # choices=["reg", "alt", "reg_cuda", "alt_cuda"]
+    channel_dim: 128
+    position_encoding: sine1d_rel
+    num_attn_layers: 6
+    nheads: 8
+    regression_head: ot
+    context_adjustment_layer: cal
+    cal_num_blocks: 8
+    cal_feat_dim: 16
+    cal_expansion_ratio: 4
+    downsample: 3
+  loss_config:
+    px_error_threshold: 3
+    validation_max_disp: -1
+    loss_weight: 'rr:1.0, l1_raw:1.0, l1:1.0, occ_be:1.0'
+
 
 
 loss_cfg:
   # This model uses the user-defined loss function.
+  px_error_threshold: 3
+  validation_max_disp: 192
+  loss_weight: 'rr:1.0, l1_raw:1.0, l1:1.0, occ_be:1.0'
+
 
 
 trainer_cfg:
-  save_name: RAFT-driving_stereo_newright
-  total_epoch: 30
-  restore_hint: 0
-  log_iter: 50 # iter
-  save_every: 1 # epoch
-  val_every: 1 # epoch
-  amp: false
+  save_name: STTR_ds
+  total_epoch: 1000
+  restore_hint: '/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/output/SceneFlow/STTRNet/STTR-Stereo_SceneFlow_new/checkpoints/STTR-Stereo_SceneFlow_new_epoch_030.pt'
+  resume: false
+  optimizer_reset: true
+  scheduler_reset: true
+  warmup_reset: true
+  log_iter: 1 # iter
+  save_every: 50 # epoch
+  val_every: 10 # epoch
+  amp: true
   sync_bn: true
   fix_bn: false
   init_parameters: false
 
   optimizer_cfg:
     solver: Adam
-    lr: 0.001
+    lr: 0.0008
     betas: [ 0.9, 0.999 ]
+    lr_backbone: 0.0008
+    lr_regression: 0.0016
 
   scheduler_cfg:
     scheduler: MultiStepLR
-    gamma: 0.5
-    milestones: [ 5, 7, 9, 11, 15, 20]
+    gamma: 0.1
+    milestones: [ 500, 800, 900 ]
     warmup:
-      warmup_steps: 2000
+      warmup_steps: 100
 
   evaluator_cfg:
     metric:
@@ -90,3 +105,7 @@ trainer_cfg:
       - thres_2
       - thres_3
 
+  clip_grad_cfg:
+    type: norm
+    max_norm: 35
+    norm_type: 2

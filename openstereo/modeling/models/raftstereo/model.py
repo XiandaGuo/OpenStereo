@@ -89,17 +89,11 @@ class RAFT_Stereo(BaseModel):
 
     def build_loss_fn(self):
         self.loss_fn = RAFTLoss(loss_gamma=0.9, max_flow=700)
-    
+        
+    """
     def prepare_inputs(self, inputs, device=None):
-        """Reorganize input data for different models
-
-        Args:
-            inputs: the input data.
-        Returns:
-            dict: training data including ref_img, tgt_img, disp image,
-                  and other meta data.
-        """
         # asure the disp_gt has the shape of [B, H, W]
+        print(inputs.keys())
         disp_gt = inputs['disp']
         if len(disp_gt.shape) == 4:
             disp_gt = disp_gt.squeeze(1)
@@ -113,23 +107,6 @@ class RAFT_Stereo(BaseModel):
         max_disp = self.model_cfg['base_config']['max_disp']
         mask = (disp_gt < max_disp) & (disp_gt > 0)
 
-        """
-        
-        if self.augmentor is not None:
-            if self.sparse:
-                img1, img2, flow, valid = self.augmentor(img1, img2, flow, valid)
-            else:
-                img1, img2, flow = self.augmentor(img1, img2, flow)
-
-        img1 = torch.from_numpy(img1).permute(2, 0, 1).float()
-        img2 = torch.from_numpy(img2).permute(2, 0, 1).float()
-        flow = torch.from_numpy(flow).permute(2, 0, 1).float()
-        if self.sparse:
-            valid = torch.from_numpy(valid)
-        else:
-            valid = (flow[0].abs() < 512) & (flow[1].abs() < 512)
-        """
-
         return {
             'img1': img1,
             'img2': img2,
@@ -138,6 +115,39 @@ class RAFT_Stereo(BaseModel):
             'disp_gt': disp_gt.unsqueeze(1).to(device),
             'mask': mask.unsqueeze(1).to(device),
         }
+    """
+
+    def prepare_inputs(self, inputs, device=None):
+        """Reorganize input data for different models
+
+        Args:
+            inputs: the input data.
+            device: the device to put the data.
+        Returns:
+            dict: training data including ref_img, tgt_img, disp image,
+                  and other meta data.
+        """
+        processed_inputs = {
+            'img1': inputs['left'],
+            'img2': inputs['right'],
+        }
+        if 'disp' in inputs.keys():
+            disp_gt = inputs['disp']
+            # compute the mask of valid disp_gt
+            mask = (disp_gt < self.max_disp) & (disp_gt > 0)
+            processed_inputs.update({
+                'flow': disp_gt,
+                'valid': mask,
+            })
+        if not self.training:
+            for k in ['pad', 'name']:
+                if k in inputs.keys():
+                    processed_inputs[k] = inputs[k]
+        if device is not None:
+            # move data to device
+            for k, v in processed_inputs.items():
+                processed_inputs[k] = v.to(device) if torch.is_tensor(v) else v
+        return processed_inputs
 
     def forward(self, inputs):
         """Forward the network."""
@@ -159,7 +169,7 @@ class RAFT_Stereo(BaseModel):
             cor_dis, flow = self.net(img1, img2, self.train_iters, test_mode = True)
             output = {
                 "inference_disp": {
-                    "disp_est": flow
+                    "disp_est": flow[-1].squeeze(1)
                 },
                 "visual_summary": {}
             }
