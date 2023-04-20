@@ -4,12 +4,27 @@ from . import stereo_trans as ST
 
 
 class StereoDataset(Dataset):
+    """
+    StereoDataset is a custom dataset class for handling stereo image pairs and their ground truth disparities.
+    It inherits from the PyTorch Dataset class and overrides the __getitem__ and __len__ methods.
+    """
     def __init__(self, data_cfg, scope='train'):
+        """
+        Initialize the StereoDataset instance.
+
+        :param data_cfg: A dictionary containing the dataset configuration.
+        :param scope: A string indicating the scope of the dataset, one of 'train', 'val', or 'test'.
+        """
+        # Store the dataset configuration, scope, and training status
         self.data_cfg = data_cfg
         self.is_train = scope == 'train'
         self.scope = scope.lower()
+
+        # Initialize the dataset and transform
         self.dataset = None
         self.transform = None
+
+        # Call the build_dataset method to set up the dataset
         self.build_dataset()
 
     def build_dataset(self):
@@ -34,6 +49,8 @@ class StereoDataset(Dataset):
         transform_config = self.data_cfg['transform']
         config = transform_config['train'] if self.is_train else transform_config['test']
         size, mean, std = config['size'], config['mean'], config['std']
+
+        # Create data transformation for training data
         if self.is_train:
             transform = ST.Compose([
                 # ST.RandomHorizontalFlip(),
@@ -44,6 +61,8 @@ class StereoDataset(Dataset):
                 ST.ToTensor(),
                 ST.NormalizeImage(mean, std),
             ])
+
+        # Create data transformation for testing data
         else:
             transform = ST.Compose([
                 ST.StereoPad(size),
