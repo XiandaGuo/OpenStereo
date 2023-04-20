@@ -35,7 +35,7 @@ class KittiTestReader(KittiReader):
 
     def item_loader(self, item):
         full_paths = [os.path.join(self.root, x) for x in item]
-        left_img_path, right_img_path = full_paths
+        left_img_path, right_img_path = full_paths[:2]
         left_img = self.image_loader(left_img_path)
         right_img = self.image_loader(right_img_path)
         sample = {

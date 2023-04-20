@@ -15,17 +15,17 @@ class StereoBatchDataset(Dataset):
         self.scope = scope.lower()
         self.dataset = None
         self.transform = None
-        self.image_reader_type = data_cfg['image_reader'] if 'image_reader' in data_cfg else "PIL"
-        self.disp_reader_type = data_cfg['disp_reader'] if 'disp_reader' in data_cfg else "PIL"
-        self.return_right_disp = data_cfg['return_right_disp'] if 'return_right_disp' in data_cfg else True
-        self.return_occ_mask = data_cfg['return_occ_mask'] if 'return_occ_mask' in data_cfg else False
-
+        self.image_reader_type = data_cfg.get('image_reader', 'PIL')
+        self.disp_reader_type = data_cfg.get('disp_reader', 'PIL')
+        self.return_right_disp = data_cfg.get('return_right_disp', False)
+        self.return_occ_mask = data_cfg.get('return_occ_mask', False)
         # for batch uniform
-        self.batch_uniform = data_cfg['batch_uniform'] if 'batch_uniform' in data_cfg else False
-        self.random_type = data_cfg['random_type'] if 'random_type' in data_cfg else None
-        self.w_range = data_cfg['w_range'] if 'w_range' in data_cfg else None
-        self.h_range = data_cfg['h_range'] if 'h_range' in data_cfg else None
+        self.batch_uniform = data_cfg.get('batch_uniform', False)
+        self.random_type = data_cfg.get('random_type', None)
+        self.w_range = data_cfg.get('w_range', None)
+        self.h_range = data_cfg.get('h_range', None)
         self.random_crop_index = None  # for batch uniform random crop, record the index of the crop transform operator
+
         self.build_dataset()
 
     def build_dataset(self):
