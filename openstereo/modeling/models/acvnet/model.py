@@ -72,7 +72,7 @@ class ACVNet(BaseModel):
         loss_cfg = self.cfg['loss_cfg']
         self.loss_fn = ACVLoss()
 
-    def prepare_inputs(self, inputs, device=None):
+    def prepare_inputs(self, inputs, device=None, **kwargs):
         """Reorganize input data for different models
 
         Args:

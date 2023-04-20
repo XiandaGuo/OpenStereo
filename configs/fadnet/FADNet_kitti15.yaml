@@ -1,23 +1,35 @@
 
 data_cfg:
-  name: SceneFlow
-  root: /mnt/cfs/algorithm/public_data/stereo/datasets/sceneflow
-  train_list: datasets/SceneFlow/sceneflow_cleanpass_train.txt
-  val_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
-  test_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
+  name: KITTI2015
+  root: /mnt/cfs/algorithm/public_data/stereo/datasets/KITTI
+  train_list: datasets/KITTI15/kitti15_train165.txt
+  val_list: datasets/KITTI15/kitti15_val35.txt
+  test_list: datasets/KITTI15/kitti15_test.txt
   num_workers: 8
-  train_batch_size: 16
-  val_batch_size: 10
+  train_batch_size: 4
+  val_batch_size: 1
   pin_memory: true
   shuffle: true
 
-  batch_uniform: false
-
+  batch_uniform: true
+  random_type: choice
+  h_range: [ 192, 256, 320 ]
+  w_range: [ 448, 512, 576 ]
 
   transform:
     train:
       - type: RandomCrop
-        size: [ 384, 768 ]
+        size: [ 256, 512 ]
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+    val:
+      - type: CropOrPad
+        size: [ 384, 1280]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -26,10 +38,8 @@ data_cfg:
         mean: [ 0.485, 0.456, 0.406 ]
         std: [ 0.229, 0.224, 0.225 ]
     test:
-       - type: StereoPad
-        size: [ 576, 960 ]
-      - type: GetValidDispa
-        max_disp: 192
+      - type: DivisiblePad
+        by: 16
       - type: TransposeImage
       - type: ToTensor
       - type: NormalizeImage
@@ -80,10 +90,7 @@ loss_cfg:
     loss_term_weight: 1
     scales: 7
     downscale: 1
-    weights: [[0.32, 0.16, 0.08, 0.04, 0.02, 0.01, 0.005],
-                    [0.6, 0.32, 0.08, 0.04, 0.02, 0.01, 0.005],
-                    [0.8, 0.16, 0.04, 0.02, 0.01, 0.005, 0.0025],
-                    [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
+    weights: [[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
     loss: L1
     maxdisp: 192
     mask: false
@@ -94,10 +101,7 @@ loss_cfg:
     loss_term_weight: 1
     scales: 7
     downscale: 1
-    weights: [[0.32, 0.16, 0.08, 0.04, 0.02, 0.01, 0.005],
-                    [0.6, 0.32, 0.08, 0.04, 0.02, 0.01, 0.005],
-                    [0.8, 0.16, 0.04, 0.02, 0.01, 0.005, 0.0025],
-                    [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
+    weights: [[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
     loss: L1
     maxdisp: 192
     mask: false
@@ -105,16 +109,16 @@ loss_cfg:
 
 
 trainer_cfg:
-  save_name: Fadnet_driving_g8b96_lamb0004
-  total_round: 4
-  total_epoch: [20,20,20,30]
+  save_name: Fadnet_SceneFlow_g8b96_lamb0004
+  total_round: 1
+  total_epoch: [2400]
   restore_hint: "/mnt/cfs/algorithm/youmin.zhang/output/SceneFlow/FADNet/Fadnet_SceneFlow_g8b96_lamb0004/checkpoints/Fadnet_SceneFlow_g8b96_lamb0004-33300.pt"
   optimizer_reset: false
   scheduler_reset: false
   warmup_reset: false
-  log_iter: 50 # iter
-  save_every: 1 # epoch
-  val_every: 1 # epoch
+  log_iter: 1 # iter
+  save_every: 100 # epoch
+  val_every: 50 # epoch
   amp: false
   sync_bn: true
   fix_bn: false
@@ -122,13 +126,13 @@ trainer_cfg:
 
   optimizer_cfg:
     solver: lamb
-    lr: 0.004
+    lr: 0.001
 
   
   scheduler_cfg:
     scheduler: MultiStepLR
     gamma: 0.5
-    milestones: [ 10, 20, 30 ]
+    milestones: [ 300,500,600 ]
     warmup:
       warmup_steps: 100
 
@@ -139,3 +143,4 @@ trainer_cfg:
       - thres_1
       - thres_2
       - thres_3
+

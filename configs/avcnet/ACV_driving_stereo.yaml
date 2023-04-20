@@ -1,4 +1,5 @@
 data_cfg:
+  name: SceneFlow
   name: DrivingStereo
   root: data/DrivingStereo
   train_list: datasets/DrivingStereo/driving_stereo_phigent_train.txt
@@ -11,19 +12,11 @@ data_cfg:
   shuffle: true
 
   batch_uniform: false
-  #  random_type: range
-  #  w_range: [ 0.5, 2.0 ]
-  #  h_range: [ 0.5, 2.0 ]
-  #  random_type: choice
-  #  h_range: [ 256, 288, 320, 352 ]
-  #  w_range: [ 480, 512, 544, 576 ]
 
   transform:
     train:
       - type: RandomCrop
-        size: [ 256, 512 ]
-      #- type: RandomHorizontalFlip
-      #  prob: 0.5
+        size: [ 384, 768 ]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -31,9 +24,9 @@ data_cfg:
       - type: NormalizeImage
         mean: [ 0.485, 0.456, 0.406 ]
         std: [ 0.229, 0.224, 0.225 ]
-    val:
-      - type: CropOrPad
-        size: [ 800, 1760 ]
+    test:
+      - type: StereoPad
+        size: [ 576, 960 ]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -44,29 +37,12 @@ data_cfg:
 
 
 model_cfg:
-  model: CoExNet
-  find_unused_parameters: true
+  model: ACVNet
 
   base_config:
     max_disp: 192
-    spixel_branch_channels: [ 32, 48 ]
-    chans: [ 16, 24, 32, 96, 160 ]
-
-  backbone_cfg:
-    type: CoExBackbone
-
-  cost_processor_cfg:
-    type: CoExCostProcessor
-    matching_weighted: False
-    matching_head: 1
-    gce: true
-    aggregation_disp_strides: 2
-    aggregation_channels: [16, 32, 48]
-    aggregation_blocks_num: [2, 2, 2]
-
-  disp_processor_cfg:
-    type: CoExDispProcessor
-    regression_topk: 2
+    attn_weights_only: False
+    freeze_attn_weights: False
 
 
 loss_cfg:
@@ -77,18 +53,18 @@ loss_cfg:
 
 
 trainer_cfg:
-  save_name: CoExNet_DrivingStereo
-  total_epoch: 10
-  restore_hint: output/SceneFlow/CoExNet/CoExNet_SceneFlow/checkpoints/CoExNet_SceneFlow_epoch_012.pt
+  save_name: ACVNet_ds
+  total_epoch: 1000
+  restore_hint: '/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/output/SceneFlow/ACVNet/ACVNet_SceneFlow_new/checkpoints/ACVNet_SceneFlow_new_epoch_050.pt'
   resume: false
   optimizer_reset: true
   scheduler_reset: true
-  warmup_reset: false
-  log_iter: 50 # iter
-  save_every: 1 # epoch
-  val_every: 1 # epoch
+  warmup_reset: true
+  log_iter: 1 # iter
+  save_every: 50 # epoch
+  val_every: 10 # epoch
   amp: true
-  sync_bn: false
+  sync_bn: true
   fix_bn: false
   init_parameters: false
 
@@ -98,8 +74,8 @@ trainer_cfg:
 
   scheduler_cfg:
     scheduler: MultiStepLR
-    gamma: 0.5
-    milestones: [ 5, 7, 9 ]
+    gamma: 0.1
+    milestones: [ 500, 800, 900 ]
     warmup:
       warmup_steps: 100
 
@@ -112,8 +88,8 @@ trainer_cfg:
       - thres_3
 
   clip_grad_cfg:
-    #    type: norm
-    #    max_norm: 35
-    #    norm_type: 2
-    type: value
-    clip_value: 0.1
+    type: norm
+    max_norm: 35
+    norm_type: 2
+
+

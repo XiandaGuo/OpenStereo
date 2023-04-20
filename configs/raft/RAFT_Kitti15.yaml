@@ -1,31 +1,31 @@
 data_cfg:
   name: KITTI2015
-  root: data/KITTI/kitti_stereo_2015
-  train_list: datasets/KITTI15/kitti15_train165.txt
+  root: data/Kitti2015
+  train_list: datasets/KITTI15/kitti15_train200.txt
   val_list: datasets/KITTI15/kitti15_val35.txt
   test_list: datasets/KITTI15/kitti15_test.txt
-  num_workers: 4
-  train_batch_size: 8
+  num_workers: 8
+  train_batch_size: 4
   val_batch_size: 1
   pin_memory: true
   shuffle: true
 
-  batch_uniform: false
-  #  random_type: range
-  #  w_range: [ 0.5, 2.0 ]
-  #  h_range: [ 0.5, 2.0 ]
-  #  random_type: choice
-  #  h_range: [ 256, 288, 320, 352 ]
-  #  w_range: [ 480, 512, 544, 576 ]
+  batch_uniform: true
+#  random_type: range
+#  w_range: [ 0.5, 2.0 ]
+#  h_range: [ 0.5, 2.0 ]
+  random_type: choice
+  h_range: [ 256, 288, 320, 352 ]
+  w_range: [ 480, 512, 544, 576 ]
 
   transform:
     train:
       - type: RandomCrop
-        size: [ 288, 576 ]
-      # - type: RandomHorizontalFlip
-      #   prob: 0.5
+        size: [ 256, 512 ]
+#      - type: RandomHorizontalFlip
+#        prob: 0.5
       - type: GetValidDisp
-        max_disp: 256
+        max_disp: 192
       - type: TransposeImage
       - type: ToTensor
       - type: NormalizeImage
@@ -52,29 +52,20 @@ data_cfg:
 
 
 model_cfg:
-  model: CoExNet
-  find_unused_parameters: true
+  model: RAFT_Stereo
 
   base_config:
+    hidden_dims: [128, 128, 128]
+    n_gru_layers: 3
+    n_downsample: 2
+    slow_fast_gru: False
     max_disp: 192
-    spixel_branch_channels: [ 32, 48 ]
-    chans: [ 16, 24, 32, 96, 160 ]
-
-  backbone_cfg:
-    type: CoExBackbone
-
-  cost_processor_cfg:
-    type: CoExCostProcessor
-    matching_weighted: False
-    matching_head: 1
-    gce: true
-    aggregation_disp_strides: 2
-    aggregation_channels: [16, 32, 48]
-    aggregation_blocks_num: [2, 2, 2]
-
-  disp_processor_cfg:
-    type: CoExDispProcessor
-    regression_topk: 2
+    aug_params: []
+    train_iters: 12
+    corr_levels: 4
+    corr_radius: 4
+    shared_backbone: True
+    corr_implementation: reg
 
 
 loss_cfg:
@@ -85,29 +76,32 @@ loss_cfg:
 
 
 trainer_cfg:
-  save_name: CoExNet_KITTI15
-  total_epoch: 300
-  restore_hint: 'output/SceneFlow/CoExNet/CoExNet_SceneFlow/checkpoints/CoExNet_SceneFlow_epoch_012.pt'
+  save_name: RAFTStereo_Kitti15
+  total_epoch: 1000
+  restore_hint: '/mnt/cfs/algorithm/yiqun.duan/stereo/openstereo/output/SceneFlow/RAFT_Stereo/RAFT-Stereo_SceneFlow_newright/checkpoints/RAFT-Stereo_SceneFlow_newright_epoch_030.pt'
   resume: false
   optimizer_reset: true
   scheduler_reset: true
   warmup_reset: true
-  log_iter: 5 # iter
+  log_iter: 1 # iter
   save_every: 50 # epoch
   val_every: 10 # epoch
   amp: true
-  sync_bn: false
+  sync_bn: true
   fix_bn: false
   init_parameters: false
 
   optimizer_cfg:
-    solver: RMSprop
-    lr: 0.001
+    solver: Adam
+    lr: 0.0008
+    betas: [ 0.9, 0.999 ]
+    lr_backbone: 0.0008
+    lr_regression: 0.0016
 
   scheduler_cfg:
     scheduler: MultiStepLR
-    gamma: 0.5
-    milestones: [ 200 ]
+    gamma: 0.1
+    milestones: [ 500, 800, 900 ]
     warmup:
       warmup_steps: 100
 
@@ -120,5 +114,6 @@ trainer_cfg:
       - thres_3
 
   clip_grad_cfg:
-    type: value
-    clip_value: 0.1
+    type: norm
+    max_norm: 35
+    norm_type: 2
