@@ -27,6 +27,7 @@ class ToTensor(object):
     def __call__(self, sample):
         for k in sample.keys():
             if sample[k] is not None and isinstance(sample[k], np.ndarray):
+                # Convert the numpy array to a PyTorch Tensor and set its datatype to float32
                 sample[k] = torch.from_numpy(sample[k].copy()).to(torch.float32)
         return sample
 
@@ -38,10 +39,11 @@ class TestCrop(object):
     def __call__(self, sample):
         h, w = sample['left'].shape[:2]
         crop_h, crop_w = self.size
-        crop_h = min(h, crop_h)
-        crop_w = min(w, crop_w)
+        crop_h = min(h, crop_h)  # ensure crop_h is within the bounds of the image
+        crop_w = min(w, crop_w)  # ensure crop_w is within the bounds of the image
 
         for k in sample.keys():
+            # crop the specified arrays to the desired size
             if k in ['left', 'right', 'disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
                 sample[k] = sample[k][h - crop_h:h, w - crop_w: w]
         return sample
@@ -55,6 +57,7 @@ class CropOrPad(object):
         h, w = sample['left'].shape[:2]
         th, tw = self.size
         if th > h or tw > w:
+            # pad the arrays with zeros to the desired size
             pad_left = 0
             pad_right = tw - w
             pad_top = th - h
@@ -67,6 +70,7 @@ class CropOrPad(object):
                     sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right)), 'constant',
                                        constant_values=0)
         else:
+            # crop the arrays to the desired size
             for k in sample.keys():
                 if k in ['left', 'right', 'disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
                     sample[k] = sample[k][h - th:h, w - tw: w]
@@ -81,13 +85,14 @@ class CenterCrop(object):
 
         h, w = sample['left'].shape[:2]
         th, tw = self.size
-        tw = min(w, tw)
-        th = min(h, th)
+        tw = min(w, tw)  # ensure tw is within the bounds of the image
+        th = min(h, th)  # ensure th is within the bounds of the image
 
-        x1 = (w - tw) // 2
-        y1 = (h - th) // 2
+        x1 = (w - tw) // 2  # compute the left edge of the centered rectangle
+        y1 = (h - th) // 2  # compute the top edge of the centered rectangle
 
         for k in sample.keys():
+            # crop the specified arrays to the centered rectangle
             if k in ['left', 'right']:
                 sample[k] = sample[k][y1: y1 + th, x1: x1 + tw, :]
             elif k in ['disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
@@ -103,8 +108,8 @@ class StereoPad(object):
         h, w = sample['left'].shape[:2]
         th, tw = self.size
 
-        h = min(h, th)
-        w = min(w, tw)
+        h = min(h, th)  # ensure h is within the bounds of the image
+        w = min(w, tw)  # ensure w is within the bounds of the image
 
         pad_left = 0
         pad_right = tw - w
@@ -285,7 +290,7 @@ class GetValidDispNOcc(object):
         """
         Compute occluded region on the left image border
 
-        :param w·: image width
+        :param w: image width
         :param disp: left disparity
         :return: occ mask
         """

@@ -116,4 +116,4 @@ if __name__ == '__main__':
         mp.spawn(worker, args=(world_size, opt, cfgs), nprocs=world_size)
     else:
         print("Non-distributed mode.")
-        worker(None, None, opt, cfgs)
+        worker(0, None, opt, cfgs)
