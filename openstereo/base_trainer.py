@@ -198,7 +198,7 @@ class BaseTrainer:
             total_loss += loss.item() if not torch.isnan(loss) else 0
             lr = self.optimizer.param_groups[0]['lr']
             log_iter = self.trainer_cfg.get('log_iter', 10)
-            if i % log_iter == 0:
+            if i % log_iter == 0 and i != 0:
                 pbar.update(log_iter) if i != 0 else pbar.update(0)
                 pbar.set_postfix({
                     'loss': loss.item(),
@@ -274,7 +274,7 @@ class BaseTrainer:
                 v = v.item() if isinstance(v, torch.Tensor) else v
                 epoch_metrics[k] += v
             log_iter = self.trainer_cfg.get('log_iter', 10)
-            if i % log_iter == 0:
+            if i % log_iter == 0 and i != 0:
                 pbar.update(log_iter)
                 pbar.set_postfix({
                     'epe': val_res['epe'].item(),

@@ -126,8 +126,8 @@ class StereoBatchDataset(Dataset):
         # Create a dictionary to map scope to the corresponding configuration
         scope_to_config = {
             'train': transform_config['train'],
-            'val': transform_config.get('val', transform_config['test']),
-            'test': transform_config['test'],
+            'val': transform_config.get('val', transform_config.get('test')),
+            'test': transform_config.get('test'),
         }
         # Get the configuration based on the scope
         config = scope_to_config.get(self.scope)
