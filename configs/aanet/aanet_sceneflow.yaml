@@ -5,7 +5,7 @@ data_cfg:
   val_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
   test_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
   num_workers: 8
-  train_batch_size: 8
+  train_batch_size: 1
   val_batch_size: 10
   pin_memory: true
   shuffle: true
@@ -77,15 +77,15 @@ loss_cfg:
 scheduler_cfg:
   warmup_iters: 0
 
-#/mnt/cfs/algorithm/youmin.zhang/output/SceneFlow/AANet/AANet_SceneFlow_lamb_b64_288_4e3/checkpoints/AANet_SceneFlow_lamb_b64_288_4e3-35456.pt
+
 trainer_cfg:
   save_name: AANet_SceneFlow_lamb_b64_288_4e3
   total_epoch: 64
-  restore_hint: "/mnt/cfs/algorithm/youmin.zhang/output/SceneFlow/AANet/AANet_SceneFlow_lamb_b64_288_4e3/checkpoints/AANet_SceneFlow_lamb_b64_288_4e3-35456.pt"
+  restore_hint: 0
   optimizer_reset: false
   scheduler_reset: false
   warmup_reset: false
-  log_iter: 50 # iter
+  log_iter: 1 # iter
   save_every: 1 # epoch
   val_every: 1 # epoch
   amp: false
