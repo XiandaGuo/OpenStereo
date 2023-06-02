@@ -103,7 +103,6 @@ class aanet(nn.Module):
 
     def forward(self, inputs):
         # split left image and right image
-        #imgs = torch.chunk(inputs, 2, dim = 1)
         left_img = inputs['ref_img']
         right_img = inputs['tgt_img']
 
