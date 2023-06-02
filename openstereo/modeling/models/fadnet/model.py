@@ -8,7 +8,6 @@ from modeling.base_model import BaseModel
 from utils import get_attr_from,get_valid_args
 from modeling.common.lamb import Lamb
 
-
 class FADNet(BaseModel):
     """
     A general stereo matching model which fits most methods.
@@ -16,40 +15,20 @@ class FADNet(BaseModel):
     """
     def __init__(self, *args, **kwargs):
         super(FADNet, self).__init__(*args, **kwargs)
-
         self.relu = nn.ReLU(inplace=False)
         self.model_trt = None
         self.Trainer =Fadnet_Traner
-       
-      
-
+    
     def build_network(self):
         model_cfg=self.model_cfg
         self.maxdisp=model_cfg['base_config']['max_disp']
         self.backbone=self.build_backbone(model_cfg['backbone_cfg'])
         self.cost_processor=self.build_cost_processor(model_cfg['cost_processor_cfg'])
         self.disp_predictor = self.build_disp_processor(model_cfg['disp_processor_cfg'])
-
-       
-    def build_corr(self,img_left, img_right, max_disp=40, zero_volume=None):
-        B, C, H, W = img_left.shape
-        if zero_volume is not None:
-            tmp_zero_volume = zero_volume #* 0.0
-            #print('tmp_zero_volume: ', mean)
-            volume = tmp_zero_volume
-        else:
-            volume = img_left.new_zeros([B, max_disp, H, W])
-        for i in range(max_disp):
-            if (i > 0) & (i < W):
-                volume[:, i, :, i:] = (img_left[:, :, :, i:] * img_right[:, :, :, :W-i]).mean(dim=1)
-            else:
-                volume[:, i, :, :] = (img_left[:, :, :, :] * img_right[:, :, :, :]).mean(dim=1)
-
-        volume = volume.contiguous()
-        return volume
-
+    
     def forward(self, inputs,enabled_tensorrt=False):
-        # parse batch
+        #dispnetc_flows, dispnetres_flows, dispnetres_final_flow=self.fadnet(inputs)
+         # parse batch
         ref_img = inputs["ref_img"]
         tgt_img = inputs["tgt_img"]
 
@@ -77,7 +56,6 @@ class FADNet(BaseModel):
 
         index = 0
         dispnetres_final_flow = dispnetres_flows[index]
-        
 
         if self.training:
             output = {
@@ -118,6 +96,23 @@ class FADNet(BaseModel):
                     "visual_summary": {}
                 }
         return output
+    
+    def build_corr(self,img_left, img_right, max_disp=40, zero_volume=None):
+        B, C, H, W = img_left.shape
+        if zero_volume is not None:
+            tmp_zero_volume = zero_volume #* 0.0
+            #print('tmp_zero_volume: ', mean)
+            volume = tmp_zero_volume
+        else:
+            volume = img_left.new_zeros([B, max_disp, H, W])
+        for i in range(max_disp):
+            if (i > 0) & (i < W):
+                volume[:, i, :, i:] = (img_left[:, :, :, i:] * img_right[:, :, :, :W-i]).mean(dim=1)
+            else:
+                volume[:, i, :, :] = (img_left[:, :, :, :] * img_right[:, :, :, :]).mean(dim=1)
+
+        volume = volume.contiguous()
+        return volume
 
 class Fadnet_Traner(BaseTrainer):
     def __init__(

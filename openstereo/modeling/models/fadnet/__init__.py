@@ -1,1 +1,1 @@
-from .fadnet import FADNet
+from .model import FADNet
