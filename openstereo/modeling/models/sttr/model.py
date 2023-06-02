@@ -3,7 +3,7 @@ import torch.optim as optim
 
 from modeling.base_model import BaseModel
 from utils import get_valid_args, get_attr_from
-from .loss import build_criterion
+from .utilities.loss import build_criterion
 from .sttr import STTR
 from .utilities import Map
 from .utilities.misc import NestedTensor
