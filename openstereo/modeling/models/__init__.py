@@ -5,6 +5,7 @@ from .coex import CoExNet
 # from .dsmnet import DSMNet1x
 # from .dsmnet import DSMNet2x
 # from .ganet import GANet
+from .igevstereo import IGEV_Stereo
 from .gwcnet import GwcNet
 from .lacgwc import LacGwcNet
 from .msnet import MSNet
@@ -13,6 +14,6 @@ from .raftstereo import RAFT_Stereo
 from .sttr import STTRNet
 from .fadnet import FADNet
 #try:
-from .aanet import AANet
+#from .aanet import AANet
 # except ImportError:
 #     print('AANet is not available')
