@@ -9,7 +9,7 @@ from torch import nn, Tensor
 from torch.utils.checkpoint import checkpoint
 
 from .attention import MultiheadAttentionRelative
-from .utilities.misc import get_clones
+from .misc import get_clones
 
 layer_idx = 0
 

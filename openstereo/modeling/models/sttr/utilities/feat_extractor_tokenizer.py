@@ -7,7 +7,7 @@ from torch import nn, Tensor
 # from torchvision.models.densenet import _DenseBlock
 from .densenet_in import _DenseBlock
 
-from .utilities.misc import center_crop
+from .misc import center_crop
 
 
 class TransitionUp(nn.Module):

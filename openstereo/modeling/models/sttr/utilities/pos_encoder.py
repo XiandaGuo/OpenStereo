@@ -7,7 +7,7 @@ import math
 import torch
 from torch import nn
 
-from .utilities.misc import NestedTensor
+from .misc import NestedTensor
 
 
 class PositionEncodingSine1DRelative(nn.Module):

@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from torch import nn
 from torchvision.models.resnet import BasicBlock
 
-from .utilities.misc import NestedTensor
+from .misc import NestedTensor
 
 
 class SppBackbone(nn.Module):
