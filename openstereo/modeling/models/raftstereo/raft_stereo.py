@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .update import BasicMultiUpdateBlock
-from .extractor import BasicEncoder, MultiBasicEncoder, ResidualBlock
-from .corr import CorrBlock1D, PytorchAlternateCorrBlock1D, CorrBlockFast1D, AlternateCorrBlock
+from .submodule import BasicMultiUpdateBlock
+from .submodule import BasicEncoder, MultiBasicEncoder, ResidualBlock
+from .submodule import CorrBlock1D, PytorchAlternateCorrBlock1D, CorrBlockFast1D, AlternateCorrBlock
 from .utils.utils import coords_grid, upflow8
 from .utils import Map
 
