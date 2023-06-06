@@ -60,6 +60,7 @@ class AANet_Trainer(BaseTrainer):
 
     def build_optimizer(self, optimizer_cfg):
         if optimizer_cfg['solver']=='lamb':
+            #use lamb optimizer
             self.msg_mgr.log_info(optimizer_cfg)
             optimizer = Lamb(filter(lambda p: p.requires_grad, self.model.parameters()), lr=optimizer_cfg['lr'])
         else:
