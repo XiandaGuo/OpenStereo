@@ -67,7 +67,6 @@ loss_cfg:
     loss_term_weight: 1
     scales: 5
     downscale: 1
-    weights: None
     loss: L1
     maxdisp: 192
     mask: false
