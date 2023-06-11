@@ -4,7 +4,6 @@ import torch.nn.functional as F
 from libs.GANet.modules.GANet import MyLoss2
 from modeling.base_model import BaseModel
 from utils import Odict
-# from .GANet11 import GANet as GANet11
 from .GANet_deep import GANet as GANet_deep
 
 
