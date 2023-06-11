@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from torch import nn
 from torchvision.models.resnet import BasicBlock
 
-from .utilities.misc import NestedTensor
+from .misc import NestedTensor
 
 
 class SppBackbone(nn.Module):
@@ -22,13 +22,13 @@ class SppBackbone(nn.Module):
         super(SppBackbone, self).__init__()
         self.inplanes = 32
         self.in_conv = nn.Sequential(nn.Conv2d(3, 16, kernel_size=3, padding=1, stride=2, bias=False),
-                                     nn.InstanceNorm2d(16),
+                                     nn.BatchNorm2d(16),
                                      nn.ReLU(inplace=True),
                                      nn.Conv2d(16, 16, kernel_size=3, padding=1, bias=False),
-                                     nn.InstanceNorm2d(16),
+                                     nn.BatchNorm2d(16),
                                      nn.ReLU(inplace=True),
                                      nn.Conv2d(16, 32, kernel_size=3, padding=1, bias=False),
-                                     nn.InstanceNorm2d(32),
+                                     nn.BatchNorm2d(32),
                                      nn.ReLU(inplace=True))  # 1/2
 
         self.resblock_1 = self._make_layer(BasicBlock, 64, 3, 2)  # 1/4
@@ -36,22 +36,22 @@ class SppBackbone(nn.Module):
 
         self.branch1 = nn.Sequential(nn.AvgPool2d((16, 16), stride=(16, 16)),
                                      nn.Conv2d(128, 32, kernel_size=1, bias=False),
-                                     nn.InstanceNorm2d(32),
+                                     nn.BatchNorm2d(32),
                                      nn.ReLU(inplace=True))
 
         self.branch2 = nn.Sequential(nn.AvgPool2d((8, 8), stride=(8, 8)),
                                      nn.Conv2d(128, 32, kernel_size=1, bias=False),
-                                     nn.InstanceNorm2d(32),
+                                     nn.BatchNorm2d(32),
                                      nn.ReLU(inplace=True))
 
         self.branch3 = nn.Sequential(nn.AvgPool2d((4, 4), stride=(4, 4)),
                                      nn.Conv2d(128, 32, kernel_size=1, bias=False),
-                                     nn.InstanceNorm2d(32),
+                                     nn.BatchNorm2d(32),
                                      nn.ReLU(inplace=True))
 
         self.branch4 = nn.Sequential(nn.AvgPool2d((2, 2), stride=(2, 2)),
                                      nn.Conv2d(128, 32, kernel_size=1, bias=False),
-                                     nn.InstanceNorm2d(32),
+                                     nn.BatchNorm2d(32),
                                      nn.ReLU(inplace=True))
 
     def _make_layer(self, block, planes, blocks, stride=1):
@@ -59,12 +59,12 @@ class SppBackbone(nn.Module):
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(nn.Conv2d(self.inplanes, planes * block.expansion,
                                                  kernel_size=1, stride=stride, bias=False),
-                                       nn.InstanceNorm2d(planes * block.expansion), )
+                                       nn.BatchNorm2d(planes * block.expansion), )
         layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample, norm_layer=nn.InstanceNorm2d))
+        layers.append(block(self.inplanes, planes, stride, downsample))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes, norm_layer=nn.InstanceNorm2d))
+            layers.append(block(self.inplanes, planes))
         return nn.Sequential(*layers)
 
     def forward(self, x: NestedTensor):
