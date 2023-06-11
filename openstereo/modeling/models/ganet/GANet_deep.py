@@ -410,3 +410,27 @@ class GANet(nn.Module):
             return disp0, disp1, disp2
         else:
             return self.cost_agg(x, g)
+
+
+if __name__ == '__main__':
+    model = GANet(192)
+    model = model.cuda()
+    model.eval()
+    warmup = 50
+    total_iter = 100
+    x = torch.randn(1, 3, 576, 960).cuda()
+    y = torch.randn(1, 3, 576, 960).cuda()
+    start_event = torch.cuda.Event(enable_timing=True)
+    end_event = torch.cuda.Event(enable_timing=True)
+    infer_times = []
+    with torch.no_grad():
+        for i in range(total_iter):
+            start_event.record()
+            output = model(x, y)
+            end_event.record()
+            torch.cuda.synchronize()
+            elapsed_time_ms = start_event.elapsed_time(end_event)
+            infer_times.append(elapsed_time_ms)
+    infer_times = infer_times[warmup:] if len(infer_times) > warmup else infer_times
+    average_infer_time = (sum(infer_times) / len(infer_times))
+    print('average_infer_time: {:.1f} ms'.format(average_infer_time))
