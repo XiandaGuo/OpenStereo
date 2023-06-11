@@ -5,25 +5,18 @@ data_cfg:
   val_list: datasets/DrivingStereo/driving_stereo_phigent_test.txt
   test_list: datasets/DrivingStereo/driving_stereo_phigent_test.txt
   num_workers: 8
-  train_batch_size: 4
+  train_batch_size: 8
   val_batch_size: 1
   pin_memory: true
   shuffle: true
 
   batch_uniform: false
-  #  random_type: range
-  #  w_range: [ 0.5, 2.0 ]
-  #  h_range: [ 0.5, 2.0 ]
-  #  random_type: choice
-  #  h_range: [ 256, 288, 320, 352 ]
-  #  w_range: [ 480, 512, 544, 576 ]
+
 
   transform:
     train:
       - type: RandomCrop
-        size: [ 256, 512 ]
-      #- type: RandomHorizontalFlip
-      #  prob: 0.5
+        size: [ 288, 576 ]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -31,9 +24,9 @@ data_cfg:
       - type: NormalizeImage
         mean: [ 0.485, 0.456, 0.406 ]
         std: [ 0.229, 0.224, 0.225 ]
-    val:
+    test:
       - type: CropOrPad
-        size: [ 400, 880 ]
+        size: [ 800, 1760 ]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -44,57 +37,71 @@ data_cfg:
 
 
 model_cfg:
-  model: PSMNet
+  model:  AANet
+  find_unused_parameters: false
 
-  base_config:
+  base_config: 
     max_disp: 192
+    num_downsample: 2
+    feature_type: aanet
+    no_feature_mdconv: false
+    feature_pyramid: false
+    feature_pyramid_network: true
+    feature_similarity: correlation
+    aggregation_type: adaptive
+    num_scales: 3
+    num_fusions: 6
+    deformable_groups: 2
+    mdconv_dilation: 2
+    refinement_type: stereodrnet
+    no_intermediate_supervision: False
+    num_stage_blocks: 1
+    num_deform_blocks: 3
 
-  # Backbone
-  backbone_cfg:
-    type: PSMNet
-
-  # VolumeCostProcessor
-  cost_processor_cfg:
-    type: PSMCostProcessor
-
-  # DispProcessor
-  disp_processor_cfg:
-    type: PSMDispProcessor
+  
 
 
 loss_cfg:
-  - log_prefix: disp
+  - log_prefix: disparity_pyramid
+    type: MultiAANetScaleLoss
     loss_term_weight: 1
-    type: Weighted_Smooth_l1_Loss
-    weights: [ 0.5, 0.7, 1.0 ]
+    scales: 5
+    downscale: 1
+    weights: None
+    loss: L1
+    maxdisp: 192
+    mask: false
+    weights: [[0, 0, 0, 0, 1.0]]
+  
 
+scheduler_cfg:
+  warmup_iters: 0
 
 trainer_cfg:
-  save_name: PSMNet_DrivingStereo_half
+  save_name: AANet_drivingstereo_lamb_b64_288_4e3
   total_epoch: 10
-  restore_hint: output/SceneFlow/PSMNet/PSMNet_SceneFlow/checkpoints/PSMNet_SceneFlow_epoch_015.pt 
-  resume: false
-  optimizer_reset: true
-  scheduler_reset: true
-  warmup_reset: true
+  restore_hint: /mnt/cfs/algorithm/youmin.zhang/output/SceneFlow/AANet/AANet_SceneFlow_lamb_b64_288_4e3/checkpoints/AANet_SceneFlow_lamb_b64_288_4e3-35456.pt
+  optimizer_reset: false
+  scheduler_reset: false
+  warmup_reset: false
   log_iter: 50 # iter
-  save_every: 1 # epoch
-  val_every: 1 # epoch
+  save_every: 5 # epoch
+  val_every: 5 # epoch
   amp: false
   sync_bn: true
   fix_bn: false
   init_parameters: false
 
   optimizer_cfg:
-    solver: RMSprop
-    lr: 0.001
+    solver: lamb
+    lr: 0.004
 
   scheduler_cfg:
     scheduler: MultiStepLR
-    gamma: 0.1
-    milestones: [ 9 ]
+    gamma: 0.5
+    milestones: [ 4,6,8]
     warmup:
-      warmup_steps: 500
+      warmup_steps: 100
 
   evaluator_cfg:
     metric:
@@ -103,8 +110,3 @@ trainer_cfg:
       - thres_1
       - thres_2
       - thres_3
-
-  clip_grad_cfg:
-    type: norm
-    max_norm: 35
-    norm_type: 2

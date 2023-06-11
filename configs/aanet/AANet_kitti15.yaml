@@ -1,22 +1,35 @@
+
 data_cfg:
-  name: SceneFlow
-  root: /mnt/cfs/algorithm/public_data/stereo/datasets/sceneflow
-  train_list: datasets/SceneFlow/sceneflow_cleanpass_train.txt
-  val_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
-  test_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
+  name: KITTI2015
+  root: /mnt/cfs/algorithm/public_data/stereo/datasets/KITTI
+  train_list: datasets/KITTI15/kitti15_train165.txt
+  val_list: datasets/KITTI15/kitti15_val35.txt
+  test_list: datasets/KITTI15/kitti15_test.txt
   num_workers: 8
-  train_batch_size: 1
-  val_batch_size: 10
+  train_batch_size: 4
+  val_batch_size: 1
   pin_memory: true
   shuffle: true
 
   batch_uniform: false
-
+  # random_type: choice
+  # h_range: [ 192, 256, 336 ]
+  # w_range: [ 448, 512, 960 ]
 
   transform:
     train:
       - type: RandomCrop
-        size: [ 288, 576 ]
+        size: [ 336, 960 ]
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+    val:
+      - type: CropOrPad
+        size: [ 384, 1248]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -25,10 +38,8 @@ data_cfg:
         mean: [ 0.485, 0.456, 0.406 ]
         std: [ 0.229, 0.224, 0.225 ]
     test:
-      - type: StereoPad
-        size: [ 576, 960 ]
-      - type: GetValidDisp
-        max_disp: 192
+      - type: DivisiblePad
+        by: 16
       - type: TransposeImage
       - type: ToTensor
       - type: NormalizeImage
@@ -67,39 +78,39 @@ loss_cfg:
     loss_term_weight: 1
     scales: 5
     downscale: 1
+    weights: None
     loss: L1
     maxdisp: 192
     mask: false
-    weights: [[0.33, 0.66, 1.0, 1.0, 1.0]]
+    weights: [[0, 0, 0, 0, 1.0]]
   
 
 scheduler_cfg:
   warmup_iters: 0
 
-
 trainer_cfg:
-  save_name: AANet_SceneFlow_lamb_b64_288_4e3
-  total_epoch: 64
-  restore_hint: 0
+  save_name: AANet_SceneFlow_AdamW_lr_0001_b32
+  total_epoch: 1000
+  restore_hint: /mnt/cfs/algorithm/youmin.zhang/output/SceneFlow/AANet/AANet_SceneFlow_lamb_b64_288_4e3/checkpoints/AANet_SceneFlow_lamb_b64_288_4e3-35456.pt
   optimizer_reset: false
   scheduler_reset: false
   warmup_reset: false
   log_iter: 1 # iter
-  save_every: 1 # epoch
-  val_every: 1 # epoch
+  save_every: 100 # epoch
+  val_every: 50 # epoch
   amp: false
   sync_bn: true
   fix_bn: false
   init_parameters: false
 
   optimizer_cfg:
-    solver: lamb
-    lr: 0.004
+    solver: AdamW
+    lr: 0.0001
 
   scheduler_cfg:
     scheduler: MultiStepLR
     gamma: 0.5
-    milestones: [ 20, 40, 60 ]
+    milestones: [ 400, 600, 800,900 ]
     warmup:
       warmup_steps: 100
 

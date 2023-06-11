@@ -44,7 +44,7 @@ class MetaModel(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def prepare_inputs(self, inputs):
+    def prepare_inputs(self, inputs, device=None, **kwargs):
         """Transform the input data based on transform setting."""
         raise NotImplementedError
 
@@ -146,12 +146,13 @@ class BaseModel(MetaModel, nn.Module):
         disp_out = self.DispProcessor(inputs)
         return disp_out
 
-    def prepare_inputs(self, inputs, device=None):
+    def prepare_inputs(self, inputs, device=None, apply_max_disp=True):
         """Reorganize input data for different models
 
         Args:
             inputs: the input data.
             device: the device to put the data.
+            apply_max_disp: whether to apply max_disp to the mask.
         Returns:
             dict: training data including ref_img, tgt_img, disp image,
                   and other meta data.
@@ -163,7 +164,10 @@ class BaseModel(MetaModel, nn.Module):
         if 'disp' in inputs.keys():
             disp_gt = inputs['disp']
             # compute the mask of valid disp_gt
-            mask = (disp_gt < self.max_disp) & (disp_gt > 0)
+            if apply_max_disp:
+                mask = (disp_gt < self.max_disp) & (disp_gt > 0)
+            else:
+                mask = disp_gt > 0
             processed_inputs.update({
                 'disp_gt': disp_gt,
                 'mask': mask,

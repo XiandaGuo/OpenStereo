@@ -15,7 +15,7 @@ class ETH3DReader(BaseReader):
         left_img_path, right_img_path, disp_img_path = full_paths
         left_img = self.image_loader(left_img_path)
         right_img = self.image_loader(right_img_path)
-        disp_img, = self.disp_loader(disp_img_path)  # PFM
+        disp_img = self.disp_loader(disp_img_path)  # PFM
         # remove invalid values
         disp_img[disp_img == np.inf] = 0
         sample = {

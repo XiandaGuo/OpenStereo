@@ -1,12 +1,13 @@
 
 data_cfg:
   name: SceneFlow
-  root: /mnt/cfs/algorithm/public_data/stereo/datasets/sceneflow
-  train_list: datasets/SceneFlow/sceneflow_cleanpass_train.txt
-  val_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
-  test_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
+  name: DrivingStereo
+  root: data/DrivingStereo
+  train_list: datasets/DrivingStereo/driving_stereo_phigent_train.txt
+  val_list: datasets/DrivingStereo/driving_stereo_phigent_test.txt
+  test_list: datasets/DrivingStereo/driving_stereo_phigent_test.txt
   num_workers: 8
-  train_batch_size: 1
+  train_batch_size: 16
   val_batch_size: 10
   pin_memory: true
   shuffle: true
@@ -26,9 +27,9 @@ data_cfg:
         mean: [ 0.485, 0.456, 0.406 ]
         std: [ 0.229, 0.224, 0.225 ]
     test:
-       - type: StereoPad
+      - type: StereoPad
         size: [ 576, 960 ]
-      - type: GetValidDispa
+      - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
       - type: ToTensor
@@ -94,10 +95,7 @@ loss_cfg:
     loss_term_weight: 1
     scales: 7
     downscale: 1
-    weights: [[0.32, 0.16, 0.08, 0.04, 0.02, 0.01, 0.005],
-                    [0.6, 0.32, 0.08, 0.04, 0.02, 0.01, 0.005],
-                    [0.8, 0.16, 0.04, 0.02, 0.01, 0.005, 0.0025],
-                    [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
+    weights: [[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
     loss: L1
     maxdisp: 192
     mask: false
@@ -106,15 +104,15 @@ loss_cfg:
 
 trainer_cfg:
   save_name: Fadnet_driving_g8b96_lamb0004
-  total_round: 4
-  total_epoch: [20,20,20,30]
+  total_round: 1
+  total_epoch: [20]
   restore_hint: "/mnt/cfs/algorithm/youmin.zhang/output/SceneFlow/FADNet/Fadnet_SceneFlow_g8b96_lamb0004/checkpoints/Fadnet_SceneFlow_g8b96_lamb0004-33300.pt"
   optimizer_reset: false
   scheduler_reset: false
   warmup_reset: false
-  log_iter: 1 # iter
-  save_every: 1 # epoch
-  val_every: 1 # epoch
+  log_iter: 50 # iter
+  save_every: 5 # epoch
+  val_every: 5 # epoch
   amp: false
   sync_bn: true
   fix_bn: false
@@ -128,7 +126,7 @@ trainer_cfg:
   scheduler_cfg:
     scheduler: MultiStepLR
     gamma: 0.5
-    milestones: [ 10, 20, 30 ]
+    milestones: [5,10,15,20]
     warmup:
       warmup_steps: 100
 
