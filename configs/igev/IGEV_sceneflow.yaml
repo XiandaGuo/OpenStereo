@@ -1,9 +1,9 @@
 data_cfg:
   name: SceneFlow
-  root: /mnt/cfs/algorithm/public_data/stereo/datasets/sceneflow
-  train_list: datasets/SceneFlow/sceneflow_cleanpass_train.txt
-  val_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
-  test_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
+  root: /mnt/cfs/algorithm/yiqi.wang/code/nips/ablation/OpenStereo2/data
+  train_list: datasets/SceneFlow/sceneflow_finalpass_train.txt
+  val_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
+  test_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
   # train_list: datasets/SceneFlow/debug_train.txt
   # val_list: datasets/SceneFlow/debug_val.txt
   # test_list: datasets/SceneFlow/debug_val.txt
@@ -49,14 +49,14 @@ data_cfg:
 model_cfg:
   model: IGEV_Stereo
   find_unused_parameters: true
-  
+
   base_config:
-    hidden_dims: [ 128, 128, 128 ]
+    hidden_dims: [128, 128, 128]
     n_gru_layers: 3
     n_downsample: 2
     slow_fast_gru: False
     max_disp: 192
-    aug_params: [ ]
+    aug_params: []
     train_iters: 22
     corr_levels: 2
     corr_radius: 4
@@ -66,11 +66,11 @@ model_cfg:
 
 
 loss_cfg:
-# This model uses the user-defined loss function.
+  # This model uses the user-defined loss function.
 
 
 trainer_cfg:
-  save_name: IGEV-Stereo_SceneFlow_newright
+  save_name: IGEV-Stereo_SceneFlow_newright2
   total_epoch: 80
   restore_hint: 0
   log_iter: 10 # iter
@@ -87,12 +87,9 @@ trainer_cfg:
     betas: [ 0.9, 0.999 ]
 
   scheduler_cfg:
-    scheduler: OneCycleLR
-    max_lr: 0.001
-    total_steps: 200000
-    pct_start: 0.01
-    cycle_momentum: False
-    anneal_strategy: linear
+    scheduler: MultiStepLR
+    gamma: 0.5
+    milestones: [20, 35, 50, 60, 70, 75]
     warmup:
       warmup_steps: 2000
 
