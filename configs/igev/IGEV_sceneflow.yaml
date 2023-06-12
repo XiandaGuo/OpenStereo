@@ -1,12 +1,9 @@
 data_cfg:
   name: SceneFlow
-  root: /mnt/cfs/algorithm/yiqi.wang/code/nips/ablation/OpenStereo2/data
+  root: /mnt/cfs/algorithm/public_data/stereo/datasets/sceneflow
   train_list: datasets/SceneFlow/sceneflow_finalpass_train.txt
   val_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
   test_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
-  # train_list: datasets/SceneFlow/debug_train.txt
-  # val_list: datasets/SceneFlow/debug_val.txt
-  # test_list: datasets/SceneFlow/debug_val.txt
   num_workers: 8
   train_batch_size: 4
   val_batch_size: 1
