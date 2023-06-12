@@ -5,6 +5,8 @@ OpenStereo is a flexible and extensible project for stereo matching.
 
 ## What's New
 - **[March 2023]**:OpenStereo is available!!!
+- **[June 12th. 2023]**:The state-of-the-art model [Iterative Geometry Encoding Volume for Stereo Matching](https://arxiv.org/pdf/2303.06615.pdf) has been integrated into OpenStereo.!!!
+
 
 ## Highlighted features
 - **Mutiple Dataset supported**: OpenStereo supports six popular stereo datasets: [SceneFlow](datasets/SceneFlow/README.md), [KITTI12](datasets/KITTI12/README.md) & [KITTI15](datasets/KITTI15/README.md), 
@@ -52,3 +54,4 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
 - [RAFT](https://github.com/princeton-vl/RAFT-Stereo)
 - [STTR](https://github.com/mli0603/stereo-transformer)
 - [OpenGait](https://github.com/ShiqiYu/OpenGait)
+- [IGEV](https://github.com/gangweiX/IGEV/tree/main/IGEV-Stereo)
