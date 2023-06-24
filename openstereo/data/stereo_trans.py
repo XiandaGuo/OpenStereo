@@ -39,8 +39,8 @@ class TestCrop(object):
     def __call__(self, sample):
         h, w = sample['left'].shape[:2]
         crop_h, crop_w = self.size
-        crop_h = min(h, crop_h)  # ensure crop_h is within the bounds of the image
-        crop_w = min(w, crop_w)  # ensure crop_w is within the bounds of the image
+        crop_h = min(h, crop_h) # ensure crop_h is within the bounds of the image
+        crop_w = min(w, crop_w) # ensure crop_w is within the bounds of the image
 
         for k in sample.keys():
             # crop the specified arrays to the desired size
@@ -64,13 +64,10 @@ class CropOrPad(object):
             pad_bottom = 0
             for k in sample.keys():
                 if k in ['left', 'right']:
-                    sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), 'constant',
-                                       constant_values=0)
+                    sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), 'edge')
                 elif k in ['disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
-                    sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right)), 'constant',
-                                       constant_values=0)
+                    sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right)), 'edge')
         else:
-            # crop the arrays to the desired size
             for k in sample.keys():
                 if k in ['left', 'right', 'disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
                     sample[k] = sample[k][h - th:h, w - tw: w]
@@ -118,11 +115,9 @@ class StereoPad(object):
         # apply pad for left, right, disp image, and occ mask
         for k in sample.keys():
             if k in ['left', 'right']:
-                sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), 'constant',
-                                   constant_values=0)
+                sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), 'edge')
             elif k in ['disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
-                sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right)), 'constant',
-                                   constant_values=0)
+                sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right)), 'edge')
         return sample
 
 
@@ -146,11 +141,9 @@ class DivisiblePad(object):
         # apply pad for left, right, disp image, and occ mask
         for k in sample.keys():
             if k in ['left', 'right']:
-                sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), 'constant',
-                                   constant_values=0)
+                sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), 'edge')
             elif k in ['disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
-                sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right)), 'constant',
-                                   constant_values=0)
+                sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right)), 'edge')
         sample['pad'] = [pad_top, pad_right, 0, 0]
         return sample
 
