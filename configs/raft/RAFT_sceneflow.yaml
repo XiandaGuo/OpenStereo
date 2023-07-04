@@ -23,8 +23,12 @@ data_cfg:
 
   transform:
     train:
-      - type: RandomCrop
+      - type: FlowAugmentor
         size: [ 256, 512 ]
+        min_scale: 0
+        max_scale: 1.4
+        do_flip: False
+        saturation_range: [ -0.2, 0.4 ]
       #- type: RandomHorizontalFlip
       #  prob: 0.5
       - type: GetValidDisp
@@ -35,7 +39,7 @@ data_cfg:
         mean: [ 0.485, 0.456, 0.406 ]
         std: [ 0.229, 0.224, 0.225 ]
     test:
-      - type: TestCrop
+      - type: StereoPad
         size: [ 540, 960 ]
       - type: GetValidDisp
         max_disp: 192
