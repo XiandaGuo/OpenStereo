@@ -15,16 +15,15 @@ class StereoBatchDataset(Dataset):
         self.scope = scope.lower()
         self.dataset = None
         self.transform = None
-        self.image_reader_type = data_cfg['image_reader'] if 'image_reader' in data_cfg else "PIL"
-        self.disp_reader_type = data_cfg['disp_reader'] if 'disp_reader' in data_cfg else "PIL"
-        self.return_right_disp = data_cfg['return_right_disp'] if 'return_right_disp' in data_cfg else True
-        self.return_occ_mask = data_cfg['return_occ_mask'] if 'return_occ_mask' in data_cfg else False
-
+        self.image_reader_type = data_cfg.get('image_reader', 'PIL')
+        self.disp_reader_type = data_cfg.get('disp_reader', 'PIL')
+        self.return_right_disp = data_cfg.get('return_right_disp', False)
+        self.return_occ_mask = data_cfg.get('return_occ_mask', False)
         # for batch uniform
-        self.batch_uniform = data_cfg['batch_uniform'] if 'batch_uniform' in data_cfg else False
-        self.random_type = data_cfg['random_type'] if 'random_type' in data_cfg else None
-        self.w_range = data_cfg['w_range'] if 'w_range' in data_cfg else None
-        self.h_range = data_cfg['h_range'] if 'h_range' in data_cfg else None
+        self.batch_uniform = data_cfg.get('batch_uniform', False)
+        self.random_type = data_cfg.get('random_type', None)
+        self.w_range = data_cfg.get('w_range', None)
+        self.h_range = data_cfg.get('h_range', None)
         self.random_crop_index = None  # for batch uniform random crop, record the index of the crop transform operator
         self.build_dataset()
 
@@ -44,6 +43,7 @@ class StereoBatchDataset(Dataset):
             else:
                 from data.reader.kitti_reader import KittiReader
                 self.disp_reader_type = 'PIL'
+                # Instantiate the KittiReader
                 self.dataset = KittiReader(
                     self.data_cfg['root'],
                     self.data_cfg[f'{self.scope}_list'],
@@ -152,16 +152,16 @@ class StereoBatchDataset(Dataset):
 
     def build_transform(self):
         transform_config = self.data_cfg['transform']
-        if self.scope == 'train':
-            config = transform_config['train']
-        elif self.scope == 'val':
-            if 'val' in transform_config:
-                config = transform_config['val']
-            else:
-                config = transform_config['test']
-        elif self.scope == 'test':
-            config = transform_config['test']
-        else:
+        # Create a dictionary to map scope to the corresponding configuration
+        scope_to_config = {
+            'train': transform_config['train'],
+            'val': transform_config.get('val', transform_config.get('test')),
+            'test': transform_config.get('test'),
+        }
+        # Get the configuration based on the scope
+        config = scope_to_config.get(self.scope)
+        if config is None:
+            # If the scope is not supported, raise a ValueError
             raise NotImplementedError(f'{self.scope} is not supported yet.')
         self.transform = self.build_transform_by_cfg(config)
 
@@ -201,18 +201,18 @@ class StereoBatchDataset(Dataset):
         for trans in transform_config:
             if trans['type'] == 'CenterCrop':
                 transform_compose.append(ST.CenterCrop(trans['size']))
-            if trans['type'] == 'TestCrop':
+            elif trans['type'] == 'TestCrop':
                 transform_compose.append(ST.TestCrop(trans['size']))
-            if trans['type'] == 'CropOrPad':
+            elif trans['type'] == 'CropOrPad':
                 transform_compose.append(ST.CropOrPad(trans['size']))
-            if trans['type'] == 'StereoPad':
+            elif trans['type'] == 'StereoPad':
                 transform_compose.append(ST.StereoPad(trans['size']))
-            if trans['type'] == 'DivisiblePad':
+            elif trans['type'] == 'DivisiblePad':
                 transform_compose.append(ST.DivisiblePad(trans['by']))
             elif trans['type'] == 'RandomCrop':
                 transform_compose.append(ST.RandomCrop(trans['size']))
                 self.random_crop_index = len(transform_compose) - 1
-            if trans['type'] == 'RandomHorizontalFlip':
+            elif trans['type'] == 'RandomHorizontalFlip':
                 assert self.return_right_disp, 'RandomHorizontalFlip is used, but return_right_disp is False.'
                 transform_compose.append(ST.RandomHorizontalFlip(p=trans['prob']))
             elif trans['type'] == 'GetValidDispNOcc':
