@@ -90,33 +90,6 @@ class RAFT_Stereo(BaseModel):
     def build_loss_fn(self):
         self.loss_fn = RAFTLoss(loss_gamma=0.9, max_flow=700)
 
-    """
-    def prepare_inputs(self, inputs, device=None):
-        # asure the disp_gt has the shape of [B, H, W]
-        print(inputs.keys())
-        disp_gt = inputs['disp']
-        if len(disp_gt.shape) == 4:
-            disp_gt = disp_gt.squeeze(1)
-        img1 = inputs['left'] 
-        img2 = inputs['right']
-
-        # compute the mask of valid disp_gt
-        # valid = disp < 512
-        # flow = torch.cat([-disp_gt, np.zeros_like(disp)], dim=-1)
-        flow = disp_gt
-        max_disp = self.model_cfg['base_config']['max_disp']
-        mask = (disp_gt < max_disp) & (disp_gt > 0)
-
-        return {
-            'img1': img1,
-            'img2': img2,
-            'flow': disp_gt,
-            'valid': mask,
-            'disp_gt': disp_gt.unsqueeze(1).to(device),
-            'mask': mask.unsqueeze(1).to(device),
-        }
-    """
-
     def prepare_inputs(self, inputs, device=None, **kwargs):
         """Reorganize input data for different models
 
@@ -138,6 +111,8 @@ class RAFT_Stereo(BaseModel):
             processed_inputs.update({
                 'flow': disp_gt,
                 'valid': mask,
+                'disp_gt': disp_gt,
+                'mask': mask            
             })
         if not self.training:
             for k in ['pad', 'name']:
