@@ -72,7 +72,15 @@ class StereoBatchDataset(Dataset):
                     right_disp=False,
                     use_noc=False,
                 )
-                self.dataset = torch.utils.data.ConcatDataset([dataset_2012, dataset_2015])
+                test_on = self.data_cfg.get('test_on', '2015')
+                if test_on == 2015:
+                    self.dataset = dataset_2015
+                elif test_on == 2012:
+                    self.dataset = dataset_2012
+                elif test_on == 'all':
+                    self.dataset = torch.utils.data.ConcatDataset([dataset_2012, dataset_2015])
+                else:
+                    raise NotImplementedError(f'test on: {test_on} is not supported yet.')
             else:
                 from data.reader.kitti_reader import KittiReader
                 self.disp_reader_type = 'PIL'

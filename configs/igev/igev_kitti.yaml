@@ -13,6 +13,7 @@ data_cfg:
   val_batch_size: 10
   pin_memory: true
   shuffle: true
+  test_on: 2015
 
   batch_uniform: false
   #  random_type: range
@@ -31,7 +32,6 @@ data_cfg:
         do_flip: false
         h_flip_prob: 0.5
         v_flip_prob: 0.1
-
 #      - type: RandomCrop
 #        size: [ 256, 512 ]
 #      - type: ColorTransform
@@ -49,7 +49,11 @@ data_cfg:
         max_disp: 192
       - type: TransposeImage
       - type: ToTensor
-
+    test:
+      - type: DivisiblePad
+        by: 32
+      - type: TransposeImage
+      - type: ToTensor
 
 model_cfg:
   model: IGEV
@@ -64,15 +68,15 @@ loss_cfg:
 
 
 trainer_cfg:
-  save_name: igev_kitti15
-  total_epoch: 10000
-  restore_hint: output/SceneFlow/IGEV/igev_sf/checkpoints/igev_sf_epoch_100.pt
+  save_name: igev_kitti
+  total_epoch: 500
+  restore_hint: /mnt/cfs/algorithm/xianda.guo/juntao/OpenStereo/output/KITTI2012&2015/IGEV/igev_kitti/checkpoints/igev_kitti_epoch_350.pt
   resume: false
   optimizer_reset: true
   scheduler_reset: true
   log_iter: 10 # iter
-  save_every: 20 # epoch
-  val_every: 20 # epoch
+  save_every: 25 # epoch
+  val_every: 25 # epoch
   amp: true
   sync_bn: true
   fix_bn: true
@@ -87,7 +91,7 @@ trainer_cfg:
   scheduler_cfg:
     scheduler: OneCycleLR
     max_lr: 0.0002
-    total_steps: 50100
+    total_steps: 12500
     pct_start: 0.01
     cycle_momentum: False
     anneal_strategy: linear
