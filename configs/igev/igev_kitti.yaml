@@ -1,0 +1,112 @@
+data_cfg:
+  name: KITTI2012&2015
+  root2012: data/kitti12
+  root2015: data/kitti15
+  train_list_2015: datasets/KITTI15/kitti15_train165.txt
+  val_list_2015: datasets/KITTI15/kitti15_val35.txt
+  test_list_2015: datasets/KITTI15/kitti15_test.txt
+  train_list_2012: datasets/KITTI12/kitti12_train165.txt
+  val_list_2012: datasets/KITTI12/kitti12_val29.txt
+  test_list_2012: datasets/KITTI12/kitti12_test.txt
+  num_workers: 4
+  train_batch_size: 2
+  val_batch_size: 10
+  pin_memory: true
+  shuffle: true
+  test_on: 2015
+
+  batch_uniform: false
+  #  random_type: range
+  #  w_range: [ 0.5, 2.0 ]
+  #  h_range: [ 0.5, 2.0 ]
+  #  random_type: choice
+  #  h_range: [ 256, 288, 320, 352 ]
+  #  w_range: [ 480, 512, 544, 576 ]
+
+  transform:
+    train:
+      - type: SparseFlowAugmentor
+        size: [ 320, 736 ]
+        min_scale: 0.2
+        max_scale: 0.5
+        do_flip: false
+        h_flip_prob: 0.5
+        v_flip_prob: 0.1
+#      - type: RandomCrop
+#        size: [ 256, 512 ]
+#      - type: ColorTransform
+#        range: [0.7, 1.3]
+#      - type: EraserTransform
+#        prob: 0.5
+#      - type: GetValidDisp
+#        max_disp: 192
+#      - type: TransposeImage
+#      - type: ToTensor
+    val:
+      - type: CropOrPad
+        size: [ 384, 1248 ]
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+    test:
+      - type: DivisiblePad
+        by: 32
+      - type: TransposeImage
+      - type: ToTensor
+
+model_cfg:
+  model: IGEV
+  find_unused_parameters: true
+
+  base_config:
+    max_disp: 192
+
+
+loss_cfg:
+  # This model uses the user-defined loss function.
+
+
+trainer_cfg:
+  save_name: igev_kitti
+  total_epoch: 500
+  restore_hint: /mnt/cfs/algorithm/xianda.guo/juntao/OpenStereo/output/KITTI2012&2015/IGEV/igev_kitti/checkpoints/igev_kitti_epoch_350.pt
+  resume: false
+  optimizer_reset: true
+  scheduler_reset: true
+  log_iter: 10 # iter
+  save_every: 25 # epoch
+  val_every: 25 # epoch
+  amp: true
+  sync_bn: true
+  fix_bn: true
+  init_parameters: false
+
+  optimizer_cfg:
+    solver: AdamW
+    lr: 0.0002
+    weight_decay: 0.00001
+    eps: 0.00000001
+
+  scheduler_cfg:
+    scheduler: OneCycleLR
+    max_lr: 0.0002
+    total_steps: 12500
+    pct_start: 0.01
+    cycle_momentum: False
+    anneal_strategy: linear
+    on_epoch: false
+#    warmup:
+#      warmup_steps: 2000
+
+  evaluator_cfg:
+    metric:
+      - d1_all
+      - epe
+      - thres_1
+      - thres_2
+      - thres_3
+
+  clip_grad_cfg:
+    type: value
+    clip_value: 1.0
