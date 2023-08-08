@@ -336,6 +336,51 @@ class NormalizeImage(object):
         return TF.normalize(img / 255.0, mean=mean, std=std)
 
 
+class ImageColorJitter(object):
+    def __init__(self, brightness=0.3, contrast=0.3, saturation=[0.7, 1.3], hue=0.3 / 3.14):
+        self.argumentor = ColorJitter(brightness=brightness, contrast=contrast, saturation=saturation, hue=hue)
+
+    def __call__(self, sample):
+        sample['left'] = self.argumentor(sample['left'])
+        sample['right'] = self.argumentor(sample['right'])
+        return sample
+
+
+class RandomEraser(object):
+    def __init__(self, prob=0.5):
+        self.prob = prob
+
+    def __call__(self, sample):
+        img1 = sample['left']
+        img2 = sample['right']
+        if np.random.rand() < self.prob:
+            img1, img2 = self.eraser_transform(img1, img2)
+        sample['left'] = img1
+        sample['right'] = img2
+        return sample
+
+    def eraser_transform(self, img1, img2):
+        ht, wd = img1.shape[:2]
+        mean_color = np.mean(img2.reshape(-1, 3), axis=0)
+        for _ in range(np.random.randint(1, 3)):
+            x0 = np.random.randint(0, wd)
+            y0 = np.random.randint(0, ht)
+            dx = np.random.randint(50, 100)
+            dy = np.random.randint(50, 100)
+            img2[y0:y0 + dy, x0:x0 + dx, :] = mean_color
+        return img1, img2
+
+
+class ImageAdjustGamma(object):
+    def __init__(self, gamma_min, gamma_max, gain_min=1.0, gain_max=1.0):
+        self.argumentor = AdjustGamma(gamma_min, gamma_max, gain_min, gain_max)
+
+    def __call__(self, sample):
+        sample['left'] = self.argumentor(sample['left'])
+        sample['right'] = self.argumentor(sample['right'])
+        return sample
+
+
 class AdjustGamma(object):
 
     def __init__(self, gamma_min, gamma_max, gain_min=1.0, gain_max=1.0):
@@ -346,9 +391,10 @@ class AdjustGamma(object):
         gamma = random.uniform(self.gamma_min, self.gamma_max)
         return functional.adjust_gamma(sample, gamma, gain)
 
+
 # only for SceneFlow
 class FlowAugmentor(object):
-    def __init__(self, crop_size= [256, 512], min_scale=-0.2, max_scale=0.5, do_flip=False, yjitter=False,
+    def __init__(self, crop_size=[256, 512], min_scale=-0.2, max_scale=0.5, do_flip=False, yjitter=False,
                  saturation_range=[0.6, 1.4], gamma=[1, 1, 1, 1]):
 
         # spatial augmentation params
@@ -489,9 +535,10 @@ class FlowAugmentor(object):
         sample['disp'] = flow[:, :, :1].squeeze(-1)
         return sample
 
+
 # only for kitti
 class SparseFlowAugmentor(object):
-    def __init__(self, crop_size, min_scale=-0.2, max_scale=0.5, do_flip=False, yjitter=False,
+    def __init__(self, crop_size=[256, 512], min_scale=-0.2, max_scale=0.5, do_flip=False, yjitter=False,
                  saturation_range=[0.7, 1.3], gamma=[1, 1, 1, 1]):
         # spatial augmentation params
         self.crop_size = crop_size
@@ -620,20 +667,29 @@ class SparseFlowAugmentor(object):
         img1 = sample['left']
         img2 = sample['right']
         disp = sample['disp']
+        valid = sample['disp'] > 0.0
+
+        img1 = np.array(img1).astype(np.uint8)
+        img2 = np.array(img2).astype(np.uint8)
+        img1 = img1[..., :3]
+        img2 = img2[..., :3]
+
         flow = np.stack([disp, np.zeros_like(disp)], axis=-1)
 
         img1, img2 = self.color_transform(img1, img2)
         img1, img2 = self.eraser_transform(img1, img2)
         img1, img2, flow, valid = self.spatial_transform(img1, img2, flow, valid)
 
-        img1 = np.ascontiguousarray(img1)
-        img2 = np.ascontiguousarray(img2)
-        flow = np.ascontiguousarray(flow)
-        valid = np.ascontiguousarray(valid)
+        img1 = torch.from_numpy(img1).permute(2, 0, 1).float()
+        img2 = torch.from_numpy(img2).permute(2, 0, 1).float()
+        flow = torch.from_numpy(flow).permute(2, 0, 1).float()
+        valid = torch.from_numpy(valid).float()
 
         sample['left'] = img1
         sample['right'] = img2
-        sample['disp'] = flow[:, :, :1].squeeze(-1)
+        sample['disp'] = flow[:1][0]
+        sample['flow'] = flow[:1][0]
+        sample['valid'] = valid
         return sample
 
 
@@ -719,7 +775,6 @@ class SpatialTransform(object):
         valid_img[yy, xx] = 1
 
         return flow_img, valid_img
-
 
     def __call__(self, sample):
 

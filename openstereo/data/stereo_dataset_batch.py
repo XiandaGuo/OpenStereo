@@ -72,7 +72,15 @@ class StereoBatchDataset(Dataset):
                     right_disp=False,
                     use_noc=False,
                 )
-                self.dataset = torch.utils.data.ConcatDataset([dataset_2012, dataset_2015])
+                test_on = self.data_cfg.get('test_on', '2015')
+                if test_on == 2015:
+                    self.dataset = dataset_2015
+                elif test_on == 2012:
+                    self.dataset = dataset_2012
+                elif test_on == 'all':
+                    self.dataset = torch.utils.data.ConcatDataset([dataset_2012, dataset_2015])
+                else:
+                    raise NotImplementedError(f'test on: {test_on} is not supported yet.')
             else:
                 from data.reader.kitti_reader import KittiReader
                 self.disp_reader_type = 'PIL'
@@ -227,10 +235,12 @@ class StereoBatchDataset(Dataset):
                 transform_compose.append(ST.NormalizeImage(trans['mean'], trans['std']))
             elif trans['type'] == 'FlowAugmentor':
                 transform_compose.append(ST.FlowAugmentor(trans['size'], trans['min_scale'], trans['max_scale'], trans['do_flip'], trans['saturation_range']))
+            elif trans['type'] == 'SparseFlowAugmentor':
+                transform_compose.append(ST.SparseFlowAugmentor(trans['size'], trans['min_scale'], trans['max_scale'], trans['do_flip']))
             elif trans['type'] == 'ColorTransform':
-                transform_compose.append(ST.ColorTransform(trans['saturation_range']))
+                transform_compose.append(ST.ColorTransform(trans['range']))
             elif trans['type'] == 'EraserTransform':
-                transform_compose.append(ST.EraserTransform(trans['eraser_aug_prob']))
+                transform_compose.append(ST.EraserTransform(trans['prob']))
             elif trans['type'] == 'SpatialTransform':
                 transform_compose.append(ST.SpatialTransform(trans['size'], trans['min_scale'], trans['max_scale'], trans['do_flip']))
             elif trans['type'] == 'RandomFlip':

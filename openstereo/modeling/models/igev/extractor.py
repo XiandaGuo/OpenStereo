@@ -1,6 +1,3 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from .submodule import *
 import timm
 
