@@ -56,7 +56,8 @@ loss_cfg:
 
 trainer_cfg:
   save_name: igev_sf
-  total_epoch: 100
+  total_epoch: 100 # remember to give a large number here if using max_iter to control the training process
+  max_iter: 200100
   restore_hint: 0
   log_iter: 10 # iter
   save_every: 1 # epoch

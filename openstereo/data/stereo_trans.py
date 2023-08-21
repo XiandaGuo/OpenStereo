@@ -682,7 +682,6 @@ class SparseFlowAugmentor(object):
         sample['disp'] = flow[:1][0]
         sample['flow'] = flow[:1][0]
         sample['valid'] = valid
-        print(img1.shape, type(img1))
         return sample
 
 

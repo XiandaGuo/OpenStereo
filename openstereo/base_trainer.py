@@ -49,8 +49,9 @@ class BaseTrainer:
         self.device = torch.device('cuda', rank) if is_dist else device
         self.current_epoch = 0
         self.current_iter = 0
-        self.save_path = os.path.join(
-            'output/', self.data_cfg['name'], self.model.model_name, self.trainer_cfg['save_name']
+        self.save_path = self.trainer_cfg.get(
+            'save_path',
+            os.path.join('output/', self.data_cfg['name'], self.model.model_name, self.trainer_cfg['save_name'])
         )
         self.amp = self.trainer_cfg.get('amp', False)
         if self.amp:
@@ -146,7 +147,7 @@ class BaseTrainer:
 
     def train_epoch(self):
         self.current_epoch += 1
-        total_loss = 0
+        total_loss = 0.
         self.model.train()
         self.msg_mgr.log_info(
             f"Using {dist.get_world_size() if self.is_dist else 1} Device,"
@@ -162,6 +163,10 @@ class BaseTrainer:
         if self.is_dist:
             self.train_loader.sampler.sampler.set_epoch(self.current_epoch)
         for i, data in enumerate(self.train_loader):
+            # for max iter training
+            if self.current_iter > self.trainer_cfg.get('max_iter', 1e10):
+                self.msg_mgr.log_info('Max iter reached.')
+                break
             self.optimizer.zero_grad()
             if self.amp:
                 with autocast():
@@ -234,6 +239,10 @@ class BaseTrainer:
                 self.save_ckpt()
             if self.current_epoch % self.trainer_cfg['val_every'] == 0:
                 self.val_epoch()
+            if self.current_iter >= self.trainer_cfg.get('max_iter', 1e10):
+                self.save_ckpt()
+                self.msg_mgr.log_info('Max iter reached. Training finished.')
+                return
         self.msg_mgr.log_info('Training finished.')
 
     @torch.no_grad()
