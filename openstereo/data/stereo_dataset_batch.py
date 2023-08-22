@@ -234,7 +234,7 @@ class StereoBatchDataset(Dataset):
             elif trans['type'] == 'NormalizeImage':
                 transform_compose.append(ST.NormalizeImage(trans['mean'], trans['std']))
             elif trans['type'] == 'FlowAugmentor':
-                transform_compose.append(ST.FlowAugmentor(trans['size'], trans['min_scale'], trans['max_scale'], trans['do_flip'], trans['saturation_range']))
+                transform_compose.append(ST.FlowAugmentor(trans['size'], trans['min_scale'], trans['max_scale'], trans['do_flip']))
             elif trans['type'] == 'SparseFlowAugmentor':
                 transform_compose.append(ST.SparseFlowAugmentor(trans['size'], trans['min_scale'], trans['max_scale'], trans['do_flip']))
             elif trans['type'] == 'ColorTransform':

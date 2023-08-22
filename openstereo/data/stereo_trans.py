@@ -392,7 +392,6 @@ class AdjustGamma(object):
         return functional.adjust_gamma(sample, gamma, gain)
 
 
-# only for SceneFlow
 class FlowAugmentor(object):
     def __init__(self, crop_size=[256, 512], min_scale=-0.2, max_scale=0.5, do_flip=False, yjitter=False,
                  saturation_range=[0.6, 1.4], gamma=[1, 1, 1, 1]):
@@ -423,20 +422,13 @@ class FlowAugmentor(object):
 
         # asymmetric
         if np.random.rand() < self.asymmetric_color_aug_prob:
-            img1 = np.array(img1, dtype=np.uint8)
-            img2 = np.array(img2, dtype=np.uint8)
-            img1 = np.array(self.photo_aug(Image.fromarray(img1)), dtype=np.uint8)
-            img2 = np.array(self.photo_aug(Image.fromarray(img2)), dtype=np.uint8)
+            img1 = np.array(self.photo_aug(Image.fromarray(img1.astype(np.uint8))), dtype=np.uint8)
+            img2 = np.array(self.photo_aug(Image.fromarray(img2.astype(np.uint8))), dtype=np.uint8)
 
         # symmetric
         else:
-            image_stack = np.concatenate([img1, img2], axis=0)
-
-            image_stack = np.array(image_stack, dtype=np.uint8)
-            image_stack = Image.fromarray(image_stack)
-            image_stack = self.photo_aug(image_stack)
-            image_stack = np.array(image_stack, dtype=np.uint8)
-
+            image_stack = np.concatenate([img1, img2], axis=0).astype(np.uint8)
+            image_stack = np.array(self.photo_aug(Image.fromarray(image_stack)), dtype=np.uint8)
             img1, img2 = np.split(image_stack, 2, axis=0)
 
         return img1, img2
@@ -526,13 +518,13 @@ class FlowAugmentor(object):
         img1, img2 = self.eraser_transform(img1, img2)
         img1, img2, flow = self.spatial_transform(img1, img2, flow)
 
-        img1 = np.ascontiguousarray(img1)
-        img2 = np.ascontiguousarray(img2)
-        flow = np.ascontiguousarray(flow)
+        img1 = torch.from_numpy(img1).permute(2, 0, 1).float()
+        img2 = torch.from_numpy(img2).permute(2, 0, 1).float()
+        flow = torch.from_numpy(flow).permute(2, 0, 1).float()
 
         sample['left'] = img1
         sample['right'] = img2
-        sample['disp'] = flow[:, :, :1].squeeze(-1)
+        sample['disp'] = flow[:1][0]
         return sample
 
 
