@@ -8,9 +8,9 @@ METRICS_NP = {
     # D1 metric (Percentage of erroneous pixels with disparity error > 3 pixels and relative error > 0.05)
     'd1_all': d1_metric_np,
     # Threshold metrics (Percentage of erroneous pixels with disparity error > threshold)
-    'thres_1': partial(threshold_metric_np, threshold=1),
-    'thres_2': partial(threshold_metric_np, threshold=2),
-    'thres_3': partial(threshold_metric_np, threshold=3),
+    'bad_1': partial(bad_metric_np, threshold=1),
+    'bad_2': partial(bad_metric_np, threshold=2),
+    'bad_3': partial(bad_metric_np, threshold=3),
 
 }
 
@@ -20,9 +20,9 @@ METRICS = {
     # D1 metric (Percentage of erroneous pixels with disparity error > 3 pixels and relative error > 0.05)
     'd1_all': d1_metric,
     # Threshold metrics (Percentage of erroneous pixels with disparity error > threshold)
-    'thres_1': partial(threshold_metric, threshold=1),
-    'thres_2': partial(threshold_metric, threshold=2),
-    'thres_3': partial(threshold_metric, threshold=3),
+    'bad_1': partial(bad_metric, threshold=1),
+    'bad_2': partial(bad_metric, threshold=2),
+    'bad_3': partial(bad_metric, threshold=3),
 }
 
 

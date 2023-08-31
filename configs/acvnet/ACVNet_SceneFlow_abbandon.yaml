@@ -68,9 +68,9 @@ evaluator_cfg:
   metric:
     - d1_all
     - epe
-    - thres_1
-    - thres_2
-    - thres_3
+    - bad_1
+    - bad_2
+    - bad_3
   restore_ckpt_strict: true
   enable_float16: false
   sampler:

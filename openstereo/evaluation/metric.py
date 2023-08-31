@@ -65,7 +65,7 @@ def d1_metric(disp_est, disp_gt, mask):
     return torch.mean(err_mask.float()) * 100
 
 
-def threshold_metric_np(disp_est, disp_gt, mask, threshold):
+def bad_metric_np(disp_est, disp_gt, mask, threshold):
     """
     Compute the threshold metric for disparity estimation.
     The metric is defined as:
@@ -94,7 +94,7 @@ def threshold_metric_np(disp_est, disp_gt, mask, threshold):
     return np.mean(err_mask.astype(float)) * 100
 
 
-def threshold_metric(disp_est, disp_gt, mask, threshold):
+def bad_metric(disp_est, disp_gt, mask, threshold):
     """
     Compute the threshold metric for disparity estimation.
     The metric is defined as:
