@@ -7,18 +7,19 @@ from .igev_stereo import IGEVStereo
 
 from types import SimpleNamespace
 
-arg_dict = {
-    'hidden_dims': [128] * 3,
-    'n_downsample': 2,
-    'n_gru_layers': 3,
-    'max_disp': 192,
-    'corr_radius': 4,
-    'corr_levels': 2,
-    'slow_fast_gru': True,
-    'iters': 22
-}
 
-args = SimpleNamespace(**arg_dict)
+# arg_dict = {
+#     'hidden_dims': [128] * 3,
+#     'n_downsample': 2,
+#     'n_gru_layers': 3,
+#     'max_disp': 192,
+#     'corr_radius': 4,
+#     'corr_levels': 2,
+#     'slow_fast_gru': True,
+#     'iters': 22
+# }
+#
+# args = SimpleNamespace(**arg_dict)
 
 
 class IGEVLoss:
@@ -62,18 +63,38 @@ class IGEVLoss:
             i_loss = (disp_preds[i] - disp_gt).abs()
             assert i_loss.shape == valid.shape, [i_loss.shape, valid.shape, disp_gt.shape, disp_preds[i].shape]
             disp_loss += i_weight * i_loss[valid.bool()].mean()
-
         return disp_loss
-
-        # return torch.ones(1, requires_grad=True).sum()
 
 
 class IGEV(BaseModel):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self,
+                 cfgs,
+                 max_disp=192,
+                 hidden_dims=[128, 128, 128],
+                 n_downsample=2,
+                 n_gru_layers=3,
+                 corr_radius=4,
+                 corr_levels=2,
+                 slow_fast_gru=True,
+                 iters=22,
+                 *args, **kwargs
+                 ):
+        arg_dict = {
+            'max_disp': max_disp,
+            'hidden_dims': hidden_dims,
+            'n_downsample': n_downsample,
+            'n_gru_layers': n_gru_layers,
+            'corr_radius': corr_radius,
+            'corr_levels': corr_levels,
+            'slow_fast_gru': slow_fast_gru,
+            'iters': iters
+        }
+        self.arg_dict = SimpleNamespace(**arg_dict)
+        super().__init__(cfg=cfgs, *args, **kwargs)
+
 
     def build_network(self):
-        self.net = IGEVStereo(args)
+        self.net = IGEVStereo(self.arg_dict)
 
     def init_parameters(self):
         return

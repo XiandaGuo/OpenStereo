@@ -27,10 +27,10 @@ data_cfg:
         do_flip: false
         h_flip_prob: 0.5
         v_flip_prob: 0.1
-#      - type: NormalizeImage
-#        mean: [ 0.485, 0.456, 0.406 ]
-#        std: [ 0.229, 0.224, 0.225 ]
-    test:
+    #      - type: NormalizeImage
+    #        mean: [ 0.485, 0.456, 0.406 ]
+    #        std: [ 0.229, 0.224, 0.225 ]
+    val:
       - type: TestCrop
         size: [ 512, 960 ]
       - type: GetValidDisp
@@ -48,10 +48,17 @@ model_cfg:
 
   base_config:
     max_disp: 192
+    hidden_dims: [ 128, 128, 128 ]
+    n_downsample: 2
+    n_gru_layers: 3
+    corr_radius: 4
+    corr_levels: 2
+    slow_fast_gru: True
+    iters: 22
 
 
 loss_cfg:
-  # This model uses the user-defined loss function.
+# This model uses the user-defined loss function.
 
 
 trainer_cfg:
@@ -81,8 +88,8 @@ trainer_cfg:
     cycle_momentum: False
     anneal_strategy: linear
     on_epoch: false
-#    warmup:
-#      warmup_steps: 2000
+  #    warmup:
+  #      warmup_steps: 2000
 
   evaluator_cfg:
     metric:

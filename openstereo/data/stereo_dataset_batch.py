@@ -100,7 +100,18 @@ class StereoBatchDataset(Dataset):
                     right_disp=self.return_right_disp,
                     use_noc=self.data_cfg['use_noc'] if 'use_noc' in self.data_cfg else False,  # NOC disp or OCC disp
                 )
-                self.dataset = torch.utils.data.ConcatDataset([dataset_2012, dataset_2015])
+                if self.scope == 'train':
+                    self.dataset = torch.utils.data.ConcatDataset([dataset_2012, dataset_2015])
+                else:
+                    val_on = self.data_cfg.get('val_on', 2015)
+                    if val_on == 2015:
+                        self.dataset = dataset_2015
+                    elif val_on == 2012:
+                        self.dataset = dataset_2012
+                    elif val_on == 'all':
+                        self.dataset = torch.utils.data.ConcatDataset([dataset_2012, dataset_2015])
+                    else:
+                        raise NotImplementedError(f'val on: {val_on} is not supported yet.')
         elif self.data_cfg['name'] == 'FlyingThings3DSubset':
             from data.reader.sceneflow_reader import FlyingThings3DSubsetReader
             self.disp_reader_type = 'PFM'
