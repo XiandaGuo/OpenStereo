@@ -1,13 +1,12 @@
-from .submodule import *
 import timm
 
-
+from .submodule import *
 
 
 class ResidualBlock(nn.Module):
     def __init__(self, in_planes, planes, norm_fn='group', stride=1):
         super(ResidualBlock, self).__init__()
-  
+
         self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, padding=1, stride=stride)
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, padding=1)
         self.relu = nn.ReLU(inplace=True)
@@ -19,13 +18,13 @@ class ResidualBlock(nn.Module):
             self.norm2 = nn.GroupNorm(num_groups=num_groups, num_channels=planes)
             if not (stride == 1 and in_planes == planes):
                 self.norm3 = nn.GroupNorm(num_groups=num_groups, num_channels=planes)
-        
+
         elif norm_fn == 'batch':
             self.norm1 = nn.BatchNorm2d(planes)
             self.norm2 = nn.BatchNorm2d(planes)
             if not (stride == 1 and in_planes == planes):
                 self.norm3 = nn.BatchNorm2d(planes)
-        
+
         elif norm_fn == 'instance':
             self.norm1 = nn.InstanceNorm2d(planes)
             self.norm2 = nn.InstanceNorm2d(planes)
@@ -40,11 +39,10 @@ class ResidualBlock(nn.Module):
 
         if stride == 1 and in_planes == planes:
             self.downsample = None
-        
-        else:    
+
+        else:
             self.downsample = nn.Sequential(
                 nn.Conv2d(in_planes, planes, kernel_size=1, stride=stride), self.norm3)
-
 
     def forward(self, x):
         y = x
@@ -58,38 +56,37 @@ class ResidualBlock(nn.Module):
         if self.downsample is not None:
             x = self.downsample(x)
 
-        return self.relu(x+y)
-
+        return self.relu(x + y)
 
 
 class BottleneckBlock(nn.Module):
     def __init__(self, in_planes, planes, norm_fn='group', stride=1):
         super(BottleneckBlock, self).__init__()
-  
-        self.conv1 = nn.Conv2d(in_planes, planes//4, kernel_size=1, padding=0)
-        self.conv2 = nn.Conv2d(planes//4, planes//4, kernel_size=3, padding=1, stride=stride)
-        self.conv3 = nn.Conv2d(planes//4, planes, kernel_size=1, padding=0)
+
+        self.conv1 = nn.Conv2d(in_planes, planes // 4, kernel_size=1, padding=0)
+        self.conv2 = nn.Conv2d(planes // 4, planes // 4, kernel_size=3, padding=1, stride=stride)
+        self.conv3 = nn.Conv2d(planes // 4, planes, kernel_size=1, padding=0)
         self.relu = nn.ReLU(inplace=True)
 
         num_groups = planes // 8
 
         if norm_fn == 'group':
-            self.norm1 = nn.GroupNorm(num_groups=num_groups, num_channels=planes//4)
-            self.norm2 = nn.GroupNorm(num_groups=num_groups, num_channels=planes//4)
+            self.norm1 = nn.GroupNorm(num_groups=num_groups, num_channels=planes // 4)
+            self.norm2 = nn.GroupNorm(num_groups=num_groups, num_channels=planes // 4)
             self.norm3 = nn.GroupNorm(num_groups=num_groups, num_channels=planes)
             if not stride == 1:
                 self.norm4 = nn.GroupNorm(num_groups=num_groups, num_channels=planes)
-        
+
         elif norm_fn == 'batch':
-            self.norm1 = nn.BatchNorm2d(planes//4)
-            self.norm2 = nn.BatchNorm2d(planes//4)
+            self.norm1 = nn.BatchNorm2d(planes // 4)
+            self.norm2 = nn.BatchNorm2d(planes // 4)
             self.norm3 = nn.BatchNorm2d(planes)
             if not stride == 1:
                 self.norm4 = nn.BatchNorm2d(planes)
-        
+
         elif norm_fn == 'instance':
-            self.norm1 = nn.InstanceNorm2d(planes//4)
-            self.norm2 = nn.InstanceNorm2d(planes//4)
+            self.norm1 = nn.InstanceNorm2d(planes // 4)
+            self.norm2 = nn.InstanceNorm2d(planes // 4)
             self.norm3 = nn.InstanceNorm2d(planes)
             if not stride == 1:
                 self.norm4 = nn.InstanceNorm2d(planes)
@@ -103,11 +100,10 @@ class BottleneckBlock(nn.Module):
 
         if stride == 1:
             self.downsample = None
-        
-        else:    
+
+        else:
             self.downsample = nn.Sequential(
                 nn.Conv2d(in_planes, planes, kernel_size=1, stride=stride), self.norm4)
-
 
     def forward(self, x):
         y = x
@@ -118,7 +114,8 @@ class BottleneckBlock(nn.Module):
         if self.downsample is not None:
             x = self.downsample(x)
 
-        return self.relu(x+y)
+        return self.relu(x + y)
+
 
 class BasicEncoder(nn.Module):
     def __init__(self, output_dim=128, norm_fn='batch', dropout=0.0, downsample=3):
@@ -128,7 +125,7 @@ class BasicEncoder(nn.Module):
 
         if self.norm_fn == 'group':
             self.norm1 = nn.GroupNorm(num_groups=8, num_channels=64)
-            
+
         elif self.norm_fn == 'batch':
             self.norm1 = nn.BatchNorm2d(64)
 
@@ -142,7 +139,7 @@ class BasicEncoder(nn.Module):
         self.relu1 = nn.ReLU(inplace=True)
 
         self.in_planes = 64
-        self.layer1 = self._make_layer(64,  stride=1)
+        self.layer1 = self._make_layer(64, stride=1)
         self.layer2 = self._make_layer(96, stride=1 + (downsample > 1))
         self.layer3 = self._make_layer(128, stride=1 + (downsample > 0))
 
@@ -166,10 +163,9 @@ class BasicEncoder(nn.Module):
         layer1 = ResidualBlock(self.in_planes, dim, self.norm_fn, stride=stride)
         layer2 = ResidualBlock(dim, dim, self.norm_fn, stride=1)
         layers = (layer1, layer2)
-        
+
         self.in_planes = dim
         return nn.Sequential(*layers)
-
 
     def forward(self, x, dual_inp=False):
 
@@ -193,6 +189,7 @@ class BasicEncoder(nn.Module):
             x = x.split(split_size=batch_dim, dim=0)
 
         return x
+
 
 class MultiBasicEncoder(nn.Module):
     def __init__(self, output_dim=[128], norm_fn='batch', dropout=0.0, downsample=3):
@@ -226,7 +223,7 @@ class MultiBasicEncoder(nn.Module):
         self.layer5 = self._make_layer(128, stride=2)
 
         output_list = []
-        
+
         for dim in output_dim:
             conv_out = nn.Sequential(
                 ResidualBlock(128, 128, self.norm_fn, stride=1),
@@ -283,7 +280,7 @@ class MultiBasicEncoder(nn.Module):
         x = self.layer3(x)
         if dual_inp:
             v = x
-            x = x[:(x.shape[0]//2)]
+            x = x[:(x.shape[0] // 2)]
 
         outputs04 = [f(x) for f in self.outputs04]
         if num_layers == 1:
@@ -324,9 +321,9 @@ class SubModule(nn.Module):
 class Feature(SubModule):
     def __init__(self):
         super(Feature, self).__init__()
-        pretrained =  True
+        pretrained = True
         model = timm.create_model('mobilenetv2_100', pretrained=pretrained, features_only=True)
-        layers = [1,2,3,5,6]
+        layers = [1, 2, 3, 5, 6]
         chans = [16, 24, 32, 96, 160]
         self.conv_stem = model.conv_stem
         self.bn1 = model.bn1
@@ -339,9 +336,9 @@ class Feature(SubModule):
         self.block4 = torch.nn.Sequential(*model.blocks[layers[3]:layers[4]])
 
         self.deconv32_16 = Conv2x_IN(chans[4], chans[3], deconv=True, concat=True)
-        self.deconv16_8 = Conv2x_IN(chans[3]*2, chans[2], deconv=True, concat=True)
-        self.deconv8_4 = Conv2x_IN(chans[2]*2, chans[1], deconv=True, concat=True)
-        self.conv4 = BasicConv_IN(chans[1]*2, chans[1]*2, kernel_size=3, stride=1, padding=1)
+        self.deconv16_8 = Conv2x_IN(chans[3] * 2, chans[2], deconv=True, concat=True)
+        self.deconv8_4 = Conv2x_IN(chans[2] * 2, chans[1], deconv=True, concat=True)
+        self.conv4 = BasicConv_IN(chans[1] * 2, chans[1] * 2, kernel_size=3, stride=1, padding=1)
 
     def forward(self, x):
         x = self.act1(self.bn1(self.conv_stem(x)))
@@ -356,4 +353,3 @@ class Feature(SubModule):
         x4 = self.deconv8_4(x8, x4)
         x4 = self.conv4(x4)
         return [x4, x8, x16, x32]
-

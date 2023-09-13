@@ -49,9 +49,9 @@ class BaseTrainer:
         self.device = torch.device('cuda', rank) if is_dist else device
         self.current_epoch = 0
         self.current_iter = 0
-        self.save_path = self.trainer_cfg.get(
-            'save_path',
-            os.path.join('output/', self.data_cfg['name'], self.model.model_name, self.trainer_cfg['save_name'])
+        self.save_path = os.path.join(
+            self.trainer_cfg.get("save_path", "./output"),
+            self.data_cfg['name'], self.model.model_name, self.trainer_cfg['save_name']
         )
         self.amp = self.trainer_cfg.get('amp', False)
         if self.amp:
@@ -133,7 +133,7 @@ class BaseTrainer:
         )
 
     def build_evaluator(self):
-        metrics = self.evaluator_cfg.get('metrics', ['epe', 'd1_all', 'thres_1', 'thres_2', 'thres_3'])
+        metrics = self.evaluator_cfg.get('metrics', ['epe', 'd1_all', 'bad_1', 'bad_2', 'bad_3'])
         self.evaluator = OpenStereoEvaluator(metrics, use_np=False)
 
     def build_clip_grad(self):
@@ -319,7 +319,7 @@ class BaseTrainer:
         self.model.eval()
         model_name = self.model.model_name
         data_name = self.data_cfg['name']
-        output_dir = f"output/{data_name}_submit/{model_name}/disp_0"
+        output_dir = os.path.join(self.trainer_cfg.get("save_path", "./output"), f"/{data_name}/{model_name}/test")
         os.makedirs(output_dir, exist_ok=True)
         self.msg_mgr.log_info("Start testing...")
         for i, inputs in enumerate(self.test_loader):

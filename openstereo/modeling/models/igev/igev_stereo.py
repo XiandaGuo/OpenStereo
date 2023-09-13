@@ -1,5 +1,3 @@
-from types import SimpleNamespace
-
 from .extractor import MultiBasicEncoder, Feature
 from .geometry import Combined_Geo_Encoding_Volume
 from .submodule import *

@@ -1,9 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
-
-
 
 
 class BasicConv(nn.Module):
@@ -31,17 +28,18 @@ class BasicConv(nn.Module):
         if self.use_bn:
             x = self.bn(x)
         if self.relu:
-            x = nn.LeakyReLU()(x)#, inplace=True)
+            x = nn.LeakyReLU()(x)  # , inplace=True)
         return x
 
 
 class Conv2x(nn.Module):
 
-    def __init__(self, in_channels, out_channels, deconv=False, is_3d=False, concat=True, keep_concat=True, bn=True, relu=True, keep_dispc=False):
+    def __init__(self, in_channels, out_channels, deconv=False, is_3d=False, concat=True, keep_concat=True, bn=True,
+                 relu=True, keep_dispc=False):
         super(Conv2x, self).__init__()
         self.concat = concat
-        self.is_3d = is_3d 
-        if deconv and is_3d: 
+        self.is_3d = is_3d
+        if deconv and is_3d:
             kernel = (4, 4, 4)
         elif deconv:
             kernel = 4
@@ -52,15 +50,19 @@ class Conv2x(nn.Module):
             kernel = (1, 4, 4)
             stride = (1, 2, 2)
             padding = (0, 1, 1)
-            self.conv1 = BasicConv(in_channels, out_channels, deconv, is_3d, bn=True, relu=True, kernel_size=kernel, stride=stride, padding=padding)
+            self.conv1 = BasicConv(in_channels, out_channels, deconv, is_3d, bn=True, relu=True, kernel_size=kernel,
+                                   stride=stride, padding=padding)
         else:
-            self.conv1 = BasicConv(in_channels, out_channels, deconv, is_3d, bn=True, relu=True, kernel_size=kernel, stride=2, padding=1)
+            self.conv1 = BasicConv(in_channels, out_channels, deconv, is_3d, bn=True, relu=True, kernel_size=kernel,
+                                   stride=2, padding=1)
 
-        if self.concat: 
+        if self.concat:
             mul = 2 if keep_concat else 1
-            self.conv2 = BasicConv(out_channels*2, out_channels*mul, False, is_3d, bn, relu, kernel_size=3, stride=1, padding=1)
+            self.conv2 = BasicConv(out_channels * 2, out_channels * mul, False, is_3d, bn, relu, kernel_size=3,
+                                   stride=1, padding=1)
         else:
-            self.conv2 = BasicConv(out_channels, out_channels, False, is_3d, bn, relu, kernel_size=3, stride=1, padding=1)
+            self.conv2 = BasicConv(out_channels, out_channels, False, is_3d, bn, relu, kernel_size=3, stride=1,
+                                   padding=1)
 
     def forward(self, x, rem):
         x = self.conv1(x)
@@ -71,7 +73,7 @@ class Conv2x(nn.Module):
                 mode='nearest')
         if self.concat:
             x = torch.cat((x, rem), 1)
-        else: 
+        else:
             x = x + rem
         x = self.conv2(x)
         return x
@@ -102,17 +104,18 @@ class BasicConv_IN(nn.Module):
         if self.use_in:
             x = self.IN(x)
         if self.relu:
-            x = nn.LeakyReLU()(x)#, inplace=True)
+            x = nn.LeakyReLU()(x)  # , inplace=True)
         return x
 
 
 class Conv2x_IN(nn.Module):
 
-    def __init__(self, in_channels, out_channels, deconv=False, is_3d=False, concat=True, keep_concat=True, IN=True, relu=True, keep_dispc=False):
+    def __init__(self, in_channels, out_channels, deconv=False, is_3d=False, concat=True, keep_concat=True, IN=True,
+                 relu=True, keep_dispc=False):
         super(Conv2x_IN, self).__init__()
         self.concat = concat
-        self.is_3d = is_3d 
-        if deconv and is_3d: 
+        self.is_3d = is_3d
+        if deconv and is_3d:
             kernel = (4, 4, 4)
         elif deconv:
             kernel = 4
@@ -123,15 +126,19 @@ class Conv2x_IN(nn.Module):
             kernel = (1, 4, 4)
             stride = (1, 2, 2)
             padding = (0, 1, 1)
-            self.conv1 = BasicConv_IN(in_channels, out_channels, deconv, is_3d, IN=True, relu=True, kernel_size=kernel, stride=stride, padding=padding)
+            self.conv1 = BasicConv_IN(in_channels, out_channels, deconv, is_3d, IN=True, relu=True, kernel_size=kernel,
+                                      stride=stride, padding=padding)
         else:
-            self.conv1 = BasicConv_IN(in_channels, out_channels, deconv, is_3d, IN=True, relu=True, kernel_size=kernel, stride=2, padding=1)
+            self.conv1 = BasicConv_IN(in_channels, out_channels, deconv, is_3d, IN=True, relu=True, kernel_size=kernel,
+                                      stride=2, padding=1)
 
-        if self.concat: 
+        if self.concat:
             mul = 2 if keep_concat else 1
-            self.conv2 = BasicConv_IN(out_channels*2, out_channels*mul, False, is_3d, IN, relu, kernel_size=3, stride=1, padding=1)
+            self.conv2 = BasicConv_IN(out_channels * 2, out_channels * mul, False, is_3d, IN, relu, kernel_size=3,
+                                      stride=1, padding=1)
         else:
-            self.conv2 = BasicConv_IN(out_channels, out_channels, False, is_3d, IN, relu, kernel_size=3, stride=1, padding=1)
+            self.conv2 = BasicConv_IN(out_channels, out_channels, False, is_3d, IN, relu, kernel_size=3, stride=1,
+                                      padding=1)
 
     def forward(self, x, rem):
         x = self.conv1(x)
@@ -142,7 +149,7 @@ class Conv2x_IN(nn.Module):
                 mode='nearest')
         if self.concat:
             x = torch.cat((x, rem), 1)
-        else: 
+        else:
             x = x + rem
         x = self.conv2(x)
         return x
@@ -156,6 +163,7 @@ def groupwise_correlation(fea1, fea2, num_groups):
     assert cost.shape == (B, num_groups, H, W)
     return cost
 
+
 def build_gwc_volume(refimg_fea, targetimg_fea, maxdisp, num_groups):
     B, C, H, W = refimg_fea.shape
     volume = refimg_fea.new_zeros([B, num_groups, maxdisp, H, W])
@@ -167,13 +175,14 @@ def build_gwc_volume(refimg_fea, targetimg_fea, maxdisp, num_groups):
             volume[:, :, i, :, :] = groupwise_correlation(refimg_fea, targetimg_fea, num_groups)
     volume = volume.contiguous()
     return volume
-        
-
 
 
 def norm_correlation(fea1, fea2):
-    cost = torch.mean(((fea1/(torch.norm(fea1, 2, 1, True)+1e-05)) * (fea2/(torch.norm(fea2, 2, 1, True)+1e-05))), dim=1, keepdim=True)
+    cost = torch.mean(
+        ((fea1 / (torch.norm(fea1, 2, 1, True) + 1e-05)) * (fea2 / (torch.norm(fea2, 2, 1, True) + 1e-05))), dim=1,
+        keepdim=True)
     return cost
+
 
 def build_norm_correlation_volume(refimg_fea, targetimg_fea, maxdisp):
     B, C, H, W = refimg_fea.shape
@@ -186,9 +195,11 @@ def build_norm_correlation_volume(refimg_fea, targetimg_fea, maxdisp):
     volume = volume.contiguous()
     return volume
 
+
 def correlation(fea1, fea2):
     cost = torch.sum((fea1 * fea2), dim=1, keepdim=True)
     return cost
+
 
 def build_correlation_volume(refimg_fea, targetimg_fea, maxdisp):
     B, C, H, W = refimg_fea.shape
@@ -200,7 +211,6 @@ def build_correlation_volume(refimg_fea, targetimg_fea, maxdisp):
             volume[:, :, i, :, :] = correlation(refimg_fea, targetimg_fea)
     volume = volume.contiguous()
     return volume
-
 
 
 def build_concat_volume(refimg_fea, targetimg_fea, maxdisp):
@@ -216,6 +226,7 @@ def build_concat_volume(refimg_fea, targetimg_fea, maxdisp):
     volume = volume.contiguous()
     return volume
 
+
 def disparity_regression(x, maxdisp):
     assert len(x.shape) == 4
     disp_values = torch.arange(0, maxdisp, dtype=x.dtype, device=x.device)
@@ -228,15 +239,16 @@ class FeatureAtt(nn.Module):
         super(FeatureAtt, self).__init__()
 
         self.feat_att = nn.Sequential(
-            BasicConv(feat_chan, feat_chan//2, kernel_size=1, stride=1, padding=0),
-            nn.Conv2d(feat_chan//2, cv_chan, 1))
+            BasicConv(feat_chan, feat_chan // 2, kernel_size=1, stride=1, padding=0),
+            nn.Conv2d(feat_chan // 2, cv_chan, 1))
 
     def forward(self, cv, feat):
         '''
         '''
         feat_att = self.feat_att(feat).unsqueeze(2)
-        cv = torch.sigmoid(feat_att)*cv
+        cv = torch.sigmoid(feat_att) * cv
         return cv
+
 
 def context_upsample(disp_low, up_weights):
     ###
@@ -244,10 +256,10 @@ def context_upsample(disp_low, up_weights):
     # sp (b,9,4*h,4*w)
     ###
     b, c, h, w = disp_low.shape
-        
-    disp_unfold = F.unfold(disp_low.reshape(b,c,h,w),3,1,1).reshape(b,-1,h,w)
-    disp_unfold = F.interpolate(disp_unfold,(h*4,w*4),mode='nearest').reshape(b,9,h*4,w*4)
 
-    disp = (disp_unfold*up_weights).sum(1)
-        
+    disp_unfold = F.unfold(disp_low.reshape(b, c, h, w), 3, 1, 1).reshape(b, -1, h, w)
+    disp_unfold = F.interpolate(disp_unfold, (h * 4, w * 4), mode='nearest').reshape(b, 9, h * 4, w * 4)
+
+    disp = (disp_unfold * up_weights).sum(1)
+
     return disp
