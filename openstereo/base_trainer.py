@@ -319,7 +319,10 @@ class BaseTrainer:
         self.model.eval()
         model_name = self.model.model_name
         data_name = self.data_cfg['name']
-        output_dir = os.path.join(self.trainer_cfg.get("save_path", "./output"), f"/{data_name}/{model_name}/test")
+        output_dir = os.path.join(
+            self.trainer_cfg.get("save_path", "./output"),
+            f"{data_name}/{model_name}/{data_name}_submit/disp_0"
+        )
         os.makedirs(output_dir, exist_ok=True)
         self.msg_mgr.log_info("Start testing...")
         for i, inputs in enumerate(self.test_loader):
