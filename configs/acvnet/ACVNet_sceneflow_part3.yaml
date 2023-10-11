@@ -36,7 +36,8 @@ data_cfg:
 model_cfg:
   model: ACVNet
   small_model: False
-  #  find_unused_parameters: true
+  find_unused_parameters: true
+
   base_config:
     max_disp: 192
     attn_weights_only: False
