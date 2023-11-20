@@ -1,6 +1,6 @@
 data_cfg:
   name: SceneFlow
-  root: /mnt/cfs/algorithm/public_data/stereo/datasets/sceneflow
+  root: /yourpath/sceneflow
   train_list: datasets/SceneFlow/sceneflow_cleanpass_train.txt
   val_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
   test_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
