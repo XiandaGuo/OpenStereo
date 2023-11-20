@@ -77,7 +77,7 @@ loss_cfg:
 trainer_cfg:
   save_name: igev_kitti
   total_epoch: 500
-  restore_hint: /mnt/cfs/algorithm/xianda.guo/juntao/OpenStereo/output/KITTI2012&2015/IGEV/igev_kitti/checkpoints/igev_kitti_epoch_350.pt
+  restore_hint: "yourpath of sceneflow checkpoint"
   resume: false
   optimizer_reset: true
   scheduler_reset: true

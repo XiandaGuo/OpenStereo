@@ -29,15 +29,6 @@ Please see [0.get_started.md](docs/0.get_started.md). We also provide the follow
 Results and models are available in the [model zoo](docs/1.model_zoo.md).
 
 
-## Authors:
-**OpenStereo Team (OST)**
-- [Xianda Guo (国显达)](https://scholar.google.com.hk/citations?hl=zh-CN&user=jPvOqgYAAAAJ), xianda_guo@163.com
-- [Juntao Lu (陆俊陶)](https://github.com/ralph0813), juntao.lu@student.unimelb.edu.au
-- [Yiqi Wang (王仪琦)](), wangyiqi18@mails.ucas.edu.cn
-- [Yiqun Duan (段逸群)](https://github.com/duanyiqun), duanyiquncc@gmail.com
-- [Zheng Zhu (朱政)](https://scholar.google.com.hk/citations?user=NmwjI0AAAAAJ&hl=zh-CN),zhengzhu@ieee.org
-
-
 ## Acknowledgement
 - [AANet](https://github.com/haofeixu/aanet)
 - [ACVNet](https://github.com/gangweiX/ACVNet)

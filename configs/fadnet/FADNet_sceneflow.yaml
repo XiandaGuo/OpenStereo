@@ -1,7 +1,7 @@
 
 data_cfg:
   name: SceneFlow
-  root: /mnt/cfs/algorithm/public_data/stereo/datasets/sceneflow
+  root: /yourpath/sceneflow
   train_list: datasets/SceneFlow/sceneflow_cleanpass_train.txt
   val_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
   test_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
@@ -26,7 +26,7 @@ data_cfg:
         mean: [ 0.485, 0.456, 0.406 ]
         std: [ 0.229, 0.224, 0.225 ]
     test:
-       - type: StereoPad
+      - type: StereoPad
         size: [ 576, 960 ]
       - type: GetValidDispa
         max_disp: 192
@@ -43,7 +43,7 @@ model_cfg:
 
   base_config:
     max_disp: 192
-  
+
 
   # Backbone
   backbone_cfg:
@@ -87,7 +87,7 @@ loss_cfg:
     loss: L1
     maxdisp: 192
     mask: false
-    
+
 
   - log_prefix: dispnetres_flows
     type: MultiScaleLoss
@@ -101,14 +101,14 @@ loss_cfg:
     loss: L1
     maxdisp: 192
     mask: false
-    
+
 
 
 trainer_cfg:
   save_name: Fadnet_driving_g8b96_lamb0004
   total_round: 4
   total_epoch: [20,20,20,30]
-  restore_hint: "/mnt/cfs/algorithm/youmin.zhang/output/SceneFlow/FADNet/Fadnet_SceneFlow_g8b96_lamb0004/checkpoints/Fadnet_SceneFlow_g8b96_lamb0004-33300.pt"
+  restore_hint: 0
   optimizer_reset: false
   scheduler_reset: false
   warmup_reset: false
@@ -124,7 +124,7 @@ trainer_cfg:
     solver: lamb
     lr: 0.004
 
-  
+
   scheduler_cfg:
     scheduler: MultiStepLR
     gamma: 0.5
