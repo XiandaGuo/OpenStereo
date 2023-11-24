@@ -448,7 +448,7 @@ class FlowAugmentor(object):
 
         return img1, img2
 
-    def spatial_transform(self, img1, img2, flow):
+    def spatial_transform(self, img1, img2, flow, flow_right):
         # randomly sample scale
         ht, wd = img1.shape[:2]
         min_scale = np.maximum(
@@ -470,24 +470,27 @@ class FlowAugmentor(object):
             img1 = cv2.resize(img1, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_LINEAR)
             img2 = cv2.resize(img2, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_LINEAR)
             flow = cv2.resize(flow, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_LINEAR)
+            flow_right = cv2.resize(flow_right, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_LINEAR)
 
             flow = flow * [scale_x, scale_y]
+            flow_right = flow_right * [scale_x, scale_y]
 
         if self.do_flip:
             if np.random.rand() < self.h_flip_prob and self.do_flip == 'hf':  # h-flip
-                img1 = img1[:, ::-1]
-                img2 = img2[:, ::-1]
-                flow = flow[:, ::-1] * [-1.0, 1.0]
+                img1 = np.ascontiguousarray(img1[:, ::-1])
+                img2 = np.ascontiguousarray(img2[:, ::-1])
+                flow = np.ascontiguousarray(flow[:, ::-1] * [-1.0, 1.0])
 
             if np.random.rand() < self.h_flip_prob and self.do_flip == 'h':  # h-flip for stereo
-                tmp = img1[:, ::-1]
-                img1 = img2[:, ::-1]
+                tmp = np.ascontiguousarray(img1[:, ::-1])
+                img1 = np.ascontiguousarray(img2[:, ::-1])
                 img2 = tmp
+                flow = np.ascontiguousarray(flow_right[:, ::-1])
 
             if np.random.rand() < self.v_flip_prob and self.do_flip == 'v':  # v-flip
-                img1 = img1[::-1, :]
-                img2 = img2[::-1, :]
-                flow = flow[::-1, :] * [1.0, -1.0]
+                img1 = np.ascontiguousarray(img1[::-1, :])
+                img2 = np.ascontiguousarray(img2[::-1, :])
+                flow = np.ascontiguousarray(flow[::-1, :] * [1.0, -1.0])
 
         if self.yjitter:
             y0 = np.random.randint(2, img1.shape[0] - self.crop_size[0] - 2)
@@ -512,11 +515,13 @@ class FlowAugmentor(object):
         img1 = sample['left']
         img2 = sample['right']
         disp = sample['disp']
+        disp_right = sample['disp_right']
         flow = np.stack([disp, np.zeros_like(disp)], axis=-1)
+        flow_right = np.stack([disp_right, np.zeros_like(disp_right)], axis=-1)
 
         img1, img2 = self.color_transform(img1, img2)
         img1, img2 = self.eraser_transform(img1, img2)
-        img1, img2, flow = self.spatial_transform(img1, img2, flow)
+        img1, img2, flow = self.spatial_transform(img1, img2, flow, flow_right)
 
         img1 = torch.from_numpy(img1).permute(2, 0, 1).float()
         img2 = torch.from_numpy(img2).permute(2, 0, 1).float()
@@ -629,10 +634,11 @@ class SparseFlowAugmentor(object):
                 img2 = img2[:, ::-1]
                 flow = flow[:, ::-1] * [-1.0, 1.0]
 
-            if np.random.rand() < self.h_flip_prob and self.do_flip == 'h':  # h-flip for stereo
-                tmp = img1[:, ::-1]
-                img1 = img2[:, ::-1]
-                img2 = tmp
+            # no usage in kitti dataset
+            # if np.random.rand() < self.h_flip_prob and self.do_flip == 'h':  # h-flip for stereo
+            #     tmp = img1[:, ::-1]
+            #     img1 = img2[:, ::-1]
+            #     img2 = tmp
 
             if np.random.rand() < self.v_flip_prob and self.do_flip == 'v':  # v-flip
                 img1 = img1[::-1, :]
@@ -807,10 +813,10 @@ class SpatialTransform(object):
                     img2 = img2[:, ::-1]
                     flow = flow[:, ::-1] * [-1.0, 1.0]
 
-                if np.random.rand() < self.h_flip_prob and self.do_flip == 'h':  # h-flip for stereo
-                    tmp = img1[:, ::-1]
-                    img1 = img2[:, ::-1]
-                    img2 = tmp
+                # if np.random.rand() < self.h_flip_prob and self.do_flip == 'h':  # h-flip for stereo
+                #     tmp = img1[:, ::-1]
+                #     img1 = img2[:, ::-1]
+                #     img2 = tmp
 
                 if np.random.rand() < self.v_flip_prob and self.do_flip == 'v':  # v-flip
                     img1 = img1[::-1, :]
