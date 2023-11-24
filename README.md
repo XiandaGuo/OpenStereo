@@ -30,19 +30,4 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
 
 
 ## Acknowledgement
-- [AANet](https://github.com/haofeixu/aanet)
-- [ACVNet](https://github.com/gangweiX/ACVNet)
-- [CascadeStereo](https://github.com/alibaba/cascade-stereo)
-- [CFNet](https://github.com/gallenszl/CFNet)
-- [COEX](https://github.com/antabangun/coex)
-- [DenseMatching](https://github.com/DeepMotionAIResearch/DenseMatchingBenchmark)
-- [FADNet](https://github.com/HKBU-HPML/FADNet)
-- [GANet](https://github.com/feihuzhang/GANet)
-- [GwcNet](https://github.com/xy-guo/GwcNet)
-- [LacGwcNet](https://github.com/SpadeLiu/Lac-GwcNet)
-- [MSNet](https://github.com/cogsys-tuebingen/mobilestereonet)
-- [PSMNet](https://github.com/JiaRenChang/PSMNet)
-- [RAFT](https://github.com/princeton-vl/RAFT-Stereo)
-- [STTR](https://github.com/mli0603/stereo-transformer)
-- [OpenGait](https://github.com/ShiqiYu/OpenGait)
-- [IGEV](https://github.com/gangweiX/IGEV/tree/main/IGEV-Stereo)
+[AANet](https://github.com/haofeixu/aanet) &nbsp; [ACVNet](https://github.com/gangweiX/ACVNet) &nbsp; [CascadeStereo](https://github.com/alibaba/cascade-stereo) &nbsp; [CFNet](https://github.com/gallenszl/CFNet) &nbsp; [COEX](https://github.com/antabangun/coex) &nbsp; [DenseMatching](https://github.com/DeepMotionAIResearch/DenseMatchingBenchmark) &nbsp; [FADNet](https://github.com/HKBU-HPML/FADNet) &nbsp; [GwcNet](https://github.com/xy-guo/GwcNet) &nbsp; [MSNet](https://github.com/cogsys-tuebingen/mobilestereonet) &nbsp; [PSMNet](https://github.com/JiaRenChang/PSMNet) &nbsp; [RAFT](https://github.com/princeton-vl/RAFT-Stereo) &nbsp; [STTR](https://github.com/mli0603/stereo-transformer) &nbsp; [OpenGait](https://github.com/ShiqiYu/OpenGait) &nbsp; [IGEV](https://github.com/gangweiX/IGEV/tree/main/IGEV-Stereo)
