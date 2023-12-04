@@ -4,9 +4,8 @@
 OpenStereo is a flexible and extensible project for stereo matching.
 
 ## What's New
+- **[December 2023]**: Our paper makes public: [OpenStereo: A Comprehensive Benchmark for Stereo Matching and Strong Baseline](https://arxiv.org/abs/2312.00343)
 - **[March 2023]**:OpenStereo is available!!!
-- **[June 12th. 2023]**:The state-of-the-art model [Iterative Geometry Encoding Volume for Stereo Matching](https://arxiv.org/pdf/2303.06615.pdf) has been integrated into OpenStereo.!!!
-
 
 ## Highlighted features
 - **Mutiple Dataset supported**: OpenStereo supports six popular stereo datasets: [SceneFlow](datasets/SceneFlow/README.md), [KITTI12](datasets/KITTI12/README.md) & [KITTI15](datasets/KITTI15/README.md), 
@@ -31,3 +30,14 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
 
 ## Acknowledgement
 [AANet](https://github.com/haofeixu/aanet) &nbsp; [ACVNet](https://github.com/gangweiX/ACVNet) &nbsp; [CascadeStereo](https://github.com/alibaba/cascade-stereo) &nbsp; [CFNet](https://github.com/gallenszl/CFNet) &nbsp; [COEX](https://github.com/antabangun/coex) &nbsp; [DenseMatching](https://github.com/DeepMotionAIResearch/DenseMatchingBenchmark) &nbsp; [FADNet](https://github.com/HKBU-HPML/FADNet) &nbsp; [GwcNet](https://github.com/xy-guo/GwcNet) &nbsp; [MSNet](https://github.com/cogsys-tuebingen/mobilestereonet) &nbsp; [PSMNet](https://github.com/JiaRenChang/PSMNet) &nbsp; [RAFT](https://github.com/princeton-vl/RAFT-Stereo) &nbsp; [STTR](https://github.com/mli0603/stereo-transformer) &nbsp; [OpenGait](https://github.com/ShiqiYu/OpenGait) &nbsp; [IGEV](https://github.com/gangweiX/IGEV/tree/main/IGEV-Stereo)
+
+## Citation
+```
+@article{OpenStereo,
+        title={OpenStereo: A Comprehensive Benchmark for Stereo Matching and Strong Baseline},
+        author={Guo, Xianda and Lu, Juntao and Zhang, Chenming and Wang, Yiqi and Duan, Yiqun and Yang, Tian and Zhu, Zheng and Chen, Long},
+        journal={arXiv preprint arXiv:2312.00343},
+        year={2023}
+}
+```
+**Note**: This code is only used for academic purposes, people cannot use this code for anything that might be considered commercial use.
