@@ -5,18 +5,12 @@ data_cfg:
   val_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
   test_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
   num_workers: 8
-  train_batch_size: 16
+  train_batch_size: 8 # 单卡训练！！！
   val_batch_size: 10
   pin_memory: true
   shuffle: true
 
   batch_uniform: false
-  #  random_type: range
-  #  w_range: [ 0.5, 2.0 ]
-  #  h_range: [ 0.5, 2.0 ]
-  #  random_type: choice
-  #  h_range: [ 256, 288, 320, 352 ]
-  #  w_range: [ 480, 512, 544, 576 ]
 
   transform:
     train:

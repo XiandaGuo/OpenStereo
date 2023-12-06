@@ -238,3 +238,33 @@ def convert_state_dict(ori_state_dict, is_dist=True):
                 new_state_dict[k] = v
 
     return new_state_dict
+
+
+def color_map_tensorboard(disp_gt, pred, disp_max=192):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    cm = plt.get_cmap('plasma')
+
+    disp_gt = disp_gt.detach().data.cpu().numpy()
+    pred = pred.detach().data.cpu().numpy()
+    error_map = np.abs(pred - disp_gt)
+
+    disp_gt = np.clip(disp_gt, a_min=0, a_max=disp_max)
+    pred = np.clip(pred, a_min=0, a_max=disp_max)
+
+    gt_tmp = 255.0 * disp_gt / disp_max
+    pred_tmp = 255.0 * pred / disp_max
+    error_map_tmp = 255.0 * error_map / np.max(error_map)
+
+    gt_tmp = cm(gt_tmp.astype('uint8'))
+    pred_tmp = cm(pred_tmp.astype('uint8'))
+    error_map_tmp = cm(error_map_tmp.astype('uint8'))
+
+    gt_tmp = np.transpose(gt_tmp[:, :, :3], (2, 0, 1))
+    pred_tmp = np.transpose(pred_tmp[:, :, :3], (2, 0, 1))
+    error_map_tmp = np.transpose(error_map_tmp[:, :, :3], (2, 0, 1))
+
+    color_disp_c = np.concatenate((gt_tmp, pred_tmp, error_map_tmp), axis=1)
+    color_disp_c = torch.from_numpy(color_disp_c)
+
+    return color_disp_c
