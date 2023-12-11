@@ -1,9 +1,9 @@
 data_cfg:
-  name: SceneFlow
-  root: data/SceneFlow
-  train_list: datasets/SceneFlow/sceneflow_cleanpass_train.txt
-  val_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
-  test_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
+  name: ETH3D
+  root: data/ETH3D
+  train_list: datasets/ETH3D/ETH3D_train.txt
+  val_list: datasets/ETH3D/ETH3D_train.txt
+  test_list: datasets/ETH3D/ETH3D_test.txt
   num_workers: 8
   train_batch_size: 4
   val_batch_size: 1
@@ -33,7 +33,7 @@ data_cfg:
         std: [ 0.229, 0.224, 0.225 ]
     val:
       - type: StereoPad
-        size: [ 544, 960 ]
+        size: [ 512, 960 ]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
