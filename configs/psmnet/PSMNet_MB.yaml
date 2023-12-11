@@ -1,9 +1,9 @@
 data_cfg:
-  name: SceneFlow
-  root: data/SceneFlow
-  train_list: datasets/SceneFlow/sceneflow_cleanpass_train.txt
-  val_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
-  test_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
+  name: Middlebury
+  root: data/Middlebury
+  train_list: datasets/Middlebury/MiddEval3_train_h.txt
+  val_list: datasets/Middlebury/MiddEval3_train_h.txt
+  test_list: datasets/Middlebury/MiddEval3_train_h.txt
   num_workers: 8
   train_batch_size: 4
   val_batch_size: 1
@@ -33,7 +33,7 @@ data_cfg:
         std: [ 0.229, 0.224, 0.225 ]
     val:
       - type: StereoPad
-        size: [ 544, 960 ]
+        size: [ 1024, 1504 ]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
