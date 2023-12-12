@@ -28,7 +28,7 @@ data_cfg:
       - type: NormalizeImage
         mean: [ 0.485, 0.456, 0.406 ]
         std: [ 0.229, 0.224, 0.225 ]
-    test:
+    val:
       - type: TestCrop
         size: [ 512, 960 ]
       - type: GetValidDisp
