@@ -1,17 +1,6 @@
 data_cfg:
-  # name: FlyingThings3DSubset
-  # root: data/SceneFlow/FlyingThings3D_subset
-  # train_list: datasets/SceneFlow/FlyingThings3D_subset_train.txt
-  # val_list: datasets/SceneFlow/FlyingThings3D_subset_val.txt
-  # test_list: datasets/SceneFlow/FlyingThings3D_subset_val.txt
-  # train_list: datasets/SceneFlow/sceneflow_finalpass_train.txt
-  # val_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
-  # test_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
   name: SceneFlow
   root: data/SceneFlow
-  # train_list: datasets/SceneFlow/debug_train.txt
-  # val_list: datasets/SceneFlow/debug_val.txt
-  # test_list: datasets/SceneFlow/debug_val.txt
   train_list: datasets/SceneFlow/sceneflow_finalpass_train.txt
   val_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
   test_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
@@ -33,8 +22,6 @@ data_cfg:
     train:
       - type: RandomCrop
         size: [ 256, 512 ]
-      #- type: RandomHorizontalFlip
-      #  prob: 0.5
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
