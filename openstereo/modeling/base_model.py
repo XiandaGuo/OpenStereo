@@ -172,6 +172,10 @@ class BaseModel(MetaModel, nn.Module):
                 'disp_gt': disp_gt,
                 'mask': mask,
             })
+        if 'occ_mask' in inputs.keys():
+            processed_inputs['occ_mask'] = inputs['occ_mask']
+        if 'occ_mask_right' in inputs.keys():
+            processed_inputs['occ_mask_right'] = inputs['occ_mask_right']
         if not self.training:
             for k in ['pad', 'name']:
                 if k in inputs.keys():
