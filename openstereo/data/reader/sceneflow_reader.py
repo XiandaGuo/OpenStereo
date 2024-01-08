@@ -61,7 +61,7 @@ class FlyingThings3DSubsetReader(BaseReader):
         sample = {
             'left': left_img,
             'right': right_img,
-            'disp': -1 * disp_img,
+            'disp': disp_img,
             'disp_right': disp_img_right,
         }
         if self.return_occ_mask:

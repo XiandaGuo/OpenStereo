@@ -1,11 +1,11 @@
 data_cfg:
   name: FlyingThings3DSubset
-  root: /mnt/nas/public_data/SceneFlow/FlyingThings3D_subset/
-  train_list: datasets/SceneFlow/FlyingThings3D_subset_train.txt
-  val_list: datasets/SceneFlow/FlyingThings3D_subset_val.txt
-  test_list: datasets/SceneFlow/FlyingThings3D_subset_val.txt
+  root: /mnt/nas/algorithm/xianda.guo/data/FlyingThings3D/
+  train_list: datasets/SceneFlow/FlyingThings3D_sttr_train.txt
+  val_list: datasets/SceneFlow/FlyingThings3D_sttr_test.txt
+  test_list: datasets/SceneFlow/FlyingThings3D_sttr_test.txt
   num_workers: 8
-  train_batch_size: 2
+  train_batch_size: 4
   val_batch_size: 1
   pin_memory: true
   shuffle: true
@@ -22,7 +22,7 @@ data_cfg:
     train:
       - type: RandomCrop
         # size: [ 256, 512 ]
-        size: [ 360, 640 ]
+        size: [ 360, 540 ]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -72,7 +72,7 @@ loss_cfg:
 
 
 trainer_cfg:
-  save_name: STTR-Stereo_SceneFlow_new
+  save_name: STTR-Stereo_SceneFlow_Data_Correction
   total_epoch: 30
   restore_hint: 0
   log_iter: 50 # iter
