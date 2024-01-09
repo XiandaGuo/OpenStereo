@@ -3,23 +3,9 @@ import torch.nn.functional as F
 
 from modeling.base_model import BaseModel
 from utils import Odict
-from .igev_stereo import IGEVStereo
-
 from types import SimpleNamespace
 
-
-# arg_dict = {
-#     'hidden_dims': [128] * 3,
-#     'n_downsample': 2,
-#     'n_gru_layers': 3,
-#     'max_disp': 192,
-#     'corr_radius': 4,
-#     'corr_levels': 2,
-#     'slow_fast_gru': True,
-#     'iters': 22
-# }
-#
-# args = SimpleNamespace(**arg_dict)
+from .igev_stereo import IGEVStereo
 
 
 class IGEVLoss:
