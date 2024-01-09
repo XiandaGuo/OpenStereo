@@ -61,12 +61,12 @@ class FlyingThings3DSubsetReader(BaseReader):
         sample = {
             'left': left_img,
             'right': right_img,
-            'disp': -1 * disp_img,
+            'disp': disp_img,
             'disp_right': disp_img_right,
         }
         if self.return_occ_mask:
-            occ = np.array(Image.open(occ_path)).astype(np.bool)
-            occ_right = np.array(Image.open(occ_right_path)).astype(np.bool)
+            occ = np.array(Image.open(occ_path)).astype(np.bool_)
+            occ_right = np.array(Image.open(occ_right_path)).astype(np.bool_)
             sample.update({
                 'occ_mask': occ,
                 'occ_mask_right': occ_right

@@ -109,8 +109,15 @@ class STTRNet(BaseModel):
         """Forward the network."""
         # fake occ
         # print(inputs.keys())
-        occ_mask = inputs['mask']
-        occ_mask_right = inputs['mask']
+        if "occ_mask" in inputs.keys():
+            occ_mask = inputs['occ_mask']
+            occ_mask_right = inputs['occ_mask_right']
+            # change occ_mask tensor type to long or bool type
+            occ_mask = occ_mask.bool()
+            occ_mask_right = occ_mask_right.bool()
+        else:
+            occ_mask = inputs['mask']
+            occ_mask_right = inputs['mask']
         # read data
         left, right = inputs['ref_img'], inputs['tgt_img']
         disp, occ_mask, occ_mask_right = inputs['disp_gt'], occ_mask, occ_mask_right
