@@ -22,7 +22,7 @@ data_cfg:
     train:
       - type: RandomCrop
         # size: [ 256, 512 ]
-        size: [ 360, 540 ]
+        size: [ 360, 640 ]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -72,8 +72,8 @@ loss_cfg:
 
 
 trainer_cfg:
-  save_name: STTR-Stereo_SceneFlow_Data_Correction_Disparity_OCC
-  total_epoch: 30
+  save_name: STTR-Stereo_SceneFlow_Data_Correction_Disparity_OCC_300
+  total_epoch: 300
   restore_hint: 0
   log_iter: 50 # iter
   save_every: 1 # epoch
@@ -85,10 +85,10 @@ trainer_cfg:
 
   optimizer_cfg:
     solver: Adam
-    lr: 0.0008
+    lr: 0.0002
     betas: [ 0.9, 0.999 ]
-    lr_backbone: 0.0008
-    lr_regression: 0.0016
+    lr_backbone: 0.0001
+    lr_regression: 0.0002
 
   scheduler_cfg:
     scheduler: MultiStepLR
