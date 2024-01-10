@@ -10,7 +10,8 @@ data_cfg:
   pin_memory: true
   shuffle: true
 
-  batch_uniform: false
+  batch_uniform: true
+  random_type: range_for_sttr
   #  random_type: range
   #  w_range: [ 0.5, 2.0 ]
   #  h_range: [ 0.5, 2.0 ]
@@ -72,7 +73,7 @@ loss_cfg:
 
 
 trainer_cfg:
-  save_name: STTR-Stereo_SceneFlow_Data_Correction_Disparity_OCC_300
+  save_name: STTR-Stereo_SceneFlow_Data_Correction_Disparity_OCC_300_crop_range
   total_epoch: 300
   restore_hint: 0
   log_iter: 50 # iter
