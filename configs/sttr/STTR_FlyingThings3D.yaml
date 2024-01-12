@@ -5,12 +5,13 @@ data_cfg:
   val_list: datasets/SceneFlow/FlyingThings3D_sttr_test.txt
   test_list: datasets/SceneFlow/FlyingThings3D_sttr_test.txt
   num_workers: 8
-  train_batch_size: 4
+  train_batch_size: 1
   val_batch_size: 1
   pin_memory: true
   shuffle: true
 
-  batch_uniform: false
+  batch_uniform: true
+  random_type: range_for_sttr
   #  random_type: range
   #  w_range: [ 0.5, 2.0 ]
   #  h_range: [ 0.5, 2.0 ]
@@ -22,7 +23,7 @@ data_cfg:
     train:
       - type: RandomCrop
         # size: [ 256, 512 ]
-        size: [ 360, 540 ]
+        size: [ 360, 640 ]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -72,8 +73,8 @@ loss_cfg:
 
 
 trainer_cfg:
-  save_name: STTR-Stereo_SceneFlow_Data_Correction
-  total_epoch: 30
+  save_name: STTR-Stereo_SceneFlow_Data_Correction_Disparity_OCC_30_crop_rangehighlr
+  total_epoch: 100
   restore_hint: 0
   log_iter: 50 # iter
   save_every: 1 # epoch
