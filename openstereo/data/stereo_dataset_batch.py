@@ -261,7 +261,7 @@ class StereoBatchDataset(Dataset):
 
     def get_crop_size(self, base_size):
         if self.random_type == 'range_for_sttr':
-            w = random.randint(360, 640)
+            w = random.randint(640, 960)
             h = random.randint(360, 640)
         elif self.random_type == 'range':
             w = random.randint(self.w_range[0] * base_size[1], self.w_range[1] * base_size[1])
