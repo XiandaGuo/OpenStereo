@@ -1,6 +1,6 @@
 data_cfg:
   name: FlyingThings3DSubset
-  root: /mnt/nas/algorithm/xianda.guo/data/FlyingThings3D/
+  root: /mnt/nas/public_data/SceneFlow/
   train_list: datasets/SceneFlow/FlyingThings3D_sttr_train.txt
   val_list: datasets/SceneFlow/FlyingThings3D_sttr_test.txt
   test_list: datasets/SceneFlow/FlyingThings3D_sttr_test.txt
@@ -22,7 +22,6 @@ data_cfg:
   transform:
     train:
       - type: RandomCrop
-        # size: [ 256, 512 ]
         size: [ 360, 640 ]
       - type: GetValidDisp
         max_disp: 192
@@ -73,8 +72,8 @@ loss_cfg:
 
 
 trainer_cfg:
-  save_name: STTR-Stereo_SceneFlow_Data_Correction_Disparity_OCC_30_crop_rangehighlr
-  total_epoch: 100
+  save_name: STTR-Stereo_FlyingThings3D_subset
+  total_epoch: 10
   restore_hint: 0
   log_iter: 50 # iter
   save_every: 1 # epoch
@@ -94,7 +93,7 @@ trainer_cfg:
   scheduler_cfg:
     scheduler: MultiStepLR
     gamma: 0.5
-    milestones: [ 5, 7, 9, 11, 15, 20]
+    milestones: [ 5, 7, 9]
     warmup:
       warmup_steps: 2000
 
