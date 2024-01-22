@@ -149,6 +149,9 @@ class BaseTrainer:
         self.current_epoch += 1
         total_loss = 0.
         self.model.train()
+        # freeze BN层
+        if self.trainer_cfg.get('fix_bn', False):
+            self.model = fix_bn(self.model)
         self.msg_mgr.log_info(
             f"Using {dist.get_world_size() if self.is_dist else 1} Device,"
             f" batches on each device: {len(self.train_loader)},"
