@@ -9,6 +9,7 @@ data_cfg:
   val_batch_size: 10
   pin_memory: true
   shuffle: true
+  return_right_disp: true
 
   batch_uniform: false
   #  random_type: range
