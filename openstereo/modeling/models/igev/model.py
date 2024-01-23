@@ -53,34 +53,13 @@ class IGEVLoss:
 
 
 class IGEV(BaseModel):
-    def __init__(self,
-                 cfgs,
-                 max_disp=192,
-                 hidden_dims=[128, 128, 128],
-                 n_downsample=2,
-                 n_gru_layers=3,
-                 corr_radius=4,
-                 corr_levels=2,
-                 slow_fast_gru=True,
-                 iters=22,
-                 *args, **kwargs
-                 ):
-        arg_dict = {
-            'max_disp': max_disp,
-            'hidden_dims': hidden_dims,
-            'n_downsample': n_downsample,
-            'n_gru_layers': n_gru_layers,
-            'corr_radius': corr_radius,
-            'corr_levels': corr_levels,
-            'slow_fast_gru': slow_fast_gru,
-            'iters': iters
-        }
-        self.arg_dict = SimpleNamespace(**arg_dict)
+    def __init__(self,*args, **kwargs):
         super().__init__(cfg=cfgs, *args, **kwargs)
 
 
     def build_network(self):
-        self.net = IGEVStereo(self.arg_dict)
+        model_cfg = self.model_cfg
+        self.net = IGEVStereo(model_cfg['base_config'])
 
     def init_parameters(self):
         return
