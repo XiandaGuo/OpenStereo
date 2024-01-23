@@ -2,7 +2,7 @@ from .extractor import MultiBasicEncoder, Feature
 from .geometry import Combined_Geo_Encoding_Volume
 from .submodule import *
 from .update import BasicMultiUpdateBlock
-
+from .utils import Map
 
 class hourglass(nn.Module):
     def __init__(self, in_channels):
@@ -79,6 +79,7 @@ class hourglass(nn.Module):
 class IGEVStereo(nn.Module):
     def __init__(self, args):
         super().__init__()
+        args = Map(args)
         self.args = args
 
         context_dims = args.hidden_dims
@@ -184,7 +185,8 @@ class IGEVStereo(nn.Module):
         disp_preds = []
 
         # GRUs iterations to update disparity
-        for itr in range(self.args.iters):
+        iters = self.args.valid_iters if test_mode else self.args.train_iters
+        for itr in range(iters):
             disp = disp.detach()
             geo_feat = geo_fn(disp, coords)
             if self.args.n_gru_layers == 3 and self.args.slow_fast_gru:  # Update low-res ConvGRU

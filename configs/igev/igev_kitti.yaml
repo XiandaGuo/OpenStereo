@@ -16,12 +16,6 @@ data_cfg:
   test_on: 2015
 
   batch_uniform: false
-  #  random_type: range
-  #  w_range: [ 0.5, 2.0 ]
-  #  h_range: [ 0.5, 2.0 ]
-  #  random_type: choice
-  #  h_range: [ 256, 288, 320, 352 ]
-  #  w_range: [ 480, 512, 544, 576 ]
 
   transform:
     train:
@@ -32,16 +26,7 @@ data_cfg:
         do_flip: false
         h_flip_prob: 0.5
         v_flip_prob: 0.1
-#      - type: RandomCrop
-#        size: [ 256, 512 ]
-#      - type: ColorTransform
-#        range: [0.7, 1.3]
-#      - type: EraserTransform
-#        prob: 0.5
-#      - type: GetValidDisp
-#        max_disp: 192
-#      - type: TransposeImage
-#      - type: ToTensor
+
     val:
       - type: CropOrPad
         size: [ 384, 1248 ]
@@ -62,12 +47,13 @@ model_cfg:
   base_config:
     max_disp: 192
     hidden_dims: [ 128, 128, 128 ]
-    n_downsample: 2
     n_gru_layers: 3
-    corr_radius: 4
-    corr_levels: 2
+    n_downsample: 2
     slow_fast_gru: True
-    iters: 22
+    corr_levels: 2
+    corr_radius: 4
+    train_iters: 22
+    valid_iters: 32
 
 
 loss_cfg:
