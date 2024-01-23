@@ -43,7 +43,7 @@ model_cfg:
     corr_levels: 2
     corr_radius: 4
     train_iters: 22
-    valid_iters: 32
+    valid_iters: 22
 
 loss_cfg:
 # This model uses the user-defined loss function.
