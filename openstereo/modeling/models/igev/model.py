@@ -54,7 +54,7 @@ class IGEVLoss:
 
 class IGEV(BaseModel):
     def __init__(self,*args, **kwargs):
-        super().__init__(cfg=cfgs, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
     def build_network(self):
