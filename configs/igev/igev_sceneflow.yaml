@@ -37,12 +37,13 @@ model_cfg:
   base_config:
     max_disp: 192
     hidden_dims: [ 128, 128, 128 ]
-    n_downsample: 2
     n_gru_layers: 3
-    corr_radius: 4
-    corr_levels: 2
+    n_downsample: 2
     slow_fast_gru: True
-    iters: 22
+    corr_levels: 2
+    corr_radius: 4
+    train_iters: 22
+    valid_iters: 32
 
 loss_cfg:
 # This model uses the user-defined loss function.
