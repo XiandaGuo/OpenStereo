@@ -199,7 +199,7 @@ class IGEVStereo(nn.Module):
                                                                   iter08=self.args.n_gru_layers >= 2)
 
             disp = disp + delta_disp
-            if test_mode and itr < self.args.iters - 1:
+            if test_mode and itr < iters - 1:
                 continue
 
             # upsample predictions
