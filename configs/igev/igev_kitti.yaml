@@ -2,10 +2,10 @@ data_cfg:
   name: KITTI2012&2015
   root2012: data/kitti12
   root2015: data/kitti15
-  train_list_2015: datasets/KITTI15/kitti15_train165.txt
+  train_list_2015: datasets/KITTI15/kitti15_train200.txt
   val_list_2015: datasets/KITTI15/kitti15_val35.txt
   test_list_2015: datasets/KITTI15/kitti15_test.txt
-  train_list_2012: datasets/KITTI12/kitti12_train165.txt
+  train_list_2012: datasets/KITTI12/kitti12_train194.txt
   val_list_2012: datasets/KITTI12/kitti12_val29.txt
   test_list_2012: datasets/KITTI12/kitti12_test.txt
   num_workers: 4
