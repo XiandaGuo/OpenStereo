@@ -16,7 +16,7 @@ data_cfg:
     train:
       - type: FlowAugmentor
         size: [ 320, 736 ]
-        min_scale: 0.2
+        min_scale: -0.2
         max_scale: 0.5
         do_flip: false
         h_flip_prob: 0.5
