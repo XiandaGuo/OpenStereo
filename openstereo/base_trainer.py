@@ -149,7 +149,7 @@ class BaseTrainer:
         self.current_epoch += 1
         total_loss = 0.
         self.model.train()
-        # freeze BN层
+        # Freeze BN
         if self.trainer_cfg.get('fix_bn', False):
             self.model = fix_bn(self.model)
         self.msg_mgr.log_info(
@@ -254,6 +254,7 @@ class BaseTrainer:
 
         # init evaluator
         apply_max_disp = self.evaluator_cfg.get('apply_max_disp', True)
+        apply_occ_mask = self.evaluator_cfg.get('apply_occ_mask', False)
 
         # init metrics
         epoch_metrics = {}
@@ -272,7 +273,8 @@ class BaseTrainer:
             pbar = NoOp()
 
         for i, data in enumerate(self.val_loader):
-            batch_inputs = self.model.prepare_inputs(data, device=self.device, apply_max_disp=apply_max_disp)
+            batch_inputs = self.model.prepare_inputs(data, device=self.device, apply_max_disp=apply_max_disp,
+                                                     apply_occ_mask=apply_occ_mask)
             with autocast(enabled=self.amp):
                 out = self.model.forward(batch_inputs)
                 inference_disp, visual_summary = out['inference_disp'], out['visual_summary']
