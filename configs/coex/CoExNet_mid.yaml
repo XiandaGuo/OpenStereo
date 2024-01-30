@@ -1,0 +1,109 @@
+data_cfg:
+  name: Middlebury
+  root: data/Middlebury
+  train_list: datasets/Middlebury/MiddEval3_train_h.txt
+  val_list: datasets/Middlebury/MiddEval3_train_h.txt
+  test_list: datasets/Middlebury/MiddEval3_train_h.txt
+  num_workers: 4
+  train_batch_size: 2
+  val_batch_size: 1
+  pin_memory: true
+  shuffle: false
+
+  batch_uniform: false
+
+  transform:
+    train:
+      - type: RandomCrop
+        size: [ 288, 576 ]
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+    val:
+      - type: DivisiblePad
+        by: 32
+        mode: double
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+
+model_cfg:
+  model: CoExNet
+  find_unused_parameters: true
+
+  base_config:
+    max_disp: 192
+    spixel_branch_channels: [ 32, 48 ]
+    chans: [ 16, 24, 32, 96, 160 ]
+
+  backbone_cfg:
+    type: CoExBackbone
+
+  cost_processor_cfg:
+    type: CoExCostProcessor
+    matching_weighted: False
+    matching_head: 1
+    gce: true
+    aggregation_disp_strides: 2
+    aggregation_channels: [16, 32, 48]
+    aggregation_blocks_num: [2, 2, 2]
+
+  disp_processor_cfg:
+    type: CoExDispProcessor
+    regression_topk: 2
+
+
+loss_cfg:
+  - log_prefix: disp
+    loss_term_weight: 0.77  # 1/1.3
+    type: Weighted_Smooth_l1_Loss
+    weights: [ 1.0, 0.3 ]
+
+
+trainer_cfg:
+  save_name: CoExNet_SceneFlow
+  total_epoch: 12
+  restore_hint: 0
+  optimizer_reset: false
+  scheduler_reset: false
+  warmup_reset: false
+  log_iter: 50 # iter
+  save_every: 1 # epoch
+  val_every: 1 # epoch
+  amp: true
+  sync_bn: false
+  fix_bn: false
+  init_parameters: false
+
+  optimizer_cfg:
+    solver: RMSprop
+    lr: 0.001
+
+  scheduler_cfg:
+    scheduler: MultiStepLR
+    gamma: 0.5
+    milestones: [ 5, 7, 9 ]
+    warmup:
+      warmup_steps: 100
+
+  evaluator_cfg:
+    apply_occ_mask: true
+    apply_max_disp: true
+    metric:
+      - d1_all
+      - epe
+      - bad_1
+      - bad_2
+      - bad_3
+
+  clip_grad_cfg:
+    type: value
+    clip_value: 0.1
