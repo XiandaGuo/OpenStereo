@@ -11,25 +11,17 @@ data_cfg:
   shuffle: false
 
   batch_uniform: false
-  #  random_type: range
-  #  w_range: [ 0.5, 2.0 ]
-  #  h_range: [ 0.5, 2.0 ]
-  #  random_type: choice
-  #  h_range: [ 256, 288, 320, 352 ]
-  #  w_range: [ 480, 512, 544, 576 ]
 
   transform:
     train:
       - type: FlowAugmentor
         size: [ 320, 736 ]
-        min_scale: 0.2
+        min_scale: -0.2
         max_scale: 0.5
         do_flip: false
         h_flip_prob: 0.5
         v_flip_prob: 0.1
-    #      - type: NormalizeImage
-    #        mean: [ 0.485, 0.456, 0.406 ]
-    #        std: [ 0.229, 0.224, 0.225 ]
+
     val:
       - type: DivisiblePad
         by: 32
@@ -38,10 +30,6 @@ data_cfg:
         max_disp: 192
       - type: TransposeImage
       - type: ToTensor
-#      - type: NormalizeImage
-#        mean: [ 0.485, 0.456, 0.406 ]
-#        std: [ 0.229, 0.224, 0.225 ]
-
 
 model_cfg:
   model: IGEV
@@ -50,17 +38,16 @@ model_cfg:
   base_config:
     max_disp: 192
     hidden_dims: [ 128, 128, 128 ]
-    n_downsample: 2
     n_gru_layers: 3
-    corr_radius: 4
+    n_downsample: 2
+    slow_fast_gru: True
     corr_levels: 2
-    slow_fast_gru: false
-    iters: 32
-
+    corr_radius: 4
+    train_iters: 22
+    valid_iters: 32
 
 loss_cfg:
 # This model uses the user-defined loss function.
-
 
 trainer_cfg:
   save_name: igev_sf
@@ -70,7 +57,7 @@ trainer_cfg:
   log_iter: 1 # iter
   save_every: 1 # epoch
   val_every: 1 # epoch
-  amp: false
+  amp: true
   sync_bn: true
   fix_bn: true
   init_parameters: false
@@ -94,7 +81,6 @@ trainer_cfg:
 
   evaluator_cfg:
     apply_occ_mask: true
-    apply_max_disp: true
     metric:
       - d1_all
       - epe
