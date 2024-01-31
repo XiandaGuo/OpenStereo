@@ -227,7 +227,7 @@ class StereoBatchDataset(Dataset):
             elif trans['type'] == 'StereoPad':
                 transform_compose.append(ST.StereoPad(trans['size']))
             elif trans['type'] == 'DivisiblePad':
-                transform_compose.append(ST.DivisiblePad(trans['by']))
+                transform_compose.append(ST.DivisiblePad(trans['by'], trans.get('mode', 'single')))
             elif trans['type'] == 'RandomCrop':
                 transform_compose.append(ST.RandomCrop(trans['size']))
                 self.random_crop_index = len(transform_compose) - 1

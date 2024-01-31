@@ -1,0 +1,143 @@
+data_cfg:
+  name: Middlebury
+  root: data/Middlebury
+  train_list: datasets/Middlebury/MiddEval3_train_h.txt
+  val_list: datasets/Middlebury/MiddEval3_train_h.txt
+  test_list: datasets/Middlebury/MiddEval3_train_h.txt
+  num_workers: 4
+  train_batch_size: 2
+  val_batch_size: 1
+  pin_memory: true
+  shuffle: false
+
+  batch_uniform: false
+
+
+  transform:
+    train:
+      - type: RandomCrop
+        size: [ 384, 768 ]
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+    val:
+      - type: DivisiblePad
+        by: 128
+        mode: double
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+
+
+model_cfg:
+  model: FADNet
+  find_unused_parameters: false
+
+  base_config:
+    max_disp: 192
+
+
+  # Backbone
+  backbone_cfg:
+    type: FadnetBackbone
+    resBlock: true
+    maxdisp: 192
+    input_channel: 3
+    encoder_ratio: 16
+    decoder_ratio: 16
+
+  # VolumeCostProcessor
+  cost_processor_cfg:
+    type: FADAggregator
+    resBlock: true
+    maxdisp: 192
+    input_channel: 3
+    encoder_ratio: 16
+    decoder_ratio: 16
+
+  # DispProcessor
+  disp_processor_cfg:
+    type: DispNetRes
+    in_planes: 11
+    resBlock: true
+    encoder_ratio: 16
+    decoder_ratio: 16
+
+
+
+
+loss_cfg:
+  - log_prefix: dispnetc_flows
+    type: MultiScaleLoss
+    loss_term_weight: 1
+    scales: 7
+    downscale: 1
+    weights: [[0.32, 0.16, 0.08, 0.04, 0.02, 0.01, 0.005],
+                    [0.6, 0.32, 0.08, 0.04, 0.02, 0.01, 0.005],
+                    [0.8, 0.16, 0.04, 0.02, 0.01, 0.005, 0.0025],
+                    [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
+    loss: L1
+    maxdisp: 192
+    mask: false
+
+
+  - log_prefix: dispnetres_flows
+    type: MultiScaleLoss
+    loss_term_weight: 1
+    scales: 7
+    downscale: 1
+    weights: [[0.32, 0.16, 0.08, 0.04, 0.02, 0.01, 0.005],
+                    [0.6, 0.32, 0.08, 0.04, 0.02, 0.01, 0.005],
+                    [0.8, 0.16, 0.04, 0.02, 0.01, 0.005, 0.0025],
+                    [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
+    loss: L1
+    maxdisp: 192
+    mask: false
+
+
+
+trainer_cfg:
+  save_name: Fadnet_driving_g8b96_lamb0004
+  total_round: 4
+  total_epoch: [20,20,20,30]
+  restore_hint: 0
+  optimizer_reset: false
+  scheduler_reset: false
+  warmup_reset: false
+  log_iter: 1 # iter
+  save_every: 1 # epoch
+  val_every: 1 # epoch
+  amp: false
+  sync_bn: true
+  fix_bn: false
+  init_parameters: false
+
+  optimizer_cfg:
+    solver: lamb
+    lr: 0.004
+
+
+  scheduler_cfg:
+    scheduler: MultiStepLR
+    gamma: 0.5
+    milestones: [ 10, 20, 30 ]
+    warmup:
+      warmup_steps: 100
+
+  evaluator_cfg:
+    apply_occ_mask: true
+    apply_max_disp: true
+    metric:
+      - d1_all
+      - epe
+      - bad_1
+      - bad_2
+      - bad_3

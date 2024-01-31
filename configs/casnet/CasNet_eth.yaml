@@ -1,0 +1,96 @@
+data_cfg:
+  name: ETH3D
+  root: data/ETH3D
+  train_list: datasets/ETH3D/ETH3D_train.txt
+  val_list: datasets/ETH3D/ETH3D_train.txt
+  test_list: datasets/ETH3D/ETH3D_train.txt
+  num_workers: 4
+  train_batch_size: 2
+  val_batch_size: 1
+  pin_memory: true
+  shuffle: false
+  batch_uniform: false
+  #  random_type: range
+  #  w_range: [ 0.5, 2.0 ]
+  #  h_range: [ 0.5, 2.0 ]
+  #  random_type: choice
+  #  h_range: [ 256, 288, 320, 352 ]
+  #  w_range: [ 480, 512, 544, 576 ]
+
+  transform:
+    train:
+      - type: RandomCrop
+        size: [ 256, 512 ]
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+    val:
+      - type: DivisiblePad
+        by: 32
+        mode: double
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+
+
+
+model_cfg:
+  model: CasStereoNet
+  model_type: psmnet
+
+  base_config:
+    max_disp: 192
+
+
+loss_cfg:
+  type: CasStereoLoss # user defined loss
+
+
+trainer_cfg:
+  save_name: CasNet_PSM_SceneFlow
+  total_epoch: 20
+  restore_hint: 0
+  optimizer_reset: false
+  scheduler_reset: false
+  warmup_reset: false
+  log_iter: 50 # iter
+  save_every: 1 # epoch
+  val_every: 1 # epoch
+  amp: true
+  sync_bn: false
+  fix_bn: false
+  init_parameters: false
+
+  optimizer_cfg:
+    solver: RMSprop
+    lr: 0.001
+
+  scheduler_cfg:
+    scheduler: MultiStepLR
+    gamma: 0.5
+    milestones: [ 10, 12, 14, 16 ]
+    warmup:
+      warmup_steps: 100
+
+  evaluator_cfg:
+    apply_occ_mask: true
+    apply_max_disp: true
+    metric:
+      - d1_all
+      - epe
+      - bad_1
+      - bad_2
+      - bad_3
+
+  clip_grad_cfg:
+    type: norm
+    max_norm: 35
+    norm_type: 2

@@ -126,21 +126,33 @@ class StereoPad(object):
 
 
 class DivisiblePad(object):
-    def __init__(self, by):
+    def __init__(self, by, mode='single'):
         self.by = by
+        self.mode = mode
 
     def __call__(self, sample):
         h, w = sample['left'].shape[:2]
         if h % self.by != 0:
-            pad_top = h + self.by - h % self.by - h
+            pad_h = h + self.by - h % self.by - h
         else:
-            pad_top = 0
+            pad_h = 0
         if w % self.by != 0:
-            pad_right = w + self.by - w % self.by - w
+            pad_w = w + self.by - w % self.by - w
         else:
-            pad_right = 0
-        pad_left = 0
-        pad_bottom = 0
+            pad_w = 0
+
+        if self.mode == 'single':
+            pad_top = pad_h
+            pad_right = pad_w
+            pad_left = 0
+            pad_bottom = 0
+        elif self.mode == 'double':
+            pad_top = pad_h // 2
+            pad_right = pad_w // 2
+            pad_bottom = pad_h - (pad_h // 2)
+            pad_left = pad_w - (pad_w // 2)
+        else:
+            raise ValueError('Invalid mode: {}'.format(self.mode))
 
         # apply pad for left, right, disp image, and occ mask
         for k in sample.keys():
@@ -149,7 +161,7 @@ class DivisiblePad(object):
             elif k in ['disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
                 sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right)), 'constant',
                                    constant_values=0)
-        sample['pad'] = [pad_top, pad_right, 0, 0]
+        sample['pad'] = [pad_top, pad_right, pad_bottom, pad_left]
         return sample
 
 
