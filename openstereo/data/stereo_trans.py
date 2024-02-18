@@ -120,8 +120,7 @@ class StereoPad(object):
             if k in ['left', 'right']:
                 sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), 'edge')
             elif k in ['disp', 'disp_right', 'occ_mask', 'occ_mask_right']:
-                sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right)), 'constant',
-                                   constant_values=0)
+                sample[k] = np.pad(sample[k], ((pad_top, pad_bottom), (pad_left, pad_right)), 'constant', constant_values=0)
         return sample
 
 
