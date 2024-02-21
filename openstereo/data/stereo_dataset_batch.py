@@ -213,6 +213,7 @@ class StereoBatchDataset(Dataset):
                         batch_result[each_item] = tmp
                     else:
                         batch_result[each_item] = torch.cat([batch_result[each_item], tmp], 0)
+        batch_result['index'] = indexs
         return batch_result
 
     def build_transform_by_cfg(self, transform_config):

@@ -1,6 +1,6 @@
 data_cfg:
   name: SceneFlow
-  root: /mnt/nas/public_data/SceneFlow  # your datapath of SceneFlow
+  root: data/sceneflow  # your datapath of SceneFlow
   train_list: datasets/SceneFlow/sceneflow_finalpass_train.txt
   val_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
   test_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
@@ -79,12 +79,12 @@ trainer_cfg:
   #      warmup_steps: 2000
 
   evaluator_cfg:
-    metric:
-      - d1_all
+    metrics:
+#      - d1_all
       - epe
-      - bad_1
-      - bad_2
-      - bad_3
+#      - bad_1
+#      - bad_2
+#      - bad_3
 
   clip_grad_cfg:
     type: value

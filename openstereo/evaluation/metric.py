@@ -147,25 +147,55 @@ def epe_metric_np(disp_est, disp_gt, mask):
     return np.mean(E)
 
 
+# def epe_metric(disp_est, disp_gt, mask):
+#     """
+#     Compute the EPE metric for disparity estimation.
+#     Also known as the average error metric or L1 error.
+#     Args:
+#         disp_est: estimated disparity map
+#         disp_gt: ground truth disparity map
+#         mask: mask of valid pixels
+#     Returns:
+#         float: EPE metric value
+#     """
+#     if mask.sum() == 0:
+#         return torch.tensor(0.0).to(disp_est.device)
+#
+#     # Apply the mask to the estimated and ground truth disparity maps
+#     disp_est, disp_gt = disp_est[mask], disp_gt[mask]
+#
+#     # Calculate the absolute error between estimated and ground truth disparities
+#     E = torch.abs(disp_gt - disp_est)
+#
+#     # Calculate the average error and return the result
+#     return torch.mean(E)
+
+
 def epe_metric(disp_est, disp_gt, mask):
     """
-    Compute the EPE metric for disparity estimation.
+    Compute the EPE metric for disparity estimation for each image in a batch.
     Also known as the average error metric or L1 error.
     Args:
         disp_est: estimated disparity map
         disp_gt: ground truth disparity map
         mask: mask of valid pixels
     Returns:
-        float: EPE metric value
+        Tensor: EPE metric value for each image
     """
-    if mask.sum() == 0:
-        return torch.tensor(0.0).to(disp_est.device)
-
-    # Apply the mask to the estimated and ground truth disparity maps
-    disp_est, disp_gt = disp_est[mask], disp_gt[mask]
-
     # Calculate the absolute error between estimated and ground truth disparities
     E = torch.abs(disp_gt - disp_est)
 
-    # Calculate the average error and return the result
-    return torch.mean(E)
+    # Apply the mask to the error map
+    E_masked = torch.where(mask, E, torch.zeros_like(E))
+
+    # Calculate the sum of the errors and the number of valid pixels for each image
+    E_sum = E_masked.sum(dim=[1, 2])
+    num_valid_pixels = mask.sum(dim=[1, 2])
+
+    # Calculate the average error for each image
+    epe_per_image = E_sum / num_valid_pixels
+
+    # Handle the case where the number of valid pixels is 0
+    epe_per_image = torch.where(num_valid_pixels > 0, epe_per_image, torch.zeros_like(epe_per_image))
+
+    return epe_per_image
