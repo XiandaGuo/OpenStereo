@@ -80,11 +80,11 @@ trainer_cfg:
 
   evaluator_cfg:
     metrics:
-#      - d1_all
+      - d1_all
       - epe
-#      - bad_1
-#      - bad_2
-#      - bad_3
+      - bad_1
+      - bad_2
+      - bad_3
 
   clip_grad_cfg:
     type: value

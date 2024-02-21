@@ -134,7 +134,7 @@ class BaseTrainer:
 
     def build_evaluator(self):
         metrics = self.evaluator_cfg.get('metrics', ['epe', 'd1_all', 'bad_1', 'bad_2', 'bad_3'])
-        self.evaluator = OpenStereoEvaluator(metrics, use_np=False)
+        self.evaluator = OpenStereoEvaluator(metrics)
 
     def build_clip_grad(self):
         clip_type = self.clip_grade_config.get('type', None)
@@ -201,7 +201,6 @@ class BaseTrainer:
                 self.clip_gard(self.model)
                 self.optimizer.step()
             self.current_iter += 1
-            # if self.current_iter < self.trainer_cfg.get('warmup_scheduler', 0):
             with self.warmup_scheduler.dampening():
                 self.batch_scheduler.step()
             total_loss += loss.item() if not torch.isnan(loss) else 0
@@ -305,19 +304,6 @@ class BaseTrainer:
         rest_iters = len(self.val_loader) - pbar.n if self.is_dist and self.rank == 0 or not self.is_dist else 0
         pbar.update(rest_iters)
         pbar.close()
-        # for k in epoch_metrics.keys():
-        # epoch_metrics = {
-        #     "epe": {
-        #         "keys": [0, 1, 2, 3],
-        #         "values": [0.11, 0.23, 0.12, 0.11]
-        #     },
-        #     "d1": {
-        #         "keys": [0, 1, 2, 3],
-        #         "values": [0.11, 0.23, 0.12, 0.11]
-        #     }
-        # }
-
-
 
         if self.is_dist:
             dist.barrier()
@@ -330,9 +316,13 @@ class BaseTrainer:
                 gathered_keys = [torch.zeros_like(keys) for _ in range(dist.get_world_size())]
                 gathered_values = [torch.zeros_like(values) for _ in range(dist.get_world_size())]
 
-                # Gather the keys and values from all devices to the master device
-                dist.gather(keys, gather_list=gathered_keys, dst=0)
-                dist.gather(values, gather_list=gathered_values, dst=0)
+                if dist.get_rank() == 0:
+                    # Gather the keys and values from all devices to the master device
+                    dist.gather(keys, gather_list=gathered_keys, dst=0)
+                    dist.gather(values, gather_list=gathered_values, dst=0)
+                else:
+                    dist.gather(keys, dst=0)
+                    dist.gather(values, dst=0)
 
                 if dist.get_rank() == 0:
                     # Concatenate the gathered keys and values
@@ -348,20 +338,20 @@ class BaseTrainer:
                     # Update the keys and values in epoch_metrics
                     epoch_metrics[metric]["values"] = list(unique_dict.values())
                     epoch_metrics[metric]["keys"] = list(unique_dict.keys())
-                    epoch_metrics[metric]["result"] = torch.mean(torch.tensor(epoch_metrics[metric]["values"])).item()
 
-        # for k in epoch_metrics.keys():
-        #     epoch_metrics[k] = epoch_metrics[k].item()
-        visual_info = {}
-        for k in epoch_metrics:
-            visual_info[f'scalar/val/{k}'] = epoch_metrics[k]['result']
-        self.msg_mgr.write_to_tensorboard(visual_info, self.current_epoch)
-        metric_info = {k: v['result'] for k, v in epoch_metrics.items()}
-        self.msg_mgr.log_info(f"Epoch {self.current_epoch} metrics: {metric_info}")
-        # clear cache
-        if next(self.model.parameters()).is_cuda:
-            torch.cuda.empty_cache()
-        return epoch_metrics
+        if not self.is_dist or dist.get_rank() == 0:
+            for metric in epoch_metrics:
+                epoch_metrics[metric]["result"] = torch.mean(torch.tensor(epoch_metrics[metric]["values"])).item()
+            visual_info = {}
+            for k in epoch_metrics:
+                visual_info[f'scalar/val/{k}'] = epoch_metrics[k]['result']
+            self.msg_mgr.write_to_tensorboard(visual_info, self.current_epoch)
+            metric_info = {k: v['result'] for k, v in epoch_metrics.items()}
+            self.msg_mgr.log_info(f"Epoch {self.current_epoch} metrics: {metric_info}")
+            # clear cache
+            if next(self.model.parameters()).is_cuda:
+                torch.cuda.empty_cache()
+            return epoch_metrics
 
     @torch.no_grad()
     def test_kitti(self):

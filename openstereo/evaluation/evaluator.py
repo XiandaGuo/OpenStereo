@@ -2,37 +2,24 @@ from functools import partial
 
 from evaluation.metric import *
 
-METRICS_NP = {
-    # EPE metric (Average Endpoint Error)
-    'epe': epe_metric_np,
-    # D1 metric (Percentage of erroneous pixels with disparity error > 3 pixels and relative error > 0.05)
-    'd1_all': d1_metric_np,
-    # Threshold metrics (Percentage of erroneous pixels with disparity error > threshold)
-    'bad_1': partial(bad_metric_np, threshold=1),
-    'bad_2': partial(bad_metric_np, threshold=2),
-    'bad_3': partial(bad_metric_np, threshold=3),
-
-}
-
 METRICS = {
     # EPE metric (Average Endpoint Error)
-    'epe': epe_metric,
+    'epe': epe_metric_per_image,
     # D1 metric (Percentage of erroneous pixels with disparity error > 3 pixels and relative error > 0.05)
-    'd1_all': d1_metric,
+    'd1_all': d1_metric_per_image,
     # Threshold metrics (Percentage of erroneous pixels with disparity error > threshold)
-    'bad_1': partial(bad_metric, threshold=1),
-    'bad_2': partial(bad_metric, threshold=2),
-    'bad_3': partial(bad_metric, threshold=3),
+    'bad_1': partial(bad_metric_per_image, threshold=1),
+    'bad_2': partial(bad_metric_per_image, threshold=2),
+    'bad_3': partial(bad_metric_per_image, threshold=3),
 }
 
 
 class OpenStereoEvaluator:
-    def __init__(self, metrics=None, use_np=False):
+    def __init__(self, metrics=None):
         # Set default metrics if none are given
         if metrics is None:
             metrics = ['epe', 'd1_all']
         self.metrics = metrics
-        self.use_np = use_np
 
     def __call__(self, data):
         # Extract input data
@@ -48,7 +35,7 @@ class OpenStereoEvaluator:
                 raise ValueError("Unknown metric: {}".format(m))
             else:
                 # Get the appropriate metric function based on use_np
-                metric_func = METRICS[m] if not self.use_np else METRICS_NP[m]
+                metric_func = METRICS[m]
 
                 # Compute the metric and store the result in the dictionary
                 res[m] = metric_func(disp_est, disp_gt, mask)
