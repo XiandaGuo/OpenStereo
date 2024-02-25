@@ -373,7 +373,11 @@ class BaseTrainer:
             # crop padding
             if 'pad' in ipts:
                 pad_top, pad_right, _, _ = ipts['pad']
-                disp_est = disp_est[:, pad_top:, :-pad_right]
+                # tensor[:0] is equivalent to remove this dimension
+                if pad_right == 0:
+                    disp_est = disp_est[:, pad_top:, :]
+                else:
+                    disp_est = disp_est[:, pad_top:, :-pad_right]
             # save to file
             img = disp_est.squeeze(0).cpu().numpy()
             img = (img * 256).astype('uint16')
