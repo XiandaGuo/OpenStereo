@@ -1,14 +1,14 @@
 data_cfg:
-  name: SceneFlow
-  root: data/SceneFlow
-  train_list: datasets/SceneFlow/sceneflow_cleanpass_train.txt
-  val_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
-  test_list: datasets/SceneFlow/sceneflow_cleanpass_test.txt
-  num_workers: 8
-  train_batch_size: 4
-  val_batch_size: 2
-  pin_memory: true
-  shuffle: true  # only for training
+  name: KITTI2015
+  root: data/kitti15
+  train_list: datasets/KITTI15/kitti15_train200.txt
+  val_list: datasets/KITTI15/kitti15_train200.txt
+  test_list: datasets/KITTI15/kitti15_test.txt
+#  name: KITTI2012
+#  root: data/kitti12
+#  train_list: datasets/KITTI12/kitti12_train194.txt
+#  val_list: datasets/KITTI12/kitti12_train194.txt
+#  test_list: datasets/KITTI12/kitti12_test.txt
 
   batch_uniform: false
   #  random_type: range
@@ -22,8 +22,6 @@ data_cfg:
     train:
       - type: RandomCrop
         size: [ 256, 512 ]
-      #- type: RandomHorizontalFlip
-      #  prob: 0.5
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -32,8 +30,8 @@ data_cfg:
         mean: [ 0.485, 0.456, 0.406 ]
         std: [ 0.229, 0.224, 0.225 ]
     val:
-      - type: StereoPad
-        size: [ 544, 960 ]
+      - type: CropOrPad
+        size: [ 384, 1248 ]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -44,18 +42,22 @@ data_cfg:
 
 
 model_cfg:
-  model: LacGwcNet
-  #  find_unused_parameters: true
+  model: MSNet
+  model_type: 2D
+
   base_config:
     max_disp: 192
 
 loss_cfg:
-# This model uses the user-defined loss function.
+  - log_prefix: disp
+    loss_term_weight: 1
+    type: Weighted_Smooth_l1_Loss
+    weights: [ 0.5, 0.5, 0.7, 1.0 ]
 
 
 trainer_cfg:
-  save_name: LacGwcNet_SceneFlow
-  total_epoch: 12
+  save_name: MSNet2D_SceneFlow
+  total_epoch: 20
   restore_hint: 0
   optimizer_reset: false
   scheduler_reset: false
@@ -63,8 +65,8 @@ trainer_cfg:
   log_iter: 50 # iter
   save_every: 1 # epoch
   val_every: 1 # epoch
-  amp: true
-  sync_bn: true
+  amp: false
+  sync_bn: false
   fix_bn: false
   init_parameters: false
 
@@ -75,8 +77,8 @@ trainer_cfg:
 
   scheduler_cfg:
     scheduler: MultiStepLR
-    gamma: 0.1
-    milestones: [ 3, 10 ]
+    gamma: 0.5
+    milestones: [ 10, 12, 14, 16 ]
     warmup:
       warmup_steps: 100
 
@@ -88,7 +90,9 @@ trainer_cfg:
       - bad_2
       - bad_3
 
-  clip_grad_cfg:
-    type: norm
-    max_norm: 35
-    norm_type: 2
+#  clip_grad_cfg:
+#    #    type: norm
+#    #    max_norm: 35
+#    #    norm_type: 2
+#    type: value
+#    clip_value: 0.1
