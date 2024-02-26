@@ -1,0 +1,117 @@
+data_cfg:
+#  name: KITTI2015
+#  root: data/kitti15
+#  train_list: datasets/KITTI15/kitti15_train200.txt
+#  val_list: datasets/KITTI15/kitti15_train200.txt
+#  test_list: datasets/KITTI15/kitti15_test.txt
+  name: KITTI2012
+  root: data/kitti12
+  train_list: datasets/KITTI12/kitti12_train194.txt
+  val_list: datasets/KITTI12/kitti12_train194.txt
+  test_list: datasets/KITTI12/kitti12_test.txt
+
+  num_workers: 8
+  train_batch_size: 1
+  val_batch_size: 10
+  pin_memory: true
+  shuffle: true
+
+  batch_uniform: false
+
+
+  transform:
+    train:
+      - type: RandomCrop
+        size: [ 288, 576 ]
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+    val:
+      - type: CropOrPad
+        size: [ 384, 1248 ]
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+
+
+model_cfg:
+  model:  AANet
+  find_unused_parameters: false
+
+  base_config: 
+    max_disp: 192
+    num_downsample: 2
+    feature_type: aanet
+    no_feature_mdconv: false
+    feature_pyramid: false
+    feature_pyramid_network: true
+    feature_similarity: correlation
+    aggregation_type: adaptive
+    num_scales: 3
+    num_fusions: 6
+    deformable_groups: 2
+    mdconv_dilation: 2
+    refinement_type: stereodrnet
+    no_intermediate_supervision: False
+    num_stage_blocks: 1
+    num_deform_blocks: 3
+
+  
+
+
+loss_cfg:
+  - log_prefix: disparity_pyramid
+    type: MultiAANetScaleLoss
+    loss_term_weight: 1
+    scales: 5
+    downscale: 1
+    loss: L1
+    maxdisp: 192
+    mask: false
+    weights: [[0.33, 0.66, 1.0, 1.0, 1.0]]
+  
+
+scheduler_cfg:
+  warmup_iters: 0
+
+trainer_cfg:
+  save_name: AANet_SceneFlow_lamb_b64_288_4e3
+  total_epoch: 64
+  restore_hint: 0
+  optimizer_reset: false
+  scheduler_reset: false
+  warmup_reset: false
+  log_iter: 1 # iter
+  save_every: 1 # epoch
+  val_every: 1 # epoch
+  amp: false
+  sync_bn: true
+  fix_bn: false
+  init_parameters: false
+
+  optimizer_cfg:
+    solver: lamb
+    lr: 0.004
+
+  scheduler_cfg:
+    scheduler: MultiStepLR
+    gamma: 0.5
+    milestones: [ 20, 40, 60 ]
+    warmup:
+      warmup_steps: 100
+
+  evaluator_cfg:
+    metric:
+      - d1_all
+      - epe
+      - bad_1
+      - bad_2
+      - bad_3

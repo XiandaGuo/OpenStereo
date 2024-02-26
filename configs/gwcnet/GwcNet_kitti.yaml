@@ -1,21 +1,27 @@
 data_cfg:
-  name: SceneFlow
-  root: data/SceneFlow
-  train_list: datasets/SceneFlow/sceneflow_finalpass_train.txt
-  val_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
-  test_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
-  num_workers: 8
-  train_batch_size: 8 # 单卡训练！！！
-  val_batch_size: 10
+#  name: KITTI2015
+#  root: data/kitti15
+#  train_list: datasets/KITTI15/kitti15_train200.txt
+#  val_list: datasets/KITTI15/kitti15_train200.txt
+#  test_list: datasets/KITTI15/kitti15_test.txt
+  name: KITTI2012
+  root: data/kitti12
+  train_list: datasets/KITTI12/kitti12_train194.txt
+  val_list: datasets/KITTI12/kitti12_train194.txt
+  test_list: datasets/KITTI12/kitti12_test.txt
+
+  num_workers: 4
+  train_batch_size: 4
+  val_batch_size: 1
   pin_memory: true
   shuffle: true
-
-  batch_uniform: false
 
   transform:
     train:
       - type: RandomCrop
-        size: [ 288, 576 ]
+        size: [ 256, 512 ]
+      #- type: RandomHorizontalFlip
+      #  prob: 0.5
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -24,8 +30,8 @@ data_cfg:
         mean: [ 0.485, 0.456, 0.406 ]
         std: [ 0.229, 0.224, 0.225 ]
     val:
-      - type: StereoPad
-        size: [ 540, 960 ]
+      - type: CropOrPad
+        size: [ 384, 1248 ]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
@@ -36,41 +42,38 @@ data_cfg:
 
 
 model_cfg:
-  model: CoExNet
-  find_unused_parameters: true
+  model: GwcNet
 
   base_config:
     max_disp: 192
-    spixel_branch_channels: [ 32, 48 ]
-    chans: [ 16, 24, 32, 96, 160 ]
+    downsample: 4
+    num_groups: 40
+    use_concat_volume: true
+    concat_channels: 12
 
+  # Backbone
   backbone_cfg:
-    type: CoExBackbone
+    type: GwcNet
 
+  # VolumeCostProcessor
   cost_processor_cfg:
-    type: CoExCostProcessor
-    matching_weighted: False
-    matching_head: 1
-    gce: true
-    aggregation_disp_strides: 2
-    aggregation_channels: [16, 32, 48]
-    aggregation_blocks_num: [2, 2, 2]
+    type: GwcVolumeCostProcessor
 
+  # DispProcessor
   disp_processor_cfg:
-    type: CoExDispProcessor
-    regression_topk: 2
+    type: GwcDispProcessor
 
 
 loss_cfg:
   - log_prefix: disp
-    loss_term_weight: 0.77  # 1/1.3
     type: Weighted_Smooth_l1_Loss
-    weights: [ 1.0, 0.3 ]
+    loss_term_weight: 1
+    weights: [ 0.5,0.5,0.7,1.0 ]
 
 
 trainer_cfg:
-  save_name: CoExNet_SceneFlow
-  total_epoch: 15
+  save_name: GwcNet_SceneFlow
+  total_epoch: 20
   restore_hint: 0
   optimizer_reset: false
   scheduler_reset: false
@@ -78,8 +81,8 @@ trainer_cfg:
   log_iter: 50 # iter
   save_every: 1 # epoch
   val_every: 1 # epoch
-  amp: true
-  sync_bn: false
+  amp: false
+  sync_bn: true
   fix_bn: false
   init_parameters: false
 
@@ -89,8 +92,8 @@ trainer_cfg:
 
   scheduler_cfg:
     scheduler: MultiStepLR
-    gamma: 0.1
-    milestones: [ 9, 12 ]
+    gamma: 0.5
+    milestones: [ 10, 12, 14 , 16 ]
     warmup:
       warmup_steps: 100
 
@@ -103,5 +106,6 @@ trainer_cfg:
       - bad_3
 
   clip_grad_cfg:
-    type: value
-    clip_value: 0.1
+    type: norm
+    max_norm: 35
+    norm_type: 2

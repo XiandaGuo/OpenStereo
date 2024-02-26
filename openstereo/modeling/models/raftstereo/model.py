@@ -122,6 +122,7 @@ class RAFT_Stereo(BaseModel):
             # move data to device
             for k, v in processed_inputs.items():
                 processed_inputs[k] = v.to(device) if torch.is_tensor(v) else v
+        processed_inputs['index'] = inputs['index']
         return processed_inputs
 
     def forward(self, inputs):

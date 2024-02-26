@@ -1,27 +1,27 @@
 data_cfg:
-  name: KITTI2012&2015
-  root2012: data/kitti12
-  root2015: data/kitti15
-  train_list_2015: datasets/KITTI15/kitti15_train200.txt
-  val_list_2015: datasets/KITTI15/kitti15_val35.txt
-  test_list_2015: datasets/KITTI15/kitti15_test.txt
-  train_list_2012: datasets/KITTI12/kitti12_train194.txt
-  val_list_2012: datasets/KITTI12/kitti12_val29.txt
-  test_list_2012: datasets/KITTI12/kitti12_test.txt
+#  name: KITTI2015
+#  root: data/kitti15
+#  train_list: datasets/KITTI15/kitti15_train200.txt
+#  val_list: datasets/KITTI15/kitti15_train200.txt
+#  test_list: datasets/KITTI15/kitti15_test.txt
+  name: KITTI2012
+  root: data/kitti12
+  train_list: datasets/KITTI12/kitti12_train194.txt
+  val_list: datasets/KITTI12/kitti12_train194.txt
+  test_list: datasets/KITTI12/kitti12_test.txt
   num_workers: 4
-  train_batch_size: 2
-  val_batch_size: 1
+  train_batch_size: 4
+  val_batch_size: 10
   pin_memory: true
   shuffle: true
-  test_on: 2015
-
+  return_right_disp: true
   batch_uniform: false
 
   transform:
     train:
-      - type: SparseFlowAugmentor
+      - type: FlowAugmentor
         size: [ 320, 736 ]
-        min_scale: 0.2
+        min_scale: -0.2
         max_scale: 0.5
         do_flip: false
         h_flip_prob: 0.5
@@ -32,11 +32,6 @@ data_cfg:
         size: [ 384, 1248 ]
       - type: GetValidDisp
         max_disp: 192
-      - type: TransposeImage
-      - type: ToTensor
-    test:
-      - type: DivisiblePad
-        by: 32
       - type: TransposeImage
       - type: ToTensor
 
@@ -53,23 +48,19 @@ model_cfg:
     corr_levels: 2
     corr_radius: 4
     train_iters: 22
-    valid_iters: 32
-
+    valid_iters: 22
 
 loss_cfg:
-  # This model uses the user-defined loss function.
-
+# This model uses the user-defined loss function.
 
 trainer_cfg:
-  save_name: igev_kitti
-  total_epoch: 500
-  restore_hint: "yourpath of sceneflow checkpoint"
-  resume: false
-  optimizer_reset: true
-  scheduler_reset: true
-  log_iter: 1 # iter
-  save_every: 25 # epoch
-  val_every: 25 # epoch
+  save_name: igev_sf
+  total_epoch: 100 # remember to give a large number here if using max_iter to control the training process
+  max_iter: 200100
+  restore_hint: 0
+  log_iter: 10 # iter
+  save_every: 1 # epoch
+  val_every: 1 # epoch
   amp: true
   sync_bn: true
   fix_bn: true
@@ -84,16 +75,16 @@ trainer_cfg:
   scheduler_cfg:
     scheduler: OneCycleLR
     max_lr: 0.0002
-    total_steps: 12500
+    total_steps: 200100
     pct_start: 0.01
     cycle_momentum: False
     anneal_strategy: linear
     on_epoch: false
-#    warmup:
-#      warmup_steps: 2000
+  #    warmup:
+  #      warmup_steps: 2000
 
   evaluator_cfg:
-    metric:
+    metrics:
       - d1_all
       - epe
       - bad_1

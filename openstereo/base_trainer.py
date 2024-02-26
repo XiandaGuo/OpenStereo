@@ -134,7 +134,7 @@ class BaseTrainer:
 
     def build_evaluator(self):
         metrics = self.evaluator_cfg.get('metrics', ['epe', 'd1_all', 'bad_1', 'bad_2', 'bad_3'])
-        self.evaluator = OpenStereoEvaluator(metrics, use_np=False)
+        self.evaluator = OpenStereoEvaluator(metrics)
 
     def build_clip_grad(self):
         clip_type = self.clip_grade_config.get('type', None)
@@ -259,7 +259,10 @@ class BaseTrainer:
         # init metrics
         epoch_metrics = {}
         for k in self.evaluator.metrics:
-            epoch_metrics[k] = 0
+            epoch_metrics[k] = {
+                'keys': [],
+                'values': [],
+            }
 
         self.msg_mgr.log_info(
             f"Using {dist.get_world_size() if self.is_dist else 1} Device,"
@@ -275,6 +278,7 @@ class BaseTrainer:
         for i, data in enumerate(self.val_loader):
             batch_inputs = self.model.prepare_inputs(data, device=self.device, apply_max_disp=apply_max_disp,
                                                      apply_occ_mask=apply_occ_mask)
+
             with autocast(enabled=self.amp):
                 out = self.model.forward(batch_inputs)
                 inference_disp, visual_summary = out['inference_disp'], out['visual_summary']
@@ -285,13 +289,14 @@ class BaseTrainer:
             }
             val_res = self.evaluator(val_data)
             for k, v in val_res.items():
-                v = v.item() if isinstance(v, torch.Tensor) else v
-                epoch_metrics[k] += v
+                v = v.tolist() if isinstance(v, torch.Tensor) else v
+                epoch_metrics[k]['keys'].extend(batch_inputs['index'])
+                epoch_metrics[k]['values'].extend(v)
             log_iter = self.trainer_cfg.get('log_iter', 10)
             if i % log_iter == 0 and i != 0:
                 pbar.update(log_iter)
                 pbar.set_postfix({
-                    'epe': val_res['epe'].item(),
+                    'epe': val_res['epe'].mean().item(),
                 })
         # log to tensorboard
         self.msg_mgr.write_to_tensorboard(visual_summary, self.current_epoch)
@@ -299,25 +304,54 @@ class BaseTrainer:
         rest_iters = len(self.val_loader) - pbar.n if self.is_dist and self.rank == 0 or not self.is_dist else 0
         pbar.update(rest_iters)
         pbar.close()
-        for k in epoch_metrics.keys():
-            epoch_metrics[k] = torch.tensor(epoch_metrics[k] / len(self.val_loader)).to(self.device)
+
         if self.is_dist:
             dist.barrier()
             self.msg_mgr.log_debug("Start reduce metrics.")
-            for k in epoch_metrics.keys():
-                dist.all_reduce(epoch_metrics[k], op=dist.ReduceOp.SUM)
-                epoch_metrics[k] /= dist.get_world_size()
-        for k in epoch_metrics.keys():
-            epoch_metrics[k] = epoch_metrics[k].item()
-        visual_info = {}
-        for k, v in epoch_metrics.items():
-            visual_info[f'scalar/val/{k}'] = v
-        self.msg_mgr.write_to_tensorboard(visual_info, self.current_epoch)
-        self.msg_mgr.log_info(f"Epoch {self.current_epoch} metrics: {epoch_metrics}")
-        # clear cache
-        if next(self.model.parameters()).is_cuda:
-            torch.cuda.empty_cache()
-        return epoch_metrics
+            for metric, data in epoch_metrics.items():
+                keys = torch.tensor(data["keys"]).to(self.device)
+                values = torch.tensor(data["values"]).to(self.device)
+
+                # Create tensors to store gathered data
+                gathered_keys = [torch.zeros_like(keys) for _ in range(dist.get_world_size())]
+                gathered_values = [torch.zeros_like(values) for _ in range(dist.get_world_size())]
+
+                if dist.get_rank() == 0:
+                    # Gather the keys and values from all devices to the master device
+                    dist.gather(keys, gather_list=gathered_keys, dst=0)
+                    dist.gather(values, gather_list=gathered_values, dst=0)
+                else:
+                    dist.gather(keys, dst=0)
+                    dist.gather(values, dst=0)
+
+                if dist.get_rank() == 0:
+                    # Concatenate the gathered keys and values
+                    concatenated_keys = torch.cat(gathered_keys, dim=0)
+                    concatenated_values = torch.cat(gathered_values, dim=0)
+
+                    # Create a dictionary to store the unique keys and their corresponding values
+                    unique_dict = {}
+                    for key, value in zip(concatenated_keys.tolist(), concatenated_values.tolist()):
+                        if key not in unique_dict:
+                            unique_dict[key] = value
+
+                    # Update the keys and values in epoch_metrics
+                    epoch_metrics[metric]["values"] = list(unique_dict.values())
+                    epoch_metrics[metric]["keys"] = list(unique_dict.keys())
+
+        if not self.is_dist or dist.get_rank() == 0:
+            for metric in epoch_metrics:
+                epoch_metrics[metric]["result"] = torch.mean(torch.tensor(epoch_metrics[metric]["values"])).item()
+            visual_info = {}
+            for k in epoch_metrics:
+                visual_info[f'scalar/val/{k}'] = epoch_metrics[k]['result']
+            self.msg_mgr.write_to_tensorboard(visual_info, self.current_epoch)
+            metric_info = {k: v['result'] for k, v in epoch_metrics.items()}
+            self.msg_mgr.log_info(f"Epoch {self.current_epoch} metrics: {metric_info}")
+            # clear cache
+            if next(self.model.parameters()).is_cuda:
+                torch.cuda.empty_cache()
+            return epoch_metrics
 
     @torch.no_grad()
     def test_kitti(self):

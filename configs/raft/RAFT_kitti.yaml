@@ -1,9 +1,14 @@
 data_cfg:
-  name: SceneFlow
-  root: data/SceneFlow
-  train_list: datasets/SceneFlow/sceneflow_finalpass_train.txt
-  val_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
-  test_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
+#  name: KITTI2015
+#  root: data/kitti15
+#  train_list: datasets/KITTI15/kitti15_train200.txt
+#  val_list: datasets/KITTI15/kitti15_train200.txt
+#  test_list: datasets/KITTI15/kitti15_test.txt
+  name: KITTI2012
+  root: data/kitti12
+  train_list: datasets/KITTI12/kitti12_train194.txt
+  val_list: datasets/KITTI12/kitti12_train194.txt
+  test_list: datasets/KITTI12/kitti12_test.txt
 
   num_workers: 8
   train_batch_size: 4
@@ -37,8 +42,8 @@ data_cfg:
         mean: [ 0.485, 0.456, 0.406 ]
         std: [ 0.229, 0.224, 0.225 ]
     val:
-      - type: StereoPad
-        size: [ 540, 960 ]
+      - type: CropOrPad
+        size: [ 384, 1248 ]
       - type: GetValidDisp
         max_disp: 192
       - type: TransposeImage
