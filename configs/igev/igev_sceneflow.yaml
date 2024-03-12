@@ -1,6 +1,6 @@
 data_cfg:
   name: SceneFlow
-  root: data/sceneflow  # your datapath of SceneFlow
+  root: data/SceneFlow  # your datapath of SceneFlow
   train_list: datasets/SceneFlow/sceneflow_finalpass_train.txt
   val_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
   test_list: datasets/SceneFlow/sceneflow_finalpass_test.txt
@@ -51,7 +51,7 @@ loss_cfg:
 trainer_cfg:
   save_name: igev_sf
   total_epoch: 100 # remember to give a large number here if using max_iter to control the training process
-  max_iter: 200100
+  max_iter: &TotalIter 100100
   restore_hint: 0
   log_iter: 10 # iter
   save_every: 1 # epoch
@@ -63,14 +63,14 @@ trainer_cfg:
 
   optimizer_cfg:
     solver: AdamW
-    lr: 0.0002
+    lr: &maxlr 0.0002
     weight_decay: 0.00001
     eps: 0.00000001
 
   scheduler_cfg:
     scheduler: OneCycleLR
-    max_lr: 0.0002
-    total_steps: 200100
+    max_lr: *maxlr
+    total_steps: *TotalIter
     pct_start: 0.01
     cycle_momentum: False
     anneal_strategy: linear
