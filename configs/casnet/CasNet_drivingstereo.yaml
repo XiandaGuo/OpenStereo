@@ -1,0 +1,88 @@
+data_cfg:
+  name: DrivingStereo
+  root: /yourpath/DrivingStereo
+  train_list: datasets/DrivingStereo/driving_stereo_train.txt
+  val_list: datasets/DrivingStereo/driving_stereo_full_test.txt
+  test_list: datasets/DrivingStereo/driving_stereo_full_test.txt
+  num_workers: 0
+  train_batch_size: 12
+  val_batch_size: 1
+  pin_memory: true
+  shuffle: true
+  return_right_disp: true
+  batch_uniform: false
+
+  transform:
+    train:
+      - type: RandomCrop
+        size: [ 256, 512 ]
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+    val:
+      - type: DivisiblePad
+        by: 32
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+
+
+model_cfg:
+  model: CasStereoNet
+  model_type: psmnet
+
+  base_config:
+    max_disp: 192
+
+
+loss_cfg:
+  type: CasStereoLoss # user defined loss
+
+
+trainer_cfg:
+  save_name: CasNet_PSM_DrivingStereo
+  total_epoch: 20
+  restore_hint: /mnt/nas/public_data/.cache/openstereo_hub/CasNet_Sceneflow.pt
+  resume: false
+  optimizer_reset: false
+  scheduler_reset: false
+  warmup_reset: false
+  log_iter: 50 # iter
+  save_every: 1 # epoch
+  val_every: 1 # epoch
+  amp: true
+  sync_bn: false
+  fix_bn: false
+  init_parameters: false
+
+  optimizer_cfg:
+    solver: RMSprop
+    lr: 0.001
+
+  scheduler_cfg:
+    scheduler: MultiStepLR
+    gamma: 0.5
+    milestones: [ 10, 12, 14, 16 ]
+    warmup:
+      warmup_steps: 100
+
+  evaluator_cfg:
+    metric:
+      - d1_all
+      - epe
+      - bad_1
+      - bad_2
+      - bad_3
+
+  clip_grad_cfg:
+    type: norm
+    max_norm: 35
+    norm_type: 2

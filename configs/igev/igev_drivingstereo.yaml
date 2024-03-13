@@ -1,0 +1,89 @@
+data_cfg:
+  name: DrivingStereo
+  root: /yourpath/DrivingStereo
+  train_list: datasets/DrivingStereo/driving_stereo_train.txt
+  val_list: datasets/DrivingStereo/driving_stereo_full_test.txt
+  test_list: datasets/DrivingStereo/driving_stereo_full_test.txt
+  num_workers: 0
+  train_batch_size: 4
+  val_batch_size: 1
+  pin_memory: true
+  shuffle: true
+  return_right_disp: true
+  batch_uniform: false
+
+  transform:
+    train:
+      - type: RandomCrop
+        size: [ 256, 512 ]
+      - type: TransposeImage
+      - type: ToTensor
+
+    val:
+      - type: DivisiblePad
+        by: 32
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+
+model_cfg:
+  model: IGEV
+  find_unused_parameters: true
+
+  base_config:
+    max_disp: 192
+    hidden_dims: [ 128, 128, 128 ]
+    n_gru_layers: 3
+    n_downsample: 2
+    slow_fast_gru: True
+    corr_levels: 2
+    corr_radius: 4
+    train_iters: 22
+    valid_iters: 22
+
+loss_cfg:
+# This model uses the user-defined loss function.
+
+trainer_cfg:
+  save_name: igev_sf
+  total_epoch: 100 # remember to give a large number here if using max_iter to control the training process
+  max_iter: 200100
+  restore_hint: /mnt/nas/public_data/.cache/openstereo_hub/IGEV_SceneFlow.pt
+  resume: false
+  log_iter: 10 # iter
+  save_every: 1 # epoch
+  val_every: 1 # epoch
+  amp: true
+  sync_bn: true
+  fix_bn: true
+  init_parameters: false
+
+  optimizer_cfg:
+    solver: AdamW
+    lr: 0.0002
+    weight_decay: 0.00001
+    eps: 0.00000001
+
+  scheduler_cfg:
+    scheduler: OneCycleLR
+    max_lr: 0.0002
+    total_steps: 200100
+    pct_start: 0.01
+    cycle_momentum: False
+    anneal_strategy: linear
+    on_epoch: false
+  #    warmup:
+  #      warmup_steps: 2000
+
+  evaluator_cfg:
+    metric:
+      - d1_all
+      - epe
+      - bad_1
+      - bad_2
+      - bad_3
+
+  clip_grad_cfg:
+    type: value
+    clip_value: 1.0
