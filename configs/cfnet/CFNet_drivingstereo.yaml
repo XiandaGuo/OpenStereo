@@ -1,0 +1,95 @@
+data_cfg:
+  name: DrivingStereo
+  root: /yourpath/DrivingStereo
+  train_list: datasets/DrivingStereo/driving_stereo_train.txt
+  val_list: datasets/DrivingStereo/driving_stereo_full_test.txt
+  test_list: datasets/DrivingStereo/driving_stereo_full_test.txt
+  num_workers: 0
+  train_batch_size: 4
+  val_batch_size: 1
+  pin_memory: true
+  shuffle: true
+  return_right_disp: true
+  batch_uniform: false
+
+  transform:
+    train:
+      - type: RandomCrop
+        size: [ 256, 512 ]
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+    val:
+      - type: DivisiblePad
+        by: 32
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+
+
+model_cfg:
+  model: CFNet
+  replace_mish: true # replace mish with relu in the first 10 epochs
+  find_unused_parameters: true
+
+  base_config:
+    max_disp: 256
+
+
+loss_cfg:
+  - log_prefix: disp
+    type: Weighted_Smooth_l1_Loss
+    loss_term_weight: 1
+    weights: [0.25, 0.35, 0.5, 0.5, 0.7, 1.0, 1.0, 1.4, 2]
+
+
+trainer_cfg:
+  save_name: CFNet_drivingstereo
+  total_epoch: 20
+  restore_hint: /mnt/nas/public_data/.cache/openstereo_hub/CFNet_Sceneflow.pt
+  resume: false
+  optimizer_reset: true
+  scheduler_reset: true
+  warmup_reset: true
+  log_iter: 50 # iter
+  save_every: 1 # epoch
+  val_every: 1 # epoch
+  amp: false
+  sync_bn: false
+  fix_bn: false
+  init_parameters: false
+
+  optimizer_cfg:
+    solver: RMSprop
+    lr: 0.001
+#    betas: [ 0.9, 0.999 ]
+
+  scheduler_cfg:
+    scheduler: MultiStepLR
+    gamma: 0.1
+    milestones: [ 10 ]
+    warmup:
+      warmup_steps: 500
+
+  evaluator_cfg:
+    metric:
+      - d1_all
+      - epe
+      - bad_1
+      - bad_2
+      - bad_3
+
+#  clip_grad_cfg:
+#    #    type: norm
+#    #    max_norm: 35
+#    #    norm_type: 2
+#    type: value
+#    clip_value: 0.1

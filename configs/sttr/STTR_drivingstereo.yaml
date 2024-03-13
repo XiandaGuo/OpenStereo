@@ -1,0 +1,106 @@
+data_cfg:
+  name: DrivingStereo
+  root: /mnt/nas/public_data/drivingstereo
+  train_list: datasets/DrivingStereo/driving_stereo_train.txt
+  val_list: datasets/DrivingStereo/driving_stereo_half_test.txt # Full GPU 3090 OOM
+  test_list: datasets/DrivingStereo/driving_stereo_half_test.txt # Full GPU 3090 OOM
+  num_workers: 8
+  train_batch_size: 6
+  val_batch_size: 1
+  pin_memory: true
+  shuffle: true
+  return_right_disp: true
+
+  batch_uniform: false
+
+  transform:
+    train:
+      - type: RandomCrop
+        size: [256, 512]
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+
+    val:
+      - type: DivisiblePad
+        by: 32
+      - type: GetValidDisp
+        max_disp: 192
+      - type: TransposeImage
+      - type: ToTensor
+      - type: NormalizeImage
+        mean: [ 0.485, 0.456, 0.406 ]
+        std: [ 0.229, 0.224, 0.225 ]
+
+model_cfg:
+  model: STTRNet
+  _set_static_graph: true
+  find_unused_parameters: false
+  base_config:
+    max_disp: 192
+    channel_dim: 128
+    position_encoding: sine1d_rel
+    num_attn_layers: 6
+    nheads: 8
+    regression_head: ot
+    context_adjustment_layer: cal
+    cal_num_blocks: 8
+    cal_feat_dim: 16
+    cal_expansion_ratio: 4
+    downsample: 3
+  loss_config:
+    px_error_threshold: 3
+    validation_max_disp: -1
+    loss_weight: 'rr:1.0, l1_raw:1.0, l1:1.0, occ_be:1.0'
+
+
+loss_cfg:
+  # This model uses the user-defined loss function.
+  px_error_threshold: 3
+  validation_max_disp: 192
+  loss_weight: 'rr:1.0, l1_raw:1.0, l1:1.0, occ_be:1.0'
+
+
+trainer_cfg:
+  save_name: STTR-Stereo_drivingstereo
+  total_epoch: 10
+  restore_hint: /mnt/nas/public_data/.cache/openstereo_hub/STTR-Stereo_FlyingThings3DSubset_epoch_08.pt
+  resume: false
+  log_iter: 50 # iter
+  save_every: 1 # epoch
+  val_every: 1 # epoch
+  amp: false
+  sync_bn: true
+  fix_bn: false
+  init_parameters: false
+
+  optimizer_cfg:
+    solver: Adam
+    lr: 0.0008
+    betas: [ 0.9, 0.999 ]
+    lr_backbone: 0.0008
+    lr_regression: 0.0016
+
+  scheduler_cfg:
+    scheduler: MultiStepLR
+    gamma: 0.5
+    milestones: [ 5, 7, 9]
+    warmup:
+      warmup_steps: 2000
+
+  evaluator_cfg:
+    metric:
+      - d1_all
+      - epe
+      - bad_1
+      - bad_2
+      - bad_3
+
+  clip_grad_cfg:
+    type: norm
+    max_norm: 35
+    norm_type: 2
