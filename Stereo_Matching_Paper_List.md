@@ -2,6 +2,8 @@
 ### 2024
 * **Selective-Stereo: Adaptive Frequency Information Selection for Stereo Matching**, Xianqi Wang, Gangwei Xu, et al. [[Paper](https://arxiv.org/abs/2403.00486)][[code](https://github.com/Windsrain/Selective-Stereo)]. CVPR2024
 * **MoCha-Stereo: Motif Channel Attention Network for Stereo Matching**, Ziyang Chen, Wei Long, et al. [[Paper](TBD)][[code](https://github.com/ZYangChen/MoCha-Stereo)]. CVPR2024
+* **IINet: Implicit Intra-inter Information Fusion for Real-Time Stereo Matching**, Ximeng Li, Chen Zhang. [[paper](https://ojs.aaai.org/index.php/AAAI/article/view/28107)[[Code](https://github.com/blindwatch/IINet)]. AAAI2024
+* **Any-Stereo: Arbitrary Scale Disparity Estimation for Iterative Stereo Matching**, Zhaohuai Liang, Changhe Li. [[paper](https://ojs.aaai.org/index.php/AAAI/article/view/28119)[[Code](https://github.com/Zhaohuai-L/Any-Stereo)]. AAAI2024
 
 ### 2023
 * **Efficient Spatial-Temporal Stereo Matching Network**, Youmin Zhang, Matteo Poggi, et al. [[paper](https://ieeexplore.ieee.org/abstract/document/10341598)][[code](https://github.com/youmi-zym/TemporalStereo)].IROS2023
