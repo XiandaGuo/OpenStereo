@@ -2,12 +2,13 @@
 ### 2024
 * **Selective-Stereo: Adaptive Frequency Information Selection for Stereo Matching**, Xianqi Wang, Gangwei Xu, et al. [[Paper](https://arxiv.org/abs/2403.00486)][[code](https://github.com/Windsrain/Selective-Stereo)]. CVPR2024
 * **MoCha-Stereo: Motif Channel Attention Network for Stereo Matching**, Ziyang Chen, Wei Long, et al. [[Paper](TBD)][[code](https://github.com/ZYangChen/MoCha-Stereo)]. CVPR2024
+* **Adaptive Multi-Modal Cross-Entropy Loss for Stereo Matching**, Peng Xu, Zhiyu Xiang, et al. [[Paper](https://arxiv.org/abs/2306.15612)][[code](https://github.com/xxxupeng/ADL)]. CVPR2024
 * **IINet: Implicit Intra-inter Information Fusion for Real-Time Stereo Matching**, Ximeng Li, Chen Zhang. [[paper](https://ojs.aaai.org/index.php/AAAI/article/view/28107)[[Code](https://github.com/blindwatch/IINet)]. AAAI2024
 * **Any-Stereo: Arbitrary Scale Disparity Estimation for Iterative Stereo Matching**, Zhaohuai Liang, Changhe Li. [[paper](https://ojs.aaai.org/index.php/AAAI/article/view/28119)[[Code](https://github.com/Zhaohuai-L/Any-Stereo)]. AAAI2024
 
 ### 2023
 * **Efficient Spatial-Temporal Stereo Matching Network**, Youmin Zhang, Matteo Poggi, et al. [[paper](https://ieeexplore.ieee.org/abstract/document/10341598)][[code](https://github.com/youmi-zym/TemporalStereo)].IROS2023
-* **Joint Depth Estimation from Gated and Wide-Baseline Active Stereo Cues**, Stefanie Walz, Mario Bijelic, et al, et al. [[paper](https://arxiv.org/pdf/2305.12955.pdf )][[code](https://github.com/princeton-computational-imaging/GatedStereo)].CVPR2023
+* **Joint Depth Estimation from Gated and Wide-Baseline Active Stereo Cues**, Stefanie Walz, Mario Bijelic, et al. [[paper](https://arxiv.org/pdf/2305.12955.pdf )][[code](https://github.com/princeton-computational-imaging/GatedStereo)].CVPR2023
 * **Hybrid Transformer and CNN Attention Network for Stereo Image Super-resolution**, Ming Cheng, Haoyu Ma, et al. [[paper](https://arxiv.org/pdf/2305.05177.pdf)][[code](None)].CVPR2023
 * **Learning to Render Novel Views from Wide-Baseline Stereo Pairs**, Yilun Du, Cameron Smit.[[paper](https://arxiv.org/pdf/2304.08463.pdf)][[code](https://github.com/yilundu/cross_attention_renderer)].CVPR2023
 * **Reconstructing Hand in a Point Embedded Multi-view Stereo**, Lixin Yang, Jian Xu, et al. [[paper](https://arxiv.org/pdf/2304.04038.pdf)][[code](https://github.com/lixiny/POEM)].CVPR2023
