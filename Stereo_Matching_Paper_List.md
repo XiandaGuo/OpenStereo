@@ -43,6 +43,7 @@
 * **Hierarchical Iterative Tile Refinement Network for Real-time Stereo Matching**, Vladimir Tankovich, Christian Hane, et al. [[paper](https://arxiv.org/abs/2007.12140)][[code](https://github.com/google-research/google-research/tree/master/hitnet)]. CVPR2021
 * **Stereo Mixture Density Networks**, Fabio Tosi, Yiyi Liao, et al. [[paper](https://arxiv.org/abs/2104.03866)][[code](https://github.com/fabiotosi92/SMD-Nets)]. CVPR2021
 * **Cascade and Fused Cost Volume for Robust Stereo Matching**, Zhelun Shen, Yuchao Dai, et al. [[paper](https://arxiv.org/abs/2104.04314)][[code](https://github.com/gallenszl/CFNet)]. CVPR2021
+* **SMD-Nets: Stereo Mixture Density Networks**, Fabio Tosi and Yiyi Liao and Carolin Schmitt and Andreas Geiger. [[paper](http://www.cvlibs.net/publications/Tosi2021CVPR.pdf)][[code](https://github.com/fabiotosi92/SMD-Nets)]. CVPR2021
 * **Revisiting Stereo Depth Estimation From a Sequence-to-Sequence Perspective With Transformers**, Zhaoshuo Li, Xingtong Liu, et al. [[paper](https://arxiv.org/abs/2011.02910)][[code](https://github.com/mli0603/stereo-transformer)]. ICCV2021
 * **Multilevel Recurrent Field Transforms for Stereo Matching**, Lahav Lipson, Zachary Teed, et al. [[paper](https://arxiv.org/abs/2109.07547)][[code](https://github.com/princeton-vl/RAFT-Stereo)]. 3DV2021 
 
