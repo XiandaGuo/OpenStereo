@@ -234,7 +234,7 @@ def convert_state_dict(ori_state_dict, is_dist=True):
             new_state_dict = ori_state_dict
         else:
             for k, v in ori_state_dict.items():
-                k = k.replace('module.', '')
+                k = k[7:]
                 new_state_dict[k] = v
 
     return new_state_dict
