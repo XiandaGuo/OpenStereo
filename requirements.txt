@@ -1,0 +1,10 @@
+tqdm
+easydict
+tensorboard
+six
+pyyaml
+opencv-python
+timm==0.4.12
+scikit-image
+thop
+matplotlib

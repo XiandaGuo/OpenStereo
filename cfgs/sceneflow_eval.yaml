@@ -1,0 +1,25 @@
+DATA_CONFIG:
+    DATA_INFOS:
+        -   DATASET: SceneFlowDataset
+            DATA_SPLIT: {
+                EVALUATING: ./data/sceneflow/sceneflow_finalpass_test.txt,
+            }
+            DATA_PATH: /yourpath/SceneFlow
+            RETURN_RIGHT_DISP: false
+
+    DATA_TRANSFORM:
+        EVALUATING:
+            - { NAME: RightTopPad, SIZE: [ 576, 960 ] }
+            - { NAME: TransposeImage }
+            - { NAME: ToTensor }
+            - { NAME: NormalizeImage, MEAN: [ 0.485, 0.456, 0.406 ], STD: [ 0.229, 0.224, 0.225 ] }
+
+EVALUATOR:
+    BATCH_SIZE_PER_GPU: 8
+    MAX_DISP: 192
+    METRIC:
+        - d1_all
+        - epe
+        - thres_1
+        - thres_2
+        - thres_3

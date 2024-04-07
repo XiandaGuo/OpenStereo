@@ -1,0 +1,79 @@
+DATA_CONFIG:
+    DATA_INFOS:
+        -   DATASET: SceneFlowDataset
+            DATA_SPLIT: {
+                TRAINING: ./data/sceneflow/sceneflow_finalpass_train.txt,
+                EVALUATING: ./data/sceneflow/sceneflow_finalpass_test.txt,
+                TESTING: ./data/sceneflow/sceneflow_finalpass_test.txt
+            }
+            DATA_PATH: /yourpath/SceneFlow
+            RETURN_RIGHT_DISP: false
+
+    DATA_TRANSFORM:
+        TRAINING:
+            - { NAME: RandomCrop, SIZE: [ 320, 736 ], Y_JITTER: false }
+            - { NAME: TransposeImage }
+            - { NAME: ToTensor }
+        EVALUATING:
+            - { NAME: RightTopPad, SIZE: [ 544, 960 ] }
+            - { NAME: TransposeImage }
+            - { NAME: ToTensor }
+
+MODEL:
+    NAME: IGEV
+    MAX_DISP: &max_disp 192
+    HIDDEN_DIMS: [ 128, 128, 128 ]
+    N_GRU_LAYERS: 3
+    N_DOWNSAMPLE: 2
+    SLOW_FAST_GRU: True
+    CORR_LEVELS: 2
+    CORR_RADIUS: 4
+    TRAIN_ITERS: 22
+    VALID_ITERS: 22
+    FIND_UNUSED_PARAMETERS: false
+    CKPT: -1
+    PRETRAINED_MODEL: ''
+
+OPTIMIZATION:
+    BATCH_SIZE_PER_GPU: 4
+    FREEZE_BN: true
+    SYNC_BN: true
+    AMP: true
+    NUM_EPOCHS: 64
+
+    OPTIMIZER:
+        NAME: AdamW
+        LR: 0.0002
+        WEIGHT_DECAY: 0.00001
+        EPS: 0.00000001
+
+    SCHEDULER:
+        NAME: MultiStepLR
+        GAMMA: 0.5
+        MILESTONES: [ 10, 12, 14, 16 ]
+        ON_EPOCH: True
+        WARMUP:
+            WARM_STEPS: 100
+
+    CLIP_GRAD:
+        TYPE: norm
+        MAX_NORM: 35
+        NORM_TYPE: 2
+
+EVALUATOR:
+    BATCH_SIZE_PER_GPU: 10
+    MAX_DISP: *max_disp
+    METRIC:
+        - d1_all
+        - epe
+        - thres_1
+        - thres_2
+        - thres_3
+
+TRAINER:
+    EVAL_INTERVAL: 1
+    CKPT_SAVE_INTERVAL: 1
+    MAX_CKPT_SAVE_NUM: 30
+    LOGGER_ITER_INTERVAL: 10
+    TRAIN_VISUALIZATION: True
+    EVAL_VISUALIZATION: True
