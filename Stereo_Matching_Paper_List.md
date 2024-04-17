@@ -68,6 +68,7 @@
 * **On the over-smoothing problem of cnn based disparity estimation**, Chuangrong Chen, Xiaozhi Chen, et al. [[Paper](https://ieeexplore.ieee.org/document/9010261)][[Code]( https://github.com/chenchr/otosp)]. ICCV2019
 
 ## 2018
+* **Deep Stereo Matching with Explicit Cost Aggregation Sub-Architecture**, Lidong Yu, Yucheng Wang, Yuwei Wu, Yunde Jia. [[Paper](https://arxiv.org/abs/1801.04065)]. AAAI2018
 * **Pyramid Stereo Matching Network**, Jia-Ren Chang,Yong-Sheng Chen, et al. [[Paper](https://arxiv.org/abs/1803.08669)][[Code](https://github.com/JiaRenChang/RealtimeStereo)]. CVPR2018
 * **StereoNet: Guided Hierarchical Refinement for Real-Time Edge-Aware Depth Prediction**, Sameh Khamis, Sean Fanello, et al. [[Paper](https://arxiv.org/abs/1807.08865)][[Code](https://github.com/meteorshowers/X-StereoLab)]. ECCV2018
 
