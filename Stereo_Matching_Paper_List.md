@@ -1,7 +1,7 @@
 ### Paper list for stereo matching and continue to update this list.
 ## 2024
 * **Selective-Stereo: Adaptive Frequency Information Selection for Stereo Matching**, Xianqi Wang, Gangwei Xu, et al. [[Paper](https://arxiv.org/abs/2403.00486)][[code](https://github.com/Windsrain/Selective-Stereo)]. CVPR2024
-* **MoCha-Stereo: Motif Channel Attention Network for Stereo Matching**, Ziyang Chen, Wei Long, et al. [[Paper](TBD)][[code](https://github.com/ZYangChen/MoCha-Stereo)]. CVPR2024
+* **MoCha-Stereo: Motif Channel Attention Network for Stereo Matching**, Ziyang Chen, Wei Long, et al. [[Paper](https://arxiv.org/abs/2404.06842)][[code](https://github.com/ZYangChen/MoCha-Stereo)]. CVPR2024
 * **Adaptive Multi-Modal Cross-Entropy Loss for Stereo Matching**, Peng Xu, Zhiyu Xiang, et al. [[Paper](https://arxiv.org/abs/2306.15612)][[code](https://github.com/xxxupeng/ADL)]. CVPR2024
 * **Neural Markov Random Field for Stereo Matching**, Guan, Tongfan, Chen Wang, and Yun-Hui Liu. [[Paper](https://arxiv.org/pdf/2403.11193.pdf)][[code](https://github.com/aeolusguan/NMRF)]. CVPR2024
 * **IINet: Implicit Intra-inter Information Fusion for Real-Time Stereo Matching**, Ximeng Li, Chen Zhang. [[paper](https://ojs.aaai.org/index.php/AAAI/article/view/28107)[[Code](https://github.com/blindwatch/IINet)]. AAAI2024
