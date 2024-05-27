@@ -8,13 +8,6 @@ PY_ARGS=${@:1}
 # 环境变量
 export TORCH_HOME='/mnt/nas/algorithm/chenming.zhang/.cache/torch'
 
-# 复制文件并cd到指定目录
-datename=$(date +%Y%m%d-%H%M%S)
-targetpath='/mnt/nas/algorithm/chenming.zhang/workspace/LightStereo-'$datename
-rsync -r --exclude='output' ./* $targetpath
-cd $targetpath
-# echo $(pwd)
-
 # 获取可用端口
 while true
 do
@@ -40,5 +33,5 @@ torchrun \
     tools/train.py \
         --dist_mode \
         --fix_random_seed \
-        --save_root_dir '/mnt/nas/algorithm/chenming.zhang/code/LightStereo/output' \
+        --save_root_dir '/mnt/nas/algorithm/chenming.zhang/github/OpenStereo/output' \
         --pin_memory $PY_ARGS

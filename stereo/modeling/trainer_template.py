@@ -27,26 +27,29 @@ class TrainerTemplate:
         self.logger = logger
         self.tb_writer = tb_writer
 
-        self.train_set, self.train_loader, self.train_sampler = self.build_train_loader()
-        self.eval_set, self.eval_loader, self.eval_sampler = self.build_eval_loader()
-
         self.model = self.build_model(model)
 
-        if 'TOTAL_STEPS' in cfgs.OPTIMIZATION.SCHEDULER:
-            self.total_epochs = math.ceil(cfgs.OPTIMIZATION.SCHEDULER.TOTAL_STEPS / len(self.train_loader))
-        else:
-            self.total_epochs = cfgs.OPTIMIZATION.NUM_EPOCHS
-            cfgs.OPTIMIZATION.SCHEDULER.TOTAL_STEPS = self.total_epochs * len(self.train_loader)
+        if self.args.run_mode in ['train', 'eval']:
+            self.eval_set, self.eval_loader, self.eval_sampler = self.build_eval_loader()
 
-        self.optimizer, self.scheduler = self.build_optimizer_and_scheduler()
-        self.scaler = torch.cuda.amp.GradScaler(enabled=cfgs.OPTIMIZATION.AMP)
-        self.last_epoch = -1
+        if self.args.run_mode == 'train':
+            self.train_set, self.train_loader, self.train_sampler = self.build_train_loader()
 
-        if self.cfgs.MODEL.CKPT > -1 and self.args.run_mode == 'train':
-            self.resume_ckpt()
+            if 'TOTAL_STEPS' in cfgs.OPTIMIZATION.SCHEDULER:
+                self.total_epochs = math.ceil(cfgs.OPTIMIZATION.SCHEDULER.TOTAL_STEPS / len(self.train_loader))
+            else:
+                self.total_epochs = cfgs.OPTIMIZATION.NUM_EPOCHS
+                cfgs.OPTIMIZATION.SCHEDULER.TOTAL_STEPS = self.total_epochs * len(self.train_loader)
 
-        self.warmup_scheduler = self.build_warmup()
-        self.clip_gard = self.build_clip_grad()
+            self.optimizer, self.scheduler = self.build_optimizer_and_scheduler()
+            self.scaler = torch.cuda.amp.GradScaler(enabled=cfgs.OPTIMIZATION.AMP)
+            self.last_epoch = -1
+
+            if self.cfgs.MODEL.CKPT > -1 and self.args.run_mode == 'train':
+                self.resume_ckpt()
+
+            self.warmup_scheduler = self.build_warmup()
+            self.clip_gard = self.build_clip_grad()
 
     def build_train_loader(self):
         train_set, train_loader, train_sampler = build_dataloader(
@@ -164,14 +167,7 @@ class TrainerTemplate:
             self.model = common_utils.freeze_bn(self.model)
         if self.args.dist_mode:
             self.train_sampler.set_epoch(current_epoch)
-        self.train_one_epoch(
-            current_epoch=current_epoch,
-            start_epoch=self.last_epoch + 1,
-            is_dist=self.args.dist_mode,
-            logger_iter_interval=self.cfgs.TRAINER.LOGGER_ITER_INTERVAL,
-            visualization=self.cfgs.TRAINER.TRAIN_VISUALIZATION,
-            tbar=tbar,
-            use_amp=self.cfgs.OPTIMIZATION.AMP)
+        self.train_one_epoch(current_epoch=current_epoch, tbar=tbar)
         if self.args.dist_mode:
             dist.barrier()
         if self.cfgs.OPTIMIZATION.SCHEDULER.ON_EPOCH:
@@ -209,10 +205,11 @@ class TrainerTemplate:
         if self.args.dist_mode:
             dist.barrier()
 
-    def train_one_epoch(self, current_epoch, start_epoch, is_dist,
-                        logger_iter_interval, visualization, tbar, use_amp):
+    def train_one_epoch(self, current_epoch, tbar):
+        start_epoch = self.last_epoch + 1
+        logger_iter_interval = self.cfgs.TRAINER.LOGGER_ITER_INTERVAL
         total_loss = 0.0
-        loss_func = self.model.module.get_loss if is_dist else self.model.get_loss
+        loss_func = self.model.module.get_loss if self.args.dist_mode else self.model.get_loss
 
         train_loader_iter = iter(self.train_loader)
         for i in range(0, len(self.train_loader)):
@@ -225,7 +222,7 @@ class TrainerTemplate:
                 data[k] = v.to(self.local_rank) if torch.is_tensor(v) else v
             data_timer = time.time()
 
-            with torch.cuda.amp.autocast(enabled=use_amp):
+            with torch.cuda.amp.autocast(enabled=self.cfgs.OPTIMIZATION.AMP):
                 model_pred = self.model(data)
                 infer_timer = time.time()
                 loss, tb_info = loss_func(model_pred, data)
@@ -265,7 +262,7 @@ class TrainerTemplate:
                                     tbar.format_interval(remaining_second_all))
                 self.logger.info(message)
 
-            if visualization:
+            if self.cfgs.TRAINER.TRAIN_VISUALIZATION:
                 tb_info['image/train/image'] = torch.cat([data['left'][0], data['right'][0]], dim=1) / 256
                 tb_info['image/train/disp'] = color_map_tensorboard(data['disp'][0], model_pred['disp_pred'].squeeze(1)[0])
 

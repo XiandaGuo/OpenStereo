@@ -4,7 +4,6 @@ import sys
 import os
 import argparse
 import datetime
-import time
 import tqdm
 from easydict import EasyDict
 
@@ -30,9 +29,6 @@ def parse_config():
     # dataloader
     parser.add_argument('--workers', type=int, default=8, help='number of workers for dataloader')
     parser.add_argument('--pin_memory', action='store_true', default=False, help='data loader pin memory')
-    # parameters
-    # parser.add_argument('--ckpt', type=int, default=-1, help='resume checkpoint to start from')
-    # parser.add_argument('--pretrained_model', type=str, default=None, help='pretrained_model')
 
     args = parser.parse_args()
     yaml_config = common_utils.config_loader(args.cfg_file)
@@ -52,12 +48,6 @@ def parse_config():
         if dataset_name == 'KittiDataset':
             dataset_name = 'KittiDataset15' if 'kitti15' in each.DATA_SPLIT.EVALUATING else 'KittiDataset12'
         each.DATA_PATH = DATA_PATH_DICT[dataset_name]
-
-    # if args.ckpt is not None:
-    #     cfgs.TRAINER.CKPT = args.ckpt
-    #
-    # if args.pretrained_model is not None:
-    #     cfgs.TRAINER.PRETRAINED_MODEL = args.pretrained_model
 
     args.run_mode = 'train'
     return args, cfgs
@@ -83,7 +73,7 @@ def main():
 
     # savedir
     args.output_dir = str(os.path.join(args.save_root_dir, args.exp_group_path, args.tag, args.extra_tag))
-    if os.path.exists(args.output_dir) and args.extra_tag != 'debug' and cfgs.TRAINER.CKPT == -1:
+    if os.path.exists(args.output_dir) and args.extra_tag != 'debug' and cfgs.MODEL.CKPT == -1:
         raise Exception('There is already an exp with this name')
     if args.dist_mode:
         dist.barrier()

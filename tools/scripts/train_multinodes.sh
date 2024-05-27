@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-# cd chenming.zhang/code/LightStereo && bash tools/scripts/train.sh 2 --extra_tag
 set -x
 
 # python代码执行参数
@@ -9,13 +8,6 @@ PY_ARGS=${@:2}
 
 # 环境变量
 export TORCH_HOME='/mnt/nas/algorithm/chenming.zhang/.cache/torch'
-
-# 复制文件并cd到指定目录
-datename=$(date +%Y%m%d-%H%M%S)
-targetpath='/mnt/nas/algorithm/chenming.zhang/workspace/LightStereo-'$datename
-rsync -r --exclude='output' ./* $targetpath
-cd $targetpath
-# echo $(pwd)
 
 # 激活python环境
 set +x
@@ -40,6 +32,6 @@ torchrun \
     tools/train.py \
         --dist_mode \
         --fix_random_seed \
-        --root_dir '/mnt/nas/algorithm/chenming.zhang/code/LightStereo/output' \
+        --root_dir '/mnt/nas/algorithm/chenming.zhang/github/OpenStereo/output' \
         --workers 8 \
         --pin_memory $PY_ARGS
