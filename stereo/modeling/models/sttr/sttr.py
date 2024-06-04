@@ -10,6 +10,8 @@ from .utilities.pos_encoder import build_position_encoding
 from .utilities.regression_head import build_regression_head
 from .utilities.transformer import build_transformer
 from .utilities.misc import batched_index_select, NestedTensor
+from .utilities.loss import build_criterion
+from .utilities import Map
 
 
 class STTR(nn.Module):
@@ -37,6 +39,10 @@ class STTR(nn.Module):
         self._reset_parameters()
         self._disable_batchnorm_tracking()
         self._relu_inplace()
+
+        loss_cfg = {'px_error_threshold': 3, 'validation_max_disp': 192, 'loss_weight': 'rr:1.0, l1_raw:1.0, l1:1.0, occ_be:1.0'}
+        loss_cfg = Map(loss_cfg)
+        self.criterion = build_criterion(loss_cfg)
 
     def _reset_parameters(self):
         """
@@ -123,4 +129,13 @@ class STTR(nn.Module):
         # regress disparity and occlusion
         output = self.regression_head(attn_weight, x)
 
+        output['input_nested'] = x
         return output
+
+    def get_loss(self, model_preds, input_data):
+        inputs = model_preds.pop('input_nested')
+        losses = self.criterion(inputs, model_preds)
+        total_loss = losses['aggregated']
+
+        loss_info = {'scalar/train/loss_disp': total_loss.item()}
+        return total_loss, loss_info
