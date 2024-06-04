@@ -198,7 +198,8 @@ class MSNet2D(nn.Module):
             pred3 = F.softmax(cost3, dim=1)
             pred3 = disparity_regression(pred3, self.maxdisp)
 
-            return [pred0, pred1, pred2, pred3]
+            return {'disp_preds': [pred0, pred1, pred2, pred3],
+                    'disp_pred': pred3}
 
         else:
             cost3 = self.classif3(out3)
@@ -209,3 +210,16 @@ class MSNet2D(nn.Module):
             pred3 = disparity_regression(pred3, self.maxdisp)
 
             return {'disp_pred': pred3}
+
+    def get_loss(self, model_preds, input_data):
+        disp_gt = input_data["disp"]  # [bz, h, w]
+        mask = (disp_gt < self.maxdisp) & (disp_gt > 0)  # [bz, h, w]
+
+        weights = [0.5, 0.5, 0.7, 1.0]
+
+        loss = 0.0
+        for disp_est, weight in zip(model_preds['disp_preds'], weights):
+            loss += weight * F.smooth_l1_loss(disp_est[mask], disp_gt[mask], size_average=True)
+
+        loss_info = {'scalar/train/loss_disp': loss.item()}
+        return loss, loss_info

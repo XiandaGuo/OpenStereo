@@ -1,6 +1,5 @@
 # @Time    : 2023/10/17 16:18
 # @Author  : zhangchenming
-import glob
 import sys
 import os
 import argparse
@@ -8,15 +7,11 @@ import datetime
 import torch
 import torch.distributed as dist
 from easydict import EasyDict
-from pathlib import Path
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path.insert(0, './')
 from stereo.utils import common_utils
-from stereo.datasets import build_dataloader
 from stereo.modeling import build_trainer
-from stereo.evaluation.eval_utils import eval_one_epoch
-from stereo.utils.common_utils import load_params_from_file
 from cfgs.data_basic import DATA_PATH_DICT
 
 def parse_config():

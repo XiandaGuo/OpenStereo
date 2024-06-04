@@ -1,8 +1,3 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.cuda.amp import autocast
-import torch.optim as optim
 from .submodule import *
 
 
@@ -10,6 +5,7 @@ class aanet(nn.Module):
     def __init__(self, model_cfg):
         super(aanet, self).__init__()
 
+        self.model_cfg = model_cfg
         self.max_disp = model_cfg.MAX_DISP
         self.refinement_type = model_cfg.REFINEMENT_TYPE
         self.num_downsample = model_cfg.NUM_DOWNSAMPLE
@@ -111,20 +107,22 @@ class aanet(nn.Module):
         cost_volume = self.cost_volume_construction(left_feature, right_feature)
         aggregation = self.aggregation(cost_volume)
         disparity_pyramid = self.disparity_computation(aggregation)
-        disparity_pyramid += self.disparity_refinement(left_img, right_img,
-                                                       disparity_pyramid[-1])
+        disparity_pyramid += self.disparity_refinement(left_img, right_img, disparity_pyramid[-1])
 
         return {'disp_pred': disparity_pyramid[-1],
                 'disp_preds': disparity_pyramid}
 
     def get_loss(self, model_preds, input_data):
         disp_gt = input_data["disp"]  # [bz, h, w]
-        mask = (disp_gt < self.maxdisp) & (disp_gt > 0)  # [bz, h, w]
+        disp_gt = disp_gt.unsqueeze(1)
+        mask = (disp_gt < self.model_cfg.MAX_DISP) & (disp_gt > 0)  # [bz, 1, h, w]
+        mask.detach_()
 
         weights = [1 / 3, 2 / 3, 1.0, 1.0, 1.0]
 
         loss = 0.0
         for i, input_ in enumerate(model_preds['disp_preds']):
+            input_ = input_.unsqueeze(1)
             input_ = F.interpolate(input_,
                                    size=(disp_gt.size(-2), disp_gt.size(-1)), mode='bilinear',
                                    align_corners=False) * (disp_gt.size(-1) / input_.size(-1))

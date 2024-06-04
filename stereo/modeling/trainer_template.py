@@ -2,20 +2,19 @@
 # @Author  : zhangchenming
 import os
 import time
-import math
 import glob
 import torch
 import torch.nn as nn
 import torch.distributed as dist
 
+from functools import partial
 from stereo.datasets import build_dataloader
 from stereo.utils import common_utils
 from stereo.utils.common_utils import color_map_tensorboard, write_tensorboard
 from stereo.utils.warmup import LinearWarmup
 from stereo.utils.clip_grad import ClipGrad
 from stereo.utils.lamb import Lamb
-
-from stereo.evaluation.eval_utils import eval_one_epoch
+from stereo.evaluation.metric_per_image import epe_metric, d1_metric, threshold_metric
 
 
 class TrainerTemplate:
@@ -35,17 +34,13 @@ class TrainerTemplate:
         if self.args.run_mode == 'train':
             self.train_set, self.train_loader, self.train_sampler = self.build_train_loader()
 
-            if 'TOTAL_STEPS' in cfgs.OPTIMIZATION.SCHEDULER:
-                self.total_epochs = math.ceil(cfgs.OPTIMIZATION.SCHEDULER.TOTAL_STEPS / len(self.train_loader))
-            else:
-                self.total_epochs = cfgs.OPTIMIZATION.NUM_EPOCHS
-                cfgs.OPTIMIZATION.SCHEDULER.TOTAL_STEPS = self.total_epochs * len(self.train_loader)
+            self.total_epochs = cfgs.OPTIMIZATION.NUM_EPOCHS
+            self.last_epoch = -1
 
             self.optimizer, self.scheduler = self.build_optimizer_and_scheduler()
             self.scaler = torch.cuda.amp.GradScaler(enabled=cfgs.OPTIMIZATION.AMP)
-            self.last_epoch = -1
 
-            if self.cfgs.MODEL.CKPT > -1 and self.args.run_mode == 'train':
+            if self.cfgs.MODEL.CKPT > -1:
                 self.resume_ckpt()
 
             self.warmup_scheduler = self.build_warmup()
@@ -103,21 +98,12 @@ class TrainerTemplate:
             optimizer_cls = Lamb
         else:
             optimizer_cls = getattr(torch.optim, self.cfgs.OPTIMIZATION.OPTIMIZER.NAME)
-        valid_arg = common_utils.get_valid_args(optimizer_cls, self.cfgs.OPTIMIZATION.OPTIMIZER,
-                                                ['name', 'specific_lr'])
-        base_lr = valid_arg['lr']
-        specific_lr = self.cfgs.OPTIMIZATION.OPTIMIZER.get('SPECIFIC_LR', {})
-        tmp_model = self.model.module if self.args.dist_mode else self.model
-        opt_params = []
-        for name, module in tmp_model.named_children():
-            each = {'params': [p for p in module.parameters() if p.requires_grad],
-                    'lr': specific_lr.get(name, base_lr)}
-            opt_params.append(each)
-        optimizer = optimizer_cls(params=opt_params, **valid_arg)
+        valid_arg = common_utils.get_valid_args(optimizer_cls, self.cfgs.OPTIMIZATION.OPTIMIZER, ['name'])
+        optimizer = optimizer_cls(params=[p for p in self.model.parameters() if p.requires_grad], **valid_arg)
 
+        self.cfgs.OPTIMIZATION.SCHEDULER.TOTAL_STEPS = self.total_epochs * len(self.train_loader)
         scheduler_cls = getattr(torch.optim.lr_scheduler, self.cfgs.OPTIMIZATION.SCHEDULER.NAME)
-        valid_arg = common_utils.get_valid_args(scheduler_cls, self.cfgs.OPTIMIZATION.SCHEDULER,
-                                                ['name', 'on_epoch'])
+        valid_arg = common_utils.get_valid_args(scheduler_cls, self.cfgs.OPTIMIZATION.SCHEDULER, ['name', 'on_epoch'])
         scheduler = scheduler_cls(optimizer, **valid_arg)
 
         return optimizer, scheduler
@@ -175,22 +161,10 @@ class TrainerTemplate:
             self.warmup_scheduler.lrs = [group['lr'] for group in self.optimizer.param_groups]
 
     def evaluate(self, current_epoch):
-        if current_epoch % self.cfgs.TRAINER.EVAL_INTERVAL == 0 or current_epoch == self.total_epochs - 1:
-            self.model.eval()
-            eval_one_epoch(
-                current_epoch=current_epoch,
-                local_rank=self.local_rank,
-                is_dist=self.args.dist_mode,
-                logger=self.logger,
-                logger_iter_interval=self.cfgs.TRAINER.LOGGER_ITER_INTERVAL,
-                tb_writer=self.tb_writer,
-                visualization=self.cfgs.TRAINER.EVAL_VISUALIZATION,
-                model=self.model,
-                eval_loader=self.eval_loader,
-                evaluator_cfgs=self.cfgs.EVALUATOR,
-                use_amp=self.cfgs.OPTIMIZATION.AMP)
-            if self.args.dist_mode:
-                dist.barrier()
+        self.model.eval()
+        self.eval_one_epoch(current_epoch=current_epoch)
+        if self.args.dist_mode:
+            dist.barrier()
 
     def save_ckpt(self, current_epoch):
         if (current_epoch % self.cfgs.TRAINER.CKPT_SAVE_INTERVAL == 0 or current_epoch == self.total_epochs - 1) and self.global_rank == 0:
@@ -269,3 +243,88 @@ class TrainerTemplate:
             tb_info.update({'scalar/train/lr': lr})
             if total_iter % logger_iter_interval == 0 and self.local_rank == 0 and self.tb_writer is not None:
                 write_tensorboard(self.tb_writer, tb_info, total_iter)
+
+    @torch.no_grad()
+    def eval_one_epoch(self, current_epoch):
+
+        metric_func_dict = {
+            'epe': epe_metric,
+            'd1_all': d1_metric,
+            'thres_1': partial(threshold_metric, threshold=1),
+            'thres_2': partial(threshold_metric, threshold=2),
+            'thres_3': partial(threshold_metric, threshold=3),
+        }
+
+        evaluator_cfgs = self.cfgs.EVALUATOR
+        local_rank = self.local_rank
+
+        epoch_metrics = {}
+        for k in evaluator_cfgs.METRIC:
+            epoch_metrics[k] = {'indexes': [], 'values': []}
+
+        for i, data in enumerate(self.eval_loader):
+            for k, v in data.items():
+                data[k] = v.to(local_rank) if torch.is_tensor(v) else v
+
+            with torch.cuda.amp.autocast(enabled=self.cfgs.OPTIMIZATION.AMP):
+                infer_start = time.time()
+                model_pred = self.model(data)
+                infer_time = time.time() - infer_start
+
+            disp_pred = model_pred['disp_pred']
+            disp_gt = data["disp"]
+            mask = (disp_gt < evaluator_cfgs.MAX_DISP) & (disp_gt > 0)
+            if 'occ_mask' in data and evaluator_cfgs.get('APPLY_OCC_MASK', False):
+                mask = mask & (data['occ_mask'] == 255.0)
+
+            for m in evaluator_cfgs.METRIC:
+                if m not in metric_func_dict:
+                    raise ValueError("Unknown metric: {}".format(m))
+                metric_func = metric_func_dict[m]
+                res = metric_func(disp_pred.squeeze(1), disp_gt, mask)
+                epoch_metrics[m]['indexes'].extend(data['index'].tolist())
+                epoch_metrics[m]['values'].extend(res.tolist())
+
+            if i % self.cfgs.TRAINER.LOGGER_ITER_INTERVAL == 0:
+                message = ('Evaluating Epoch:{:>2d} Iter:{:>4d}/{} InferTime: {:.2f}ms'
+                           ).format(current_epoch, i, len(self.eval_loader), infer_time * 1000)
+                self.logger.info(message)
+
+                if self.cfgs.TRAINER.EVAL_VISUALIZATION and self.tb_writer is not None:
+                    tb_info = {
+                        'image/eval/image': torch.cat([data['left'][0], data['right'][0]], dim=1) / 256,
+                        'image/eval/disp': color_map_tensorboard(data['disp'][0], model_pred['disp_pred'].squeeze(1)[0])
+                    }
+                    write_tensorboard(self.tb_writer, tb_info, current_epoch * len(self.eval_loader) + i)
+
+        # gather from all gpus
+        if self.args.dist_mode:
+            dist.barrier()
+            self.logger.info("Start reduce metrics.")
+            for k in epoch_metrics.keys():
+                indexes = torch.tensor(epoch_metrics[k]["indexes"]).to(local_rank)
+                values = torch.tensor(epoch_metrics[k]["values"]).to(local_rank)
+                gathered_indexes = [torch.zeros_like(indexes) for _ in range(dist.get_world_size())]
+                gathered_values = [torch.zeros_like(values) for _ in range(dist.get_world_size())]
+                dist.all_gather(gathered_indexes, indexes)
+                dist.all_gather(gathered_values, values)
+                unique_dict = {}
+                for key, value in zip(torch.cat(gathered_indexes, dim=0).tolist(),
+                                      torch.cat(gathered_values, dim=0).tolist()):
+                    if key not in unique_dict:
+                        unique_dict[key] = value
+                epoch_metrics[k]["indexes"] = list(unique_dict.keys())
+                epoch_metrics[k]["values"] = list(unique_dict.values())
+
+        results = {}
+        for k in epoch_metrics.keys():
+            results[k] = torch.tensor(epoch_metrics[k]["values"]).mean()
+
+        if local_rank == 0 and self.tb_writer is not None:
+            tb_info = {}
+            for k, v in results.items():
+                tb_info[f'scalar/val/{k}'] = v.item()
+
+            write_tensorboard(self.tb_writer, tb_info, current_epoch)
+
+        self.logger.info(f"Epoch {current_epoch} metrics: {results}")

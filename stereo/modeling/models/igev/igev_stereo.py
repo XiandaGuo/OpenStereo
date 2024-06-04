@@ -80,6 +80,7 @@ class IGEVStereo(nn.Module):
     def __init__(self, args):
         super().__init__()
         self.args = args
+        self.max_disp = args.MAX_DISP
 
         context_dims = args.HIDDEN_DIMS
 
@@ -211,4 +212,36 @@ class IGEVStereo(nn.Module):
             return {'disp_pred': disp_up}
 
         init_disp = context_upsample(init_disp * 4., spx_pred.float()).unsqueeze(1)
-        return init_disp, disp_preds
+
+        return {'init_disp': init_disp,
+                'disp_preds': disp_preds,
+                'disp_pred': disp_preds[-1]}
+
+    def get_loss(self, model_pred, input_data):
+        disp_gt = input_data["disp"]
+        mask = (disp_gt < self.max_disp) & (disp_gt > 0)
+        valid = mask.float()
+
+        disp_gt = disp_gt.unsqueeze(1)
+        mag = torch.sum(disp_gt ** 2, dim=1).sqrt()
+        valid = ((valid >= 0.5) & (mag < self.max_disp)).unsqueeze(1)
+        assert valid.shape == disp_gt.shape, [valid.shape, disp_gt.shape]
+        assert not torch.isinf(disp_gt[valid.bool()]).any()
+
+        disp_init_pred = model_pred['init_disp']
+        disp_loss = 1.0 * F.smooth_l1_loss(disp_init_pred[valid.bool()], disp_gt[valid.bool()], reduction='mean')
+
+        # gru loss
+        loss_gamma = 0.9
+        disp_preds = model_pred['disp_preds']
+        n_predictions = len(disp_preds)
+        assert n_predictions >= 1
+        for i in range(n_predictions):
+            adjusted_loss_gamma = loss_gamma ** (15 / (n_predictions - 1))
+            i_weight = adjusted_loss_gamma ** (n_predictions - i - 1)
+            i_loss = (disp_preds[i] - disp_gt).abs()
+            assert i_loss.shape == valid.shape, [i_loss.shape, valid.shape, disp_gt.shape, disp_preds[i].shape]
+            disp_loss += i_weight * i_loss[valid.bool()].mean()
+
+        loss_info = {'scalar/train/loss_disp': disp_loss.item()}
+        return disp_loss, loss_info

@@ -42,4 +42,22 @@ class CoEx(nn.Module):
         inputs.update(cost_out)
         disp_out = self.DispProcessor(inputs)
 
-        return {'disp_pred': disp_out['inference_disp']['disp_est']}
+        if self.training:
+            return {'disp_preds': disp_out['disp_ests'],
+                    'disp_pred': disp_out['disp_ests'][0]}
+        else:
+            return {'disp_pred': disp_out['inference_disp']['disp_est']}
+
+    def get_loss(self, model_preds, input_data):
+        disp_gt = input_data["disp"]  # [bz, h, w]
+        mask = (disp_gt < self.max_disp) & (disp_gt > 0)  # [bz, h, w]
+
+        weights = [1.0, 0.3]
+
+        loss = 0.0
+        for disp_est, weight in zip(model_preds['disp_preds'], weights):
+            loss += weight * F.smooth_l1_loss(disp_est[mask], disp_gt[mask], size_average=True)
+
+        loss = loss * 0.77
+        loss_info = {'scalar/train/loss_disp': loss.item()}
+        return loss, loss_info
