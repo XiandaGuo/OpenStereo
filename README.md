@@ -36,7 +36,7 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
 ```
 @article{OpenStereo,
         title={OpenStereo: A Comprehensive Benchmark for Stereo Matching and Strong Baseline},
-        author={Guo, Xianda and Lu, Juntao and Zhang, Chenming and Wang, Yiqi and Duan, Yiqun and Yang, Tian and Zhu, Zheng and Chen, Long},
+        author={Guo, Xianda and Zhang, Chenming and Lu, Juntao and Wang, Yiqi and Duan, Yiqun and Yang, Tian and Zhu, Zheng and Chen, Long},
         journal={arXiv preprint arXiv:2312.00343},
         year={2023}
 }
