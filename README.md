@@ -9,7 +9,7 @@ OpenStereo is a flexible and extensible project for stereo matching.
 - **[March 2023]**:OpenStereo is available!!!
 
 ## Highlighted features
-- **Mutiple Dataset supported**: OpenStereo supports six popular stereo datasets: [SceneFlow](datasets/SceneFlow/README.md), [KITTI12](datasets/KITTI12/README.md) & [KITTI15](datasets/KITTI15/README.md), 
+- **Multiple Dataset supported**: OpenStereo supports six popular stereo datasets: [SceneFlow](datasets/SceneFlow/README.md), [KITTI12](datasets/KITTI12/README.md) & [KITTI15](datasets/KITTI15/README.md), 
  [ETH3D](datasets/ETH3D/README.md),[Middlebury](datasets/Middlebury/README.md) and [DrivingStereo](datasets/DrivingStereo/README.md) .
 - **Multiple Models Support**: We reproduced several SOTA methods, and reached the same or even the better performance. 
 - **DDP Support**: The officially recommended [`Distributed Data Parallel (DDP)`](https://pytorch.org/tutorials/intermediate/ddp_tutorial.html) mode is used during both the training and testing phases.
@@ -36,7 +36,7 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
 ```
 @article{OpenStereo,
         title={OpenStereo: A Comprehensive Benchmark for Stereo Matching and Strong Baseline},
-        author={Guo, Xianda and Lu, Juntao and Zhang, Chenming and Wang, Yiqi and Duan, Yiqun and Yang, Tian and Zhu, Zheng and Chen, Long},
+        author={Guo, Xianda and Zhang, Chenming and Lu, Juntao  and Wang, Yiqi and Duan, Yiqun and Yang, Tian and Zhu, Zheng and Chen, Long},
         journal={arXiv preprint arXiv:2312.00343},
         year={2023}
 }
