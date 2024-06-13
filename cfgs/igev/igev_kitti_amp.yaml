@@ -1,0 +1,88 @@
+DATA_CONFIG:
+    DATA_INFOS:
+        -   DATASET: KittiDataset
+            DATA_SPLIT: {
+                TRAINING: ./data/kitti12/kitti12_train194.txt,
+                EVALUATING: '',
+                TESTING: ''
+            }
+            DATA_PATH: /yourpath/kitti12
+            RETURN_RIGHT_DISP: true
+
+        -   DATASET: KittiDataset
+            DATA_SPLIT: {
+                TRAINING: ./data/kitti15/kitti15_train200.txt,
+                EVALUATING: ./data/kitti15/kitti15_val20.txt,
+                TESTING: ./data/kitti15/kitti15_test.txt
+            }
+            DATA_PATH: /yourpath/kitti15
+            RETURN_RIGHT_DISP: true
+
+    DATA_TRANSFORM:
+        TRAINING:
+            - { NAME: StereoColorJitter, BRIGHTNESS: [ 0.7, 1.3 ], CONTRAST: [ 0.7, 1.3 ], SATURATION: [ 0.7, 1.3 ], HUE: 0.3, ASYMMETRIC_PROB: 0 }
+            - { NAME: RandomErase, PROB: 0.5, MAX_TIME: 2, BOUNDS: [ 50, 100 ] }
+            - { NAME: RandomSparseScale, SIZE: [ 320, 736 ], MIN_SCALE: 0.2, MAX_SCALE: 0.5, SCALE_PROB: 0.8 }
+            - { NAME: RandomCrop, SIZE: [ 320, 736 ] }
+            - { NAME: TransposeImage }
+            - { NAME: ToTensor }
+        EVALUATING:
+            - { NAME: RightTopPad, SIZE: [ 384, 1248 ] }
+            - { NAME: TransposeImage }
+            - { NAME: ToTensor }
+
+MODEL:
+    NAME: IGEV
+    MAX_DISP: &max_disp 192
+    HIDDEN_DIMS: [ 128, 128, 128 ]
+    N_GRU_LAYERS: 3
+    N_DOWNSAMPLE: 2
+    SLOW_FAST_GRU: True
+    CORR_LEVELS: 2
+    CORR_RADIUS: 4
+    TRAIN_ITERS: 22
+    VALID_ITERS: 32
+    FIND_UNUSED_PARAMETERS: true
+    CKPT: -1
+    PRETRAINED_MODEL: ''
+
+OPTIMIZATION:
+    BATCH_SIZE_PER_GPU: 2
+    FREEZE_BN: true
+    SYNC_BN: true
+    AMP: true
+    NUM_EPOCHS: 500
+
+    OPTIMIZER:
+        NAME: AdamW
+        LR: 0.0002
+        WEIGHT_DECAY: 0.00001
+        EPS: 0.00000001
+
+    SCHEDULER:
+        NAME: OneCycleLR
+        MAX_LR: 0.0002
+        PCT_START: 0.01
+        ON_EPOCH: False
+
+    CLIP_GRAD:
+        TYPE: value
+        CLIP_VALUE: 1.0
+
+EVALUATOR:
+    BATCH_SIZE_PER_GPU: 1
+    MAX_DISP: *max_disp
+    METRIC:
+        - d1_all
+        - epe
+        - thres_1
+        - thres_2
+        - thres_3
+
+TRAINER:
+    EVAL_INTERVAL: 1
+    CKPT_SAVE_INTERVAL: 1
+    MAX_CKPT_SAVE_NUM: 30
+    LOGGER_ITER_INTERVAL: 10
+    TRAIN_VISUALIZATION: True
+    EVAL_VISUALIZATION: True
