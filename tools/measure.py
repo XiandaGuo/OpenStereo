@@ -5,28 +5,29 @@ import torch
 import argparse
 import sys
 import thop
-import numpy as np
 from easydict import EasyDict
 from tqdm import tqdm
 
 sys.path.insert(0, './')
 from stereo.utils import common_utils
-from stereo.modeling import build_network
+from stereo.modeling import build_trainer
 
 
 def parse_config():
     parser = argparse.ArgumentParser(description='arg parser')
+    parser.add_argument('--dist_mode', action='store_true', default=False, help='torchrun ddp multi gpu')
     parser.add_argument('--cfg_file', type=str, default=None, help='specify the config for training')
 
     args = parser.parse_args()
     yaml_config = common_utils.config_loader(args.cfg_file)
     cfgs = EasyDict(yaml_config)
+    args.run_mode = 'measure'
     return args, cfgs
 
 
 def main():
     args, cfgs = parse_config()
-    model = build_network(model_cfg=cfgs.MODEL).cuda()
+    model = build_trainer(args, cfgs, local_rank=0, global_rank=0, logger=None, tb_writer=None).model
 
     shape = [1, 3, 544, 960]
     infer_time(model, shape)

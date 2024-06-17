@@ -171,7 +171,7 @@ class TrainerTemplate:
             ckpt_list = glob.glob(os.path.join(self.args.ckpt_dir, 'checkpoint_epoch_*.pth'))
             ckpt_list.sort(key=os.path.getmtime)
             if len(ckpt_list) >= self.cfgs.TRAINER.MAX_CKPT_SAVE_NUM:
-                for cur_file_idx in range(0, len(ckpt_list) - self.args.max_ckpt_save_num + 1):
+                for cur_file_idx in range(0, len(ckpt_list) - self.cfgs.TRAINER.MAX_CKPT_SAVE_NUM + 1):
                     os.remove(ckpt_list[cur_file_idx])
             ckpt_name = os.path.join(self.args.ckpt_dir, 'checkpoint_epoch_%d.pth' % current_epoch)
             common_utils.save_checkpoint(self.model, self.optimizer, self.scheduler, self.scaler,
