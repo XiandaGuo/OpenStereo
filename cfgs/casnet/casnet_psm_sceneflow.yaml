@@ -35,10 +35,10 @@ MODEL:
     PRETRAINED_MODEL: ''
 
 OPTIMIZATION:
-    BATCH_SIZE_PER_GPU: 12
+    BATCH_SIZE_PER_GPU: 4
     FREEZE_BN: false
     SYNC_BN: false
-    AMP: true
+    AMP: false
     NUM_EPOCHS: 20
 
     OPTIMIZER:
@@ -52,11 +52,6 @@ OPTIMIZATION:
         ON_EPOCH: True
         WARMUP:
             WARM_STEPS: 100
-
-    CLIP_GRAD:
-        TYPE: norm
-        MAX_NORM: 35
-        NORM_TYPE: 2
 
 EVALUATOR:
     BATCH_SIZE_PER_GPU: 10
