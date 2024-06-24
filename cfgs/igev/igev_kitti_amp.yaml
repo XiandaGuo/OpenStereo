@@ -2,7 +2,7 @@ DATA_CONFIG:
     DATA_INFOS:
         -   DATASET: KittiDataset
             DATA_SPLIT: {
-                TRAINING: ./data/kitti12/kitti12_train194.txt,
+                TRAINING: ./data/KITTI12//kitti12_train194.txt,
                 EVALUATING: '',
                 TESTING: ''
             }
@@ -11,9 +11,9 @@ DATA_CONFIG:
 
         -   DATASET: KittiDataset
             DATA_SPLIT: {
-                TRAINING: ./data/kitti15/kitti15_train200.txt,
-                EVALUATING: ./data/kitti15/kitti15_val20.txt,
-                TESTING: ./data/kitti15/kitti15_test.txt
+                TRAINING: ./data/KITTI15//kitti15_train200.txt,
+                EVALUATING: ./data/KITTI15//kitti15_val20.txt,
+                TESTING: ./data/KITTI15//kitti15_test.txt
             }
             DATA_PATH: /yourpath/kitti15
             RETURN_RIGHT_DISP: true

@@ -2,8 +2,8 @@ DATA_CONFIG:
     DATA_INFOS:
         -   DATASET: KittiDataset
             DATA_SPLIT: {
-                EVALUATING: ./data/kitti15/kitti15_val20.txt,
-                TESTING: ./data/kitti15/kitti15_test.txt
+                EVALUATING: ./data/KITTI15//kitti15_val20.txt,
+                TESTING: ./data/KITTI15//kitti15_test.txt
             }
             DATA_PATH: /yourpath/KITTI/stereo_2015
             RETURN_RIGHT_DISP: false
