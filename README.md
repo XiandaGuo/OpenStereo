@@ -10,7 +10,7 @@ OpenStereo is a flexible and extensible project for stereo matching.
 - **[March 2023]**:OpenStereo is available!!!
 
 ## Highlighted features
-- **Multiple Dataset supported**: OpenStereo supports six popular stereo datasets: [SceneFlow](data/SceneFlow/README.md), [KITTI12](data/KITTI12/README.md) & [KITTI15](data/KITTI15/README.md), 
+- **Multiple Dataset supported**: OpenStereo supports 10 popular stereo datasets: [SceneFlow](data/SceneFlow/README.md), [KITTI12](data/KITTI12/README.md) & [KITTI15](data/KITTI15/README.md), 
  [ETH3D](data/ETH3D/README.md),[Middlebury](data/Middlebury/README.md) , [DrivingStereo](data/DrivingStereo/README.md) , [Sintel](data/Sintel/README.md), [FallingThings](data/FallingThings/README.md), [InStereo2K](data/InStereo2K/README.md), [UnrealStereo4k](data/UnrealStereo4k/README.md).
 - **Multiple Models Support**: We reproduced several SOTA methods, and reached the same or even better performance. 
 - **DDP Support**: The officially recommended [`Distributed Data Parallel (DDP)`](https://pytorch.org/tutorials/intermediate/ddp_tutorial.html) mode is used during both the training and testing phases.
