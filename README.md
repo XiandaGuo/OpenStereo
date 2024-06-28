@@ -4,7 +4,8 @@
 OpenStereo is a flexible and extensible project for stereo matching.
 
 ## What's New
-- **[May 2025]**: The 2.0 version of OpenStereo is available, featuring an optimized training and testing framework.
+- **[June 26th, 2024]**: TensorRT has been integrated, , please see the [Deployment documentation](deploy/README.md).
+- **[May 2024]**: The 2.0 version of OpenStereo is available, featuring an optimized training and testing framework.
 - **[January 2024]**: Our proposed StereoBase rank 1st on the [KITTI15 leaderboard](https://www.cvlibs.net/datasets/kitti/eval_scene_flow_detail.php?benchmark=stereo&result=52177cbd800e317dc999650fae31408deccebb4d])!!!
 - **[December 2023]**: Our paper makes public: [OpenStereo: A Comprehensive Benchmark for Stereo Matching and Strong Baseline](https://arxiv.org/abs/2312.00343)
 - **[March 2023]**:OpenStereo is available!!!
