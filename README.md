@@ -1,6 +1,6 @@
-<img src="./misc/OpenStereo.png" alt="logo" />
+<!-- PROJECT LOGO -->
+<h1 align="center">OpenStereo: A Comprehensive Benchmark for Stereo Matching and Strong Baseline</h1>
 
-------------------------------------------
 OpenStereo is a flexible and extensible project for stereo matching.
 
 ## What's New
