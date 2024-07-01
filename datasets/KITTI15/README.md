@@ -29,17 +29,10 @@ data
 ### Reference
 
 ```bibtex
-@ARTICLE{Menze2018JPRS,
-  author = {Moritz Menze and Christian Heipke and Andreas Geiger},
-  title = {Object Scene Flow},
-  journal = {ISPRS Journal of Photogrammetry and Remote Sensing (JPRS)},
-  year = {2018}
-}
-
-@INPROCEEDINGS{Menze2015ISA,
-  author = {Moritz Menze and Christian Heipke and Andreas Geiger},
-  title = {Joint 3D Estimation of Vehicles and Scene Flow},
-  booktitle = {ISPRS Workshop on Image Sequence Analysis (ISA)},
-  year = {2015}
+@inproceedings{kitti2015,
+  title={Object scene flow for autonomous vehicles},
+  author={Menze, Moritz and Geiger, Andreas},
+  booktitle={CVPR},
+  year={2015}
 }
 ```
