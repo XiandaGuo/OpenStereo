@@ -44,10 +44,10 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
         year={2023}
 }
 @article{guo2024lightstereo,
-  title={LightStereo: Channel Boost Is All Your Need for Efficient 2D Cost Aggregation},
-  author={Guo, Xianda and Zhang, Chenming and Nie, Dujun and Zheng, Wenzhao and Zhang, Youmin and Chen, Long},
-  journal={arXiv preprint arXiv:2406.19833},
-  year={2024}
+        title={LightStereo: Channel Boost Is All Your Need for Efficient 2D Cost Aggregation},
+        author={Guo, Xianda and Zhang, Chenming and Nie, Dujun and Zheng, Wenzhao and Zhang, Youmin and Chen, Long},
+        journal={arXiv preprint arXiv:2406.19833},
+        year={2024}
 }
 ```
 **Note**: This code is only used for academic purposes, people cannot use this code for anything that might be considered commercial use.
