@@ -9,7 +9,7 @@
 
 ## 2023
 * **Efficient Spatial-Temporal Stereo Matching Network**, Youmin Zhang, Matteo Poggi, et al. [[paper](https://ieeexplore.ieee.org/abstract/document/10341598)][[code](https://github.com/youmi-zym/TemporalStereo)]. IROS2023
-* **DynamicStereo: Consistent Dynamic Depth from Stereo Videos**, Nikita Karaev, Ignacio Rocco, et al. [[paper](https://research.facebook.com/publications/dynamicstereo-consistent-dynamic-depth-from-stereo-videos/)][[code](https://github.com/facebookresearch/dynamic_stereo)]
+* **DynamicStereo: Consistent Dynamic Depth from Stereo Videos**, Nikita Karaev, Ignacio Rocco, et al. [[paper](https://research.facebook.com/publications/dynamicstereo-consistent-dynamic-depth-from-stereo-videos/)][[code](https://github.com/facebookresearch/dynamic_stereo)]. CVPR2023
 * **Joint Depth Estimation from Gated and Wide-Baseline Active Stereo Cues**, Stefanie Walz, Mario Bijelic, et al. [[paper](https://arxiv.org/pdf/2305.12955.pdf )][[code](https://github.com/princeton-computational-imaging/GatedStereo)]. CVPR2023
 * **Hybrid Transformer and CNN Attention Network for Stereo Image Super-resolution**, Ming Cheng, Haoyu Ma, et al. [[paper](https://arxiv.org/pdf/2305.05177.pdf)][[code](None)]. CVPR2023
 * **Learning to Render Novel Views from Wide-Baseline Stereo Pairs**, Yilun Du, Cameron Smit.[[paper](https://arxiv.org/pdf/2304.08463.pdf)][[code](https://github.com/yilundu/cross_attention_renderer)]. CVPR2023
