@@ -24,6 +24,7 @@ class MiddleburyDataset(DatasetTemplate):
         occ_mask_path = left_img_path.replace('im0.png', 'mask0nocc.png')
         occ_mask = Image.open(occ_mask_path).convert('L')
         occ_mask = np.array(occ_mask, dtype=np.float32)
+        occ_mask = occ_mask != 255.0
 
         sample = {
             'left': left_img,  # [H, W, 3]

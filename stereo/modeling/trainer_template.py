@@ -275,7 +275,7 @@ class TrainerTemplate:
             disp_gt = data["disp"]
             mask = (disp_gt < evaluator_cfgs.MAX_DISP) & (disp_gt > 0)
             if 'occ_mask' in data and evaluator_cfgs.get('APPLY_OCC_MASK', False):
-                mask = mask & (data['occ_mask'] == 255.0)
+                mask = mask & ~data['occ_mask'].to(torch.bool)
 
             for m in evaluator_cfgs.METRIC:
                 if m not in metric_func_dict:
