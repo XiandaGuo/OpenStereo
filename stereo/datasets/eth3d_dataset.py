@@ -21,6 +21,8 @@ class ETH3DDataset(DatasetTemplate):
         disp_img[disp_img == np.inf] = 0
 
         occ_mask = Image.open(disp_img_path.replace('disp0GT.pfm', 'mask0nocc.png'))
+        occ_mask = np.array(occ_mask, dtype=np.float32)
+        occ_mask = occ_mask != 255.0
 
         sample = {
             'left': left_img,

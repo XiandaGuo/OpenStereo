@@ -14,7 +14,8 @@ DATA_CONFIG:
             - { NAME: ToTensor }
 
 EVALUATOR:
-    BATCH_SIZE_PER_GPU: 8
+    BATCH_SIZE_PER_GPU: 1
+    APPLY_OCC_MASK: true
     MAX_DISP: 192
     METRIC:
         - d1_all
