@@ -1,5 +1,7 @@
 #include <chrono>
 #include <opencv2/opencv.hpp>
+#include <yaml-cpp/yaml.h>
+
 #include "transforms.h"
 #include "inference.h"
 #include "utils.h"
@@ -9,6 +11,34 @@ bool VERBOSE = 0;
 bool SHOW = 0;
 bool DEBUG = 0;
 int WARMUP_TIME = 10;
+
+std::map<std::string, Transform::TransformParams> parseConfig(const std::string& configPath) {
+    YAML::Node config = YAML::LoadFile(configPath);
+    std::map<std::string, Transform::TransformParams> operations;
+
+    if (config["DATA_CONFIG"]["DATA_TRANSFORM"]["EVALUATING"]) {
+        for (const auto& node : config["DATA_CONFIG"]["DATA_TRANSFORM"]["EVALUATING"]) {
+            std::string operationName = node["NAME"].as<std::string>();
+            Transform::TransformParams params;
+
+            for (const auto& param : node) {
+                std::string key = param.first.as<std::string>();
+                if (key == "NAME") continue; // Skip the NAME field
+                if (param.second.IsSequence()) {
+                    std::vector<float> vec = param.second.as<std::vector<float>>();
+                    params[key] = vec;
+                } else if (param.second.IsScalar()) {
+                    float value = param.second.as<float>();
+                    params[key] = value;
+                }
+            }
+
+            operations[operationName] = params;
+        }
+    }
+
+    return operations;
+}
 
 int main(int argc, char* argv[]) {
     if (argc < 4) {
@@ -72,7 +102,7 @@ int main(int argc, char* argv[]) {
 
     // debug code
     if (DEBUG) {
-        cv::Rect cropRegion(0, 0, 512, 256);
+        cv::Rect cropRegion(0, 0, 256, 256);
         left_img_bgr = left_img_bgr(cropRegion);
         right_img_bgr = right_img_bgr(cropRegion);
         cv::imwrite("left_img.png", left_img_bgr);
@@ -92,18 +122,22 @@ int main(int argc, char* argv[]) {
         {"right_img", right_img_rgb}
     };
 
+    std::map<std::string, Transform::TransformParams> operations;
+    operations["RightTopPad"] = Transform::TransformParams({{"target_height", 384}, {"target_width", 1248}});
+    operations["TransposeImage"] = Transform::TransformParams();
+    operations["NormalizeImage"] = {{"mean", std::vector<float>{0.485f, 0.456f, 0.406f}},
+                                    {"std", std::vector<float>{0.229f, 0.224f, 0.225f}}};
+    Transform transform(operations);
+
     auto start_preprocess = std::chrono::high_resolution_clock::now();
 
-    // RightTopPad padder(384, 1248);
-    TransposeImage transpose;
-    // NormalizeImage normalize(cv::Scalar(0.485, 0.456, 0.406), cv::Scalar(0.229, 0.224, 0.225));
-
-    // sample = padder(sample);
-    sample = transpose(sample);
-    // sample = normalize(sample);
+    sample = transform(sample);
 
     auto end_preprocess = std::chrono::high_resolution_clock::now();
     auto duration_preprocess = std::chrono::duration_cast<std::chrono::milliseconds>(end_preprocess - start_preprocess);
+
+    // cv::imwrite("left_img.png", sample["left_img"]);
+    // cv::imwrite("right_img.png", sample["right_img"]);
 
     // Try run and warm up engine
     try {
