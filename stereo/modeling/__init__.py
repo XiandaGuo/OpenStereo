@@ -3,7 +3,7 @@
 
 from .models.casnet.trainer import Trainer as CasStereoTrainer
 from .models.cfnet.trainer import Trainer as CFNetTrainer
-from .models.aanet.trainer import Trainer as AANetTrainer
+# from .models.aanet.trainer import Trainer as AANetTrainer
 from .models.coex.trainer import Trainer as CoExTrainer
 from .models.fadnet.trainer import Trainer as FADNetTrainer
 from .models.gwcnet.trainer import Trainer as GwcNetTrainer
@@ -11,6 +11,7 @@ from .models.igev.trainer import Trainer as IGEVTrainer
 from .models.msnet.trainer import Trainer as MSNetTrainer
 from .models.psmnet.trainer import Trainer as PSMNetTrainer
 from .models.sttr.trainer import Trainer as STTRTrainer
+from .models.lightstereo.trainer import Trainer as LightStereoTrainer
 
 
 __all__ = {
@@ -22,10 +23,11 @@ __all__ = {
     'GwcNet': GwcNetTrainer,
     'FADNet': FADNetTrainer,
     'CoExNet': CoExTrainer,
-    'AANet': AANetTrainer,
+    # 'AANet': AANetTrainer,
     'CFNet': CFNetTrainer,
     'CasGwcNet': CasStereoTrainer,
     'CasPSMNet': CasStereoTrainer,
+    'LightStereo': LightStereoTrainer
 }
 
 

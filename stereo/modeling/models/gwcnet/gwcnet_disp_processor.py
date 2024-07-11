@@ -120,14 +120,8 @@ class GwcDispProcessor(nn.Module):
                 "training_disp": {
                     "disp": {
                         "disp_ests": [pred0,pred1,pred2,pred3],
-                        "disp_gt": inputs['disp_gt'],
-                        "mask": inputs['mask']
                     },
                 },
-                "visual_summary": {
-                    'image/train/image_c': torch.cat([inputs['ref_img'][0], inputs['tgt_img'][0]], dim=1),
-                    'image/train/disp_c': torch.cat([inputs['disp_gt'][0], pred3[0]], dim=0),
-                }
             }
             return output
 

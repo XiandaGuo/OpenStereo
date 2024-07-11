@@ -11,7 +11,11 @@ from .driving_dataset import DrivingDataset
 from .sceneflow_dataset import FlyingThings3DSubsetDataset
 from .middlebury_dataset import MiddleburyDataset
 from .eth3d_dataset import ETH3DDataset
-
+from .sintel_dataset import SintelDataset
+from .fallingthings_dataset import FallingThingsDataset
+from .instereo2k_dataset import InStereo2KDataset
+from .unrealstereo4k_dataset import UnrealStereo4KDataset
+from .crestereo_dataset import CREStereoDataset
 
 __all__ = {
     'SceneFlowDataset': SceneFlowDataset,
@@ -19,7 +23,12 @@ __all__ = {
     'DrivingDataset': DrivingDataset,
     'FlyingThings3DSubsetDataset': FlyingThings3DSubsetDataset,
     'MiddleburyDataset': MiddleburyDataset,
-    'ETH3DDataset': ETH3DDataset
+    'ETH3DDataset': ETH3DDataset,
+    'SintelDataset': SintelDataset,
+    'FallingThingsDataset': FallingThingsDataset,
+    'InStereo2KDataset': InStereo2KDataset,
+    'UnrealStereo4KDataset': UnrealStereo4KDataset,
+    'CREStereoDataset': CREStereoDataset
 }
 
 

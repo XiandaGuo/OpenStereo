@@ -26,6 +26,8 @@ class FADNet(nn.Module):
         self.disp_predictor = DispNetRes(in_planes, resBlock=resBlock, input_channel=input_channel,
                                          encoder_ratio=encoder_ratio, decoder_ratio=decoder_ratio)
 
+        self.multiScales = [nn.AvgPool2d(2 ** i, 2 ** i) for i in range(7)]
+
     def build_corr(self,img_left, img_right, max_disp=40, zero_volume=None):
         B, C, H, W = img_left.shape
         if zero_volume is not None:
@@ -79,18 +81,17 @@ class FADNet(nn.Module):
                 "training_disp": {
                     "dispnetc_flows": {
                         "disp_ests": dispnetc_flows,
-                        "disp_gt": inputs["disp_gt"],
-                        "mask": inputs["mask"]
                     },
                     "dispnetres_flows": {
                         "disp_ests": dispnetres_flows,
-                        "disp_gt": inputs["disp_gt"],
-                        "mask": inputs["mask"]
                     }
 
                 },
                 "visual_summary": {}
             }
+            return {'disp_pred': dispnetres_final_flow,
+                    'disp_preds': output["training_disp"]}
+
         else:
             if dispnetres_final_flow.dim() == 4:
                 dispnetres_final_flow = dispnetres_final_flow.squeeze(1)
@@ -114,3 +115,26 @@ class FADNet(nn.Module):
                 }
 
         return {'disp_pred': dispnetres_final_flow}
+
+    def get_loss(self, model_preds, input_data):
+        disp_gt = input_data["disp"]  # [bz, h, w]
+
+        weights = [0.3200, 0.1600, 0.0800, 0.0400, 0.0200, 0.0100, 0.0050]
+
+        loss = 0.0
+        dispnetc = model_preds['disp_preds']['dispnetc_flows']['disp_ests']
+        for i, input_ in enumerate(dispnetc):
+            target_ = self.multiScales[i](disp_gt)
+            mask = (target_ < self.maxdisp) & (target_ > 0)
+            input_ = input_.squeeze(1)
+            loss += weights[i] * F.smooth_l1_loss(input_[mask], target_[mask], reduction='mean')
+
+        dispnetres = model_preds['disp_preds']['dispnetres_flows']['disp_ests']
+        for i, input_ in enumerate(dispnetres):
+            target_ = self.multiScales[i](disp_gt)
+            mask = (target_ < self.maxdisp) & (target_ > 0)
+            input_ = input_.squeeze(1)
+            loss += weights[i] * F.smooth_l1_loss(input_[mask], target_[mask], reduction='mean')
+
+        loss_info = {'scalar/train/loss_disp': loss.item()}
+        return loss, loss_info

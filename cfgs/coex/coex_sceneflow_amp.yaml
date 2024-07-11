@@ -2,9 +2,9 @@ DATA_CONFIG:
     DATA_INFOS:
         -   DATASET: SceneFlowDataset
             DATA_SPLIT: {
-                TRAINING: ./data/sceneflow/sceneflow_finalpass_train.txt,
-                EVALUATING: ./data/sceneflow/sceneflow_finalpass_test.txt,
-                TESTING: ./data/sceneflow/sceneflow_finalpass_test.txt
+                TRAINING: ./data/SceneFlow/sceneflow_finalpass_train.txt,
+                EVALUATING: ./data/SceneFlow/sceneflow_finalpass_test.txt,
+                TESTING: ./data/SceneFlow/sceneflow_finalpass_test.txt
             }
             DATA_PATH: /yourpath/SceneFlow
             RETURN_RIGHT_DISP: false
@@ -33,7 +33,7 @@ MODEL:
     AGGREGATION_CHANNELS: [ 16, 32, 48 ]
     AGGREGATION_BLOCKS_NUM: [ 2, 2, 2 ]
     REGRESSION_TOPK: 2
-    FIND_UNUSED_PARAMETERS: false
+    FIND_UNUSED_PARAMETERS: true
     CKPT: -1
     PRETRAINED_MODEL: ''
 

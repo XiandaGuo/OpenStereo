@@ -2,7 +2,7 @@ DATA_CONFIG:
     DATA_INFOS:
         -   DATASET: SceneFlowDataset
             DATA_SPLIT: {
-                EVALUATING: ./data/sceneflow/sceneflow_finalpass_test.txt,
+                EVALUATING: ./data/SceneFlow/sceneflow_finalpass_test.txt,
             }
             DATA_PATH: /yourpath/SceneFlow
             RETURN_RIGHT_DISP: false

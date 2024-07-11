@@ -2,9 +2,9 @@ DATA_CONFIG:
     DATA_INFOS:
         -   DATASET: SceneFlowDataset
             DATA_SPLIT: {
-                TRAINING: ./data/sceneflow/sceneflow_finalpass_train.txt,
-                EVALUATING: ./data/sceneflow/sceneflow_finalpass_test.txt,
-                TESTING: ./data/sceneflow/sceneflow_finalpass_test.txt
+                TRAINING: ./data/SceneFlow/sceneflow_finalpass_train.txt,
+                EVALUATING: ./data/SceneFlow/sceneflow_finalpass_test.txt,
+                TESTING: ./data/SceneFlow/sceneflow_finalpass_test.txt
             }
             DATA_PATH: /yourpath/SceneFlow
             RETURN_RIGHT_DISP: false
@@ -29,7 +29,7 @@ MODEL:
     CORR_LEVELS: 2
     CORR_RADIUS: 4
     TRAIN_ITERS: 22
-    VALID_ITERS: 22
+    VALID_ITERS: 32
     FIND_UNUSED_PARAMETERS: false
     CKPT: -1
     PRETRAINED_MODEL: ''

@@ -1,6 +1,5 @@
 # @Time    : 2023/10/17 16:18
 # @Author  : zhangchenming
-import glob
 import sys
 import os
 import argparse
@@ -8,22 +7,20 @@ import datetime
 import torch
 import torch.distributed as dist
 from easydict import EasyDict
-from pathlib import Path
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path.insert(0, './')
 from stereo.utils import common_utils
-from stereo.datasets import build_dataloader
 from stereo.modeling import build_trainer
-from stereo.evaluation.eval_utils import eval_one_epoch
-from stereo.utils.common_utils import load_params_from_file
 from cfgs.data_basic import DATA_PATH_DICT
+
 
 def parse_config():
     parser = argparse.ArgumentParser(description='arg parser')
     parser.add_argument('--dist_mode', action='store_true', default=False, help='torchrun ddp multi gpu')
     parser.add_argument('--cfg_file', type=str, default=None, help='specify the config for eval')
     parser.add_argument('--eval_data_cfg_file', type=str, default=None)
+    parser.add_argument('--pretrained_model', type=str, default=None)
     # dataloader
     parser.add_argument('--workers', type=int, default=0, help='number of workers for dataloader')
     parser.add_argument('--pin_memory', action='store_true', default=False, help='data loader pin memory')
@@ -34,10 +31,14 @@ def parse_config():
     yaml_config = common_utils.config_loader(args.cfg_file)
     cfgs = EasyDict(yaml_config)
 
+    if args.pretrained_model:
+        cfgs.MODEL.PRETRAINED_MODEL = args.pretrained_model
+
     if args.eval_data_cfg_file:
         eval_data_yaml_config = common_utils.config_loader(args.eval_data_cfg_file)
         eval_data_cfgs = EasyDict(eval_data_yaml_config)
         cfgs.DATA_CONFIG = eval_data_cfgs.DATA_CONFIG
+        cfgs.EVALUATOR = eval_data_cfgs.EVALUATOR
 
     args.exp_group_path = os.path.join(cfgs.DATA_CONFIG.DATA_INFOS[0].DATASET, cfgs.MODEL.NAME)
 

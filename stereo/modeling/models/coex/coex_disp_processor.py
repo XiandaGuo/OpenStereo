@@ -106,19 +106,7 @@ class CoExDispProcessor(nn.Module):
         tgt_img = inputs["right"]
 
         if self.training:
-            output = {
-                "training_disp": {
-                    "disp": {
-                        "disp_ests": disp_pred,
-                        "disp_gt": inputs['disp_gt'],
-                        "mask": inputs['mask']
-                    },
-                },
-                "visual_summary": {
-                    'image/train/image_c': torch.cat([ref_img[0], tgt_img[0]], dim=1),
-                    'image/train/disp_c': torch.cat([inputs['disp_gt'][0], disp_pred[0][0]], dim=0),
-                },
-            }
+            output = {"disp_ests": disp_pred}
 
         else:
             disp_pred = disp_pred[0]

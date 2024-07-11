@@ -32,4 +32,22 @@ class GwcNet(nn.Module):
         inputs.update(cost_out)
         disp_out = self.DispProcessor(inputs)
 
+        if self.training:
+            return {'disp_preds': disp_out['training_disp']['disp']['disp_ests'],
+                    'disp_pred': disp_out['training_disp']['disp']['disp_ests'][-1]}
+
         return {'disp_pred': disp_out['inference_disp']['disp_est']}
+
+
+    def get_loss(self, model_preds, input_data):
+        disp_gt = input_data["disp"]  # [bz, h, w]
+        mask = (disp_gt < self.maxdisp) & (disp_gt > 0)  # [bz, h, w]
+
+        weights = [0.5, 0.5, 0.7, 1.0]
+
+        loss = 0.0
+        for disp_est, weight in zip(model_preds['disp_preds'], weights):
+            loss += weight * F.smooth_l1_loss(disp_est[mask], disp_gt[mask], size_average=True)
+
+        loss_info = {'scalar/train/loss_disp': loss.item()}
+        return loss, loss_info
