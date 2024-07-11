@@ -11,6 +11,7 @@ from .models.igev.trainer import Trainer as IGEVTrainer
 from .models.msnet.trainer import Trainer as MSNetTrainer
 from .models.psmnet.trainer import Trainer as PSMNetTrainer
 from .models.sttr.trainer import Trainer as STTRTrainer
+from .models.lightstereo.trainer import Trainer as LightStereoTrainer
 
 
 __all__ = {
@@ -26,6 +27,7 @@ __all__ = {
     'CFNet': CFNetTrainer,
     'CasGwcNet': CasStereoTrainer,
     'CasPSMNet': CasStereoTrainer,
+    'LightStereo': LightStereoTrainer
 }
 
 
