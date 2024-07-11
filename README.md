@@ -4,16 +4,17 @@
 OpenStereo is a flexible and extensible project for stereo matching.
 
 ## What's New
-- **[July 1st, 2024]**: The paper of LightStereo makes public: [LightStereo: Channel Boost Is All Your Need for Efficient 2D Cost Aggregation](https://arxiv.org/abs/2406.19833)
-- **[June 26th, 2024]**: TensorRT has been integrated, , please see the [Deployment documentation](deploy/README.md).
+- **[July 11th, 2024]**: The code of LightStereo is available.
+- **[July 1st, 2024]**: The paper of LightStereo makes public: [LightStereo: Channel Boost Is All Your Need for Efficient 2D Cost Aggregation](https://arxiv.org/abs/2406.19833).
+- **[June 26th, 2024]**: TensorRT has been integrated, please see the [Deployment documentation](deploy/README.md).
 - **[May 2024]**: The 2.0 version of OpenStereo is available, featuring an optimized training and testing framework.
 - **[January 2024]**: Our proposed StereoBase rank 1st on the [KITTI15 leaderboard](https://www.cvlibs.net/datasets/kitti/eval_scene_flow.php?benchmark=stereo)!!!
-- **[December 2023]**: Our paper makes public: [OpenStereo: A Comprehensive Benchmark for Stereo Matching and Strong Baseline](https://arxiv.org/abs/2312.00343)
+- **[December 2023]**: Our paper makes public: [OpenStereo: A Comprehensive Benchmark for Stereo Matching and Strong Baseline](https://arxiv.org/abs/2312.00343).
 - **[March 2023]**:OpenStereo is available!!!
 
 ## Our Publications
-- **[Arxiv'24]** LightStereo: Channel Boost Is All Your Need for Efficient 2D Cost Aggregation, [*Paper*](https://arxiv.org/abs/2406.19833) and [*Code*]()(Coming soon)
-- **[Arxiv'23]** OpenStereo: A Comprehensive Benchmark for Stereo Matching and Strong Baseline,  [*Paper*](https://arxiv.org/abs/2312.00343) and [*Code*](cfgs/)
+- **[Arxiv'24]** LightStereo: Channel Boost Is All Your Need for Efficient 2D Cost Aggregation, [*Paper*](https://arxiv.org/abs/2406.19833) and [*Code*](stereo/modeling/models/lightstereo).
+- **[Arxiv'23]** OpenStereo: A Comprehensive Benchmark for Stereo Matching and Strong Baseline,  [*Paper*](https://arxiv.org/abs/2312.00343) and [*Code*](cfgs/).
 
   
 ## Highlighted features
