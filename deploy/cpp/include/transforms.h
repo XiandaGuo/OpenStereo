@@ -9,6 +9,7 @@
 #include <memory>
 #include <functional>
 #include <variant>
+#include <yaml-cpp/yaml.h>
 
 class RightTopPad {
 public:
@@ -80,7 +81,7 @@ public:
     using TransformParams = std::unordered_map<std::string, ParamValue>;
     using TransformFunction = std::function<std::unordered_map<std::string, cv::Mat>(std::unordered_map<std::string, cv::Mat>&)>;
 
-    Transform(const std::map<std::string, TransformParams>& operations);
+    Transform(const std::map<std::string, TransformParams>& operations, bool verbose=false);
     std::unordered_map<std::string, cv::Mat> operator()(std::unordered_map<std::string, cv::Mat>& sample) const;
 
 private:
@@ -89,5 +90,48 @@ private:
     template<typename T>
     T GetParam(const TransformParams& params, const std::string& key) const;
 };
+
+inline std::map<std::string, Transform::TransformParams> parseConfig(const std::string& configPath, bool verbose=false) {
+    YAML::Node config = YAML::LoadFile(configPath);
+    std::map<std::string, Transform::TransformParams> operations;
+
+    int knum_ops = 0;
+    if (config["DATA_CONFIG"]["DATA_TRANSFORM"]["EVALUATING"]) {
+        for (const auto& node : config["DATA_CONFIG"]["DATA_TRANSFORM"]["EVALUATING"]) {
+            std::string op_name = node["NAME"].as<std::string>();
+
+            // if operation name not in supported operation
+            if (op_name == "ToTensor") continue;
+
+            Transform::TransformParams params;
+
+            for (const auto& param : node) {
+                std::string param_name = param.first.as<std::string>();
+                if (param_name == "NAME") continue; // Skip the NAME field
+                if (param.second.IsSequence()) {
+                    if (param_name == "SIZE") {
+                        std::vector<int> vec = param.second.as<std::vector<int>>();
+                        params[param_name] = vec;
+                    } else {
+                        std::vector<float> vec = param.second.as<std::vector<float>>();
+                        params[param_name] = vec;
+                    }
+                } else if (param.second.IsScalar()) {
+                    float value = param.second.as<float>();
+                    params[param_name] = value;
+                }
+            }
+
+            operations[op_name] = params;
+            knum_ops++;
+        }
+    }
+
+    if (!knum_ops || verbose) {
+        std::cout << "Warning: no operation for preprocess" << std::endl;
+    }
+
+    return operations;
+}
 
 #endif // TRANSFORMS_H

@@ -89,7 +89,7 @@ NormalizeImage::NormalizeImage(const std::vector<float>& mean, const std::vector
 
 std::unordered_map<std::string, cv::Mat> NormalizeImage::operator()(std::unordered_map<std::string, cv::Mat>& sample) const {
     for (auto& item : sample) {
-        if (item.first == "left" || item.first == "right") {
+        if (item.first == "left_img" || item.first == "right_img") {
             cv::Mat& image = item.second;
             Normalize(image);
         }
@@ -98,7 +98,16 @@ std::unordered_map<std::string, cv::Mat> NormalizeImage::operator()(std::unorder
 }
 
 void NormalizeImage::Normalize(cv::Mat& image) const {
-    image = (image - mean_) / std_;
+    image = ((image / 255.0) - mean_) / std_;
+
+    // image.convertTo(image, CV_32F, 1.0 / 255.0);
+
+    // std::vector<cv::Mat> channels(3);
+    // cv::split(image, channels);
+    // for (int i = 0; i < 3; ++i) {
+    //     channels[i] = (channels[i] - mean_[i]) / std_[i];
+    // }
+    // cv::merge(channels, image);
 }
 
 RightBottomCrop::RightBottomCrop(int target_height, int target_width)
@@ -131,8 +140,8 @@ CropOrPad::CropOrPad(int target_height, int target_width)
     : target_height_(target_height), target_width_(target_width), crop_fn_(target_height, target_width), pad_fn_(target_height, target_width) {}
 
 std::unordered_map<std::string, cv::Mat> CropOrPad::operator()(std::unordered_map<std::string, cv::Mat>& sample) const {
-    int h = sample.at("left").rows;
-    int w = sample.at("left").cols;
+    int h = sample.at("left_img").rows;
+    int w = sample.at("left_img").cols;
 
     if (target_height_ > h || target_width_ > w) {
         sample = pad_fn_(sample);
@@ -147,8 +156,8 @@ DivisiblePad::DivisiblePad(int by, const std::string& mode)
     : by_(by), mode_(mode) {}
 
 std::unordered_map<std::string, cv::Mat> DivisiblePad::operator()(std::unordered_map<std::string, cv::Mat>& sample) const {
-    int h = sample.at("left").rows;
-    int w = sample.at("left").cols;
+    int h = sample.at("left_img").rows;
+    int w = sample.at("left_img").cols;
 
     int pad_h = (h % by_ != 0) ? (by_ - h % by_) : 0;
     int pad_w = (w % by_ != 0) ? (by_ - w % by_) : 0;
@@ -169,47 +178,72 @@ std::unordered_map<std::string, cv::Mat> DivisiblePad::operator()(std::unordered
     }
 
     for (auto& item : sample) {
-        if (item.first == "left" || item.first == "right") {
+        if (item.first == "left_img" || item.first == "right_img") {
             cv::copyMakeBorder(item.second, item.second, pad_top, pad_bottom, pad_left, pad_right, cv::BORDER_REPLICATE);
         } else if (item.first == "disp" || item.first == "disp_right" || item.first == "occ_mask" || item.first == "occ_mask_right") {
             cv::copyMakeBorder(item.second, item.second, pad_top, pad_bottom, pad_left, pad_right, cv::BORDER_CONSTANT, cv::Scalar(0));
         }
     }
 
-    std::vector<int> padding = { pad_top, pad_right, pad_bottom, pad_left };
+    std::vector<int> padding = {pad_top, pad_right, pad_bottom, pad_left};
     cv::Mat padding_mat(padding, true);
     sample["pad"] = padding_mat;
 
     return sample;
 }
 
-Transform::Transform(const std::map<std::string, TransformParams>& operations) {
+Transform::Transform(const std::map<std::string, TransformParams>& operations, bool verbose) {
+    if (verbose) {std::cout << "================= Transform Info =================" << std::endl;}
     for (const auto& op : operations) {
         const std::string& op_name = op.first;
         const auto& params = op.second;
+        if (verbose) {std::cout << "NAME: " << op_name;}
 
         if (op_name == "RightTopPad") {
-            int target_height = GetParam<int>(params, "target_height");
-            int target_width = GetParam<int>(params, "target_width");
+            std::vector<int> size = GetParam<std::vector<int>>(params, "SIZE");
+            int target_height = size[0], target_width = size[1];
             operations_.emplace_back(RightTopPad(target_height, target_width));
+            if (verbose) {
+                std::cout << ", SIZE: [" << target_height << ", " << target_width << "]" << std::endl;
+            }
         } else if (op_name == "RightBottomCrop") {
-            int target_height = GetParam<int>(params, "target_height");
-            int target_width = GetParam<int>(params, "target_width");
+            std::vector<int> size = GetParam<std::vector<int>>(params, "SIZE");
+            int target_height = size[0], target_width = size[1];
             operations_.emplace_back(RightBottomCrop(target_height, target_width));
+            if (verbose) {
+                std::cout << ", SIZE: [" << target_height << ", " << target_width << "]" << std::endl;
+            }
         } else if (op_name == "TransposeImage") {
             operations_.emplace_back(TransposeImage());
+            if (verbose) {std::cout << std::endl;}
         } else if (op_name == "NormalizeImage") {
-            std::vector<float> mean = GetParam<std::vector<float>>(params, "mean");
-            std::vector<float> std = GetParam<std::vector<float>>(params, "std");
+            std::vector<float> mean = GetParam<std::vector<float>>(params, "MEAN");
+            std::vector<float> std = GetParam<std::vector<float>>(params, "STD");
             operations_.emplace_back(NormalizeImage(mean, std));
+            if (verbose) {
+                std::cout << ", MEAN: [" << mean[0] << ", " << mean[1] << ", " << mean[2] << "]"
+                          << ", STD: [" << std[0] << ", " << std[1] << ", " << std[2] << "]" << std::endl;
+            }
         } else if (op_name == "DivisiblePad") {
-            int by = GetParam<int>(params, "by");
-            std::string mode = GetParam<std::string>(params, "mode");
-            operations_.emplace_back(DivisiblePad(by, mode));
+            int by = GetParam<int>(params, "BY");
+            std::string mode = "round";
+            try {
+                mode = GetParam<std::string>(params, "MODE");
+                operations_.emplace_back(DivisiblePad(by, mode));
+            } catch(const std::exception& e) {
+                std::cerr << e.what() << "used default mode" << '\n';
+                operations_.emplace_back(DivisiblePad(by, mode));
+            }
+            if (verbose) {
+                std::cout << ", BY: " << by << ", MODE: " << mode << std::endl;
+            }
         } else if (op_name == "CropOrPad") {
-            int target_height = GetParam<int>(params, "target_height");
-            int target_width = GetParam<int>(params, "target_width");
+            std::vector<int> size = GetParam<std::vector<int>>(params, "SIZE");
+            int target_height = size[0], target_width = size[1];
             operations_.emplace_back(CropOrPad(target_height, target_width));
+            if (verbose) {
+                std::cout << ", SIZE: [" << target_height << ", " << target_width << "]" << std::endl;
+            }
         } else {
             throw std::invalid_argument("Unsupported operation: " + op_name);
         }
