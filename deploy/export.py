@@ -28,8 +28,8 @@ if str(ROOT) not in sys.path:
 if platform.system() != 'Windows':
     RELATIVAE_ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from deploy_utils import (check_img_size, check_requirements, check_version, colorstr, file_size,
-                           get_default_args, get_format_idx, print_args, url2file, yaml_save, Profile)
+from deploy_utils import (check_img_size, check_requirements, check_version, colorstr, file_size, get_default_args,
+                          get_format_idx, load_model, print_args, url2file, yaml_save, Profile)
                      
 MACOS = platform.system() == 'Darwin'  # macOS environment
 
@@ -53,6 +53,7 @@ from stereo.modeling.models.coex.coex import CoEx
 from stereo.modeling.models.cfnet.cfnet import CFNet
 from stereo.modeling.models.casnet.cas_gwc import GwcNet as CasGwcNet
 from stereo.modeling.models.casnet.cas_psm import PSMNet as CasPSMNet
+from stereo.modeling.models.lightstereo.lightstereo import LightStereo as LightStereo
 
 
 __net__ = {
@@ -68,6 +69,7 @@ __net__ = {
     'CFNet': CFNet,
     'CasGwcNet': CasGwcNet,
     'CasPSMNet': CasPSMNet,
+    'LightStereo': LightStereo
 }
 
 # logger
@@ -144,7 +146,7 @@ def export_onnx(model, inputs, weights, opset, dynamic, simplify, prefix=colorst
     
     torch.onnx.export(
         model,
-        {'inputs': inputs},
+        {'data': inputs},
         f,
         verbose=False,
         opset_version=opset,
@@ -324,12 +326,10 @@ def run(
     cfgs = EasyDict(yaml_config)
     model_name = cfgs.MODEL.NAME
 
-    # load pretrained model
+    # Load pretrained model
     if not os.path.isfile(weights):
         raise FileNotFoundError
-    ckpt = torch.load(weights, map_location='cuda:0')
-    state_dict = ckpt['state_dict'] if 'state_dict' in ckpt else ckpt
-    output_model = __net__[model_name](cfgs.MODEL)
+    output_model = load_model(__net__[model_name](cfgs.MODEL), weights)
 
     # Checks
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand

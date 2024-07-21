@@ -151,6 +151,24 @@ def get_format_idx(df, format_name):
     idx = df.loc[df['Format'] == format_name].index
     return idx[0] if not idx.empty else -1 
 
+def load_model(model, weights, device=None, inplace=True):
+    from torch import nn
+
+    ckpt = torch.load(weights, map_location=device)
+    state_dict = ckpt['model_state'] if 'model_state' in ckpt else ckpt
+    model.load_state_dict(state_dict)
+
+    # Module compatibility updates
+    for m in model.modules():
+        t = type(m)
+        if t in (nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU):
+            m.inplace = inplace  # torch 1.7.0 compatibility
+        elif t is nn.Upsample and not hasattr(m, 'recompute_scale_factor'):
+            m.recompute_scale_factor = None  # torch 1.11.0 compatibility
+
+    return model
+
+
 def print_args(args: Optional[dict] = None, show_file=True, show_func=False, logger=None):
     if logger is None:
         logger = logging.getLogger(__name__)
