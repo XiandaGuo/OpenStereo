@@ -68,7 +68,7 @@ cmake -DTENSORRT_ROOT=<path_to_tensorrt> .. && make
 Then, you can perform inference with the following command:
 
 ```bash
-./main <left_image_path> <right_image_path> <engine_path> <options>
+./main <cfg_path> <engine_path> <left_image_path> <right_image_path> <options>
 ```
 
 The required header files and dynamic libraries for deployment are packaged in `build/libopenstereo`, which can be conveniently included in your project.

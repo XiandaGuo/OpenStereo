@@ -67,7 +67,7 @@ cmake -DTENSORRT_ROOT=<path_to_tensorrt> .. && make
 然后，可以使用以下命令进行推理：
 
 ```bash
-./main <left_image_path> <right_image_path> <engine_path> <options>
+./main <cfg_path> <engine_path> <left_image_path> <right_image_path> <options>
 ```
 
 部署所需的头文件和动态链接库已打包在 `build/libopenstereo` 中，可方便地将其加入到你的工程中。
