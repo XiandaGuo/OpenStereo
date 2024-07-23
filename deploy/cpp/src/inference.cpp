@@ -154,7 +154,7 @@ std::unordered_map<std::string, cv::Mat> InferenceEngine::postprocess() {
     // get inference result
     std::unordered_map<std::string, cv::Mat> output;
     auto disp_pred_dims = engine_->getTensorShape(engine_->getIOTensorName(engine_->getNbIOTensors() - 1));
-    cv::Mat disp_pred(disp_pred_dims.d[1], disp_pred_dims.d[2], CV_32FC1); // Adjust the size and type accordingly
+    cv::Mat disp_pred(disp_pred_dims.d[disp_pred_dims.nbDims - 2], disp_pred_dims.d[disp_pred_dims.nbDims - 1], CV_32FC1); // Adjust the size and type accordingly
 
     // Memcpy from device output buffer to host output buffer
     cudaMemcpyAsync(disp_pred.data, buffers_[2], disp_pred.total() * disp_pred.elemSize(), cudaMemcpyDeviceToHost, stream_);
