@@ -1,9 +1,15 @@
 cmake_minimum_required(VERSION 3.10)
-project(main)
+project(main LANGUAGES CXX CUDA)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3")
+set(CMAKE_CUDA_ARCHITECTURES 89)
+
+# set default CMAKE_BUILD_TYPE to Release
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
+endif()
 
 # Find yaml-cpp
 find_package(yaml-cpp REQUIRED)
@@ -18,13 +24,6 @@ include_directories(${CUDAToolkit_INCLUDE_DIRS} include)
 message(STATUS "CUDAToolkit_LIBRARY_ROOT: ${CUDAToolkit_LIBRARY_ROOT}")
 
 # Include TensorRT
-# set(TENSORRT_ROOT "" CACHE PATH "Path to TensorRT installation")
-# if(NOT TENSORRT_ROOT)
-#     message(FATAL_ERROR "Please set TENSORRT_ROOT to the root directory of your TensorRT installation")
-# endif()
-# include_directories(${TENSORRT_ROOT}/include)
-# Find TensorRT
-
 set(TENSORRT_ROOT "" CACHE PATH "Path to TensorRT installation")
 
 # Check if TENSORRT_ROOT is set
@@ -90,7 +89,7 @@ include_directories(${TENSORRT_INCLUDE_DIR})
 # endforeach()
 
 # Add src
-file(GLOB SOURCES "src/*.cpp" "*.cpp")
+file(GLOB SOURCES "src/*.cpp" "src/*.cu" "*.cpp")
 
 # Add exec
 add_executable(main ${SOURCES})
