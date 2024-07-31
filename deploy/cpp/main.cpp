@@ -10,11 +10,13 @@
 bool VERBOSE = 0;
 bool SHOW = 0;
 bool DEBUG = 0;
-int WARMUP_TIME = 10;
+int WARMUP_TIME = 100;
+
+using PreprocessType = std::variant<std::unordered_map<std::string, cv::Mat>, std::unordered_map<std::string, float*>>;
 
 int main(int argc, char* argv[]) {
     if (argc < 4) {
-        std::cerr << "Usage: " << argv[0] << "<cfg_path> <engine_path> <left_image_path> <right_image_path> <options>" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <cfg_path> <engine_path> <left_image_path> <right_image_path> <options>" << std::endl;
         std::cerr << "Options:" << std::endl;
         std::cerr << "  --verbose, -v      Enable verbose output" << std::endl;
         std::cerr << "  --warmup <value>   Set warmup time to <value> (integer)" << std::endl;
@@ -103,11 +105,14 @@ int main(int argc, char* argv[]) {
     // operations["TransposeImage"] = Transform::TransformParams();
     // operations["NormalizeImage"] = {{"MEAN", std::vector<float>{0.485f, 0.456f, 0.406f}},
     //                                 {"STD", std::vector<float>{0.229f, 0.224f, 0.225f}}};
+    // operations["FusedRightTopPadTransposeNormalize"] = {{"SIZE", std::vector<int>{384, 1248}},
+    //                                                     {"MEAN", std::vector<float>{0.485f, 0.456f, 0.406f}},
+    //                                                     {"STD", std::vector<float>{0.229f, 0.224f, 0.225f}}};
     Transform transform(operations, VERBOSE);
 
     auto start_preprocess = std::chrono::high_resolution_clock::now();
 
-    sample = transform(sample);
+    auto preprocess_result = transform(sample);
 
     auto end_preprocess = std::chrono::high_resolution_clock::now();
     auto duration_preprocess = std::chrono::duration_cast<std::chrono::milliseconds>(end_preprocess - start_preprocess);
@@ -115,7 +120,7 @@ int main(int argc, char* argv[]) {
     // Try run and warm up engine
     try {
         for (int i = 0; i < WARMUP_TIME; i++) {
-            engine.run(sample);
+            engine.run(preprocess_result);
         }
     } catch (const std::exception& e) {
         std::cerr << "Error running inference: " << e.what() << std::endl;
@@ -125,7 +130,7 @@ int main(int argc, char* argv[]) {
     // Run engine
     auto start_inference = std::chrono::high_resolution_clock::now();
 
-    std::unordered_map<std::string, cv::Mat> output = engine.run(sample);
+    std::unordered_map<std::string, cv::Mat> output = engine.run(preprocess_result);
 
     auto end_inference = std::chrono::high_resolution_clock::now();
     auto duration_inference = std::chrono::duration_cast<std::chrono::milliseconds>(end_inference - start_inference);

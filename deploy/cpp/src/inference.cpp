@@ -136,16 +136,31 @@ void InferenceEngine::allocateBuffers() {
     }
 }
 
-void InferenceEngine::preprocess(const std::unordered_map<std::string, cv::Mat>& sample) {
+void InferenceEngine::preprocess(const PreprocessType& sample) {
     // host2device
-    for (const auto& item : sample) {
-        const std::string& key = item.first;
-        const cv::Mat& image = item.second;
+    if (std::holds_alternative<std::unordered_map<std::string, cv::Mat>>(sample)) {
+        const auto& mat_map = std::get<std::unordered_map<std::string, cv::Mat>>(sample);
+        for (const auto& item : mat_map) {
+            const std::string& key = item.first;
+            const cv::Mat& image = item.second;
 
-        if (key == "left_img") {
-            cudaMemcpyAsync(buffers_[0], image.data, image.total() * image.elemSize(), cudaMemcpyHostToDevice, stream_);
-        } else if (key == "right_img") {
-            cudaMemcpyAsync(buffers_[1], image.data, image.total() * image.elemSize(), cudaMemcpyHostToDevice, stream_);
+            if (key == "left_img") {
+                cudaMemcpyAsync(buffers_[0], image.data, image.total() * image.elemSize(), cudaMemcpyHostToDevice, stream_);
+            } else if (key == "right_img") {
+                cudaMemcpyAsync(buffers_[1], image.data, image.total() * image.elemSize(), cudaMemcpyHostToDevice, stream_);
+            }
+        }
+    } else if (std::holds_alternative<std::unordered_map<std::string, float*>>(sample)) {
+        const auto& float_ptr_map = std::get<std::unordered_map<std::string, float*>>(sample);
+        for (const auto& item : float_ptr_map) {
+            const std::string& key = item.first;
+            float* d_ptr = item.second;
+
+            if (key == "left_img") {
+                cudaMemcpyAsync(buffers_[0], d_ptr, 3 * 384 * 1248 * sizeof(float), cudaMemcpyDeviceToDevice, stream_);
+            } else if (key == "right_img") {
+                cudaMemcpyAsync(buffers_[1], d_ptr, 3 * 384 * 1248 * sizeof(float), cudaMemcpyDeviceToDevice, stream_);
+            }
         }
     }
 }
@@ -179,7 +194,7 @@ std::unordered_map<std::string, cv::Mat> InferenceEngine::postprocess() {
     return output;
 }
 
-std::unordered_map<std::string, cv::Mat> InferenceEngine::run(const std::unordered_map<std::string, cv::Mat>& sample) {
+std::unordered_map<std::string, cv::Mat> InferenceEngine::run(const PreprocessType& sample) {
     preprocess(sample);
 
     // Enqueue the inference
