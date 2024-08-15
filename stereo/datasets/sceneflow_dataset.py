@@ -5,11 +5,16 @@ import numpy as np
 from PIL import Image
 from stereo.datasets.dataset_utils.readpfm import readpfm
 from .dataset_template import DatasetTemplate
+from stereo.utils.common_utils import get_pos_fullres
 
 
 class SceneFlowDataset(DatasetTemplate):
     def __init__(self, data_info, data_cfg, mode):
         super().__init__(data_info, data_cfg, mode)
+        if hasattr(self.data_info, 'RETURN_POS'):
+            self.retrun_pos = self.data_info.RETURN_POS
+        else:
+            self.retrun_pos = False
         self.return_right_disp = self.data_info.RETURN_RIGHT_DISP
 
     def __getitem__(self, idx):
@@ -27,6 +32,10 @@ class SceneFlowDataset(DatasetTemplate):
             'right': right_img,  # [H, W, 3]
             'disp': disp_img,  # [H, W]
         }
+
+        if self.retrun_pos and self.mode == 'training':
+            sample['pos'] = get_pos_fullres(800, sample['left'].shape[1], sample['left'].shape[0])
+
         if self.return_right_disp:
             disp_img_right_path = disp_img_path.replace('left', 'right')
             disp_img_right = readpfm(disp_img_right_path)[0].astype(np.float32)

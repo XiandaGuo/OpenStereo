@@ -258,3 +258,11 @@ def draw_depth_2_image(disp, image, baseline=0.54, focallength=1.003556e+3):
     image = np.transpose(image, [2, 0, 1])
     image = np.ascontiguousarray(image, dtype=np.float32)
     return torch.from_numpy(image)
+
+def get_pos_fullres(fx, w, h):
+    x_range = (np.linspace(0, w - 1, w) + 0.5 - w // 2) / fx
+    y_range = (np.linspace(0, h - 1, h) + 0.5 - h // 2) / fx
+    x, y = np.meshgrid(x_range, y_range)
+    z = np.ones_like(x)
+    pos_grid = np.stack([x, y, z], axis=0).astype(np.float32)
+    return pos_grid

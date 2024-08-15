@@ -3,11 +3,15 @@ import numpy as np
 from PIL import Image
 from stereo.datasets.dataset_utils.readpfm import readpfm
 from .dataset_template import DatasetTemplate
-
+from stereo.utils.common_utils import get_pos_fullres
 
 class ETH3DDataset(DatasetTemplate):
     def __init__(self, data_info, data_cfg, mode):
         super().__init__(data_info, data_cfg, mode)
+        if hasattr(self.data_info, 'RETURN_POS'):
+            self.retrun_pos = self.data_info.RETURN_POS
+        else:
+            self.retrun_pos = False
 
     def __getitem__(self, idx):
         item = self.data_list[idx]
@@ -30,6 +34,10 @@ class ETH3DDataset(DatasetTemplate):
             'disp': disp_img,
             'occ_mask': occ_mask
         }
+
+        if self.retrun_pos and self.mode == 'training':
+            sample['pos'] = get_pos_fullres(800, sample['left'].shape[1], sample['left'].shape[0])
+
         sample = self.transform(sample)
         sample['index'] = idx
         sample['name'] = left_img_path

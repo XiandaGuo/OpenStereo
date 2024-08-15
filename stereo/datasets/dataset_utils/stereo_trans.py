@@ -73,6 +73,8 @@ class RandomCrop(object):
         for k in sample.keys():
             if k in ['right']:
                 sample[k] = sample[k][y2: y2 + crop_height, x1: x1 + crop_width]
+            elif k in ['pos']:
+                sample[k] = sample[k][:, y1: y1 + crop_height, x1: x1 + crop_width]
             else:
                 sample[k] = sample[k][y1: y1 + crop_height, x1: x1 + crop_width]
 
