@@ -16,6 +16,7 @@ from .fallingthings_dataset import FallingThingsDataset
 from .instereo2k_dataset import InStereo2KDataset
 from .unrealstereo4k_dataset import UnrealStereo4KDataset
 from .crestereo_dataset import CREStereoDataset
+from .argoverse_dataset import ArgoverseDataset
 
 __all__ = {
     'SceneFlowDataset': SceneFlowDataset,
@@ -28,7 +29,8 @@ __all__ = {
     'FallingThingsDataset': FallingThingsDataset,
     'InStereo2KDataset': InStereo2KDataset,
     'UnrealStereo4KDataset': UnrealStereo4KDataset,
-    'CREStereoDataset': CREStereoDataset
+    'CREStereoDataset': CREStereoDataset,
+    'ArgoverseDataset': ArgoverseDataset
 }
 
 
