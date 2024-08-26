@@ -1,11 +1,18 @@
 ### Paper list for stereo matching and continue to update this list.
 ## 2024
+* **MC-Stereo: Multi-peak Lookup and Cascade Search Range for Stereo Matching**, M. Feng, J. Cheng, H. Jia, L. Liu, G. Xu and X. Yang, et al. [[Paper](https://arxiv.org/abs/2311.02340)][[code](https://github.com/MiaoJieF/MC-Stereo)]. 3DV2024
+* **Temporally Consistent Stereo Matching**, Jiaxi Zeng, Chengtang Jiaxi Zeng, Chengtang Ya, et al. [[Paper](https://arxiv.org/abs/2407.11950)][[code](https://github.com/jiaxiZeng/Temporally-Consistent-Stereo-Matching)].  ECCV 2024
+* **Neural Markov Random Field for Stereo Matching**, T. Guan, C. Wang, and Y. Liu, et al. [[Paper](https://arxiv.org/abs/2403.11193)][[code](https://github.com/aeolusguan/NMRF)]. CVPR2024
+* **Robust Synthetic-to-Real Transfer for Stereo Matching**, J. Zhang, J. Li, L. Huang, X. Yu, L. Gu, J. Zheng, and X. Bai, et al. [[Paper](https://arxiv.org/abs/2403.07705)][[code](https://github.com/jiaw-z/DKT-Stereo)]. CVPR2024
+* **LoS: Local Structure Guided Stereo Matching**, K. Li, L. Wang, Y. Zhang, K. Xue, S. Zhou and Y. Guo, et al. [[Paper](https://openaccess.thecvf.com/content/CVPR2024/papers/Li_LoS_Local_Structure-Guided_Stereo_Matching_CVPR_2024_paper.pdf)][[code](https://github.com/The-Learning-And-Vision-Atelier-LAVA/LoS)]. CVPR2024
 * **Selective-Stereo: Adaptive Frequency Information Selection for Stereo Matching**, Xianqi Wang, Gangwei Xu, et al. [[Paper](https://arxiv.org/abs/2403.00486)][[code](https://github.com/Windsrain/Selective-Stereo)]. CVPR2024
 * **MoCha-Stereo: Motif Channel Attention Network for Stereo Matching**, Ziyang Chen, Wei Long, et al. [[Paper](https://arxiv.org/abs/2404.06842)][[code](https://github.com/ZYangChen/MoCha-Stereo)]. CVPR2024
 * **Adaptive Multi-Modal Cross-Entropy Loss for Stereo Matching**, Peng Xu, Zhiyu Xiang, et al. [[Paper](https://arxiv.org/abs/2306.15612)][[code](https://github.com/xxxupeng/ADL)]. CVPR2024
 * **Neural Markov Random Field for Stereo Matching**, Guan, Tongfan, Chen Wang, and Yun-Hui Liu. [[Paper](https://arxiv.org/pdf/2403.11193.pdf)][[code](https://github.com/aeolusguan/NMRF)]. CVPR2024
 * **IINet: Implicit Intra-inter Information Fusion for Real-Time Stereo Matching**, Ximeng Li, Chen Zhang. [[paper](https://ojs.aaai.org/index.php/AAAI/article/view/28107)[[Code](https://github.com/blindwatch/IINet)]. AAAI2024
 * **Any-Stereo: Arbitrary Scale Disparity Estimation for Iterative Stereo Matching**, Zhaohuai Liang, Changhe Li. [[paper](https://ojs.aaai.org/index.php/AAAI/article/view/28119)[[Code](https://github.com/Zhaohuai-L/Any-Stereo)]. AAAI2024
+* **TinyStereo: A Tiny Coarse-to-Fine Framework for Vision-Based Depth Estimation on Embedded GPUs**,Q. Chang, X. Xu, A. Zha, M. Er, Y. Sun and Y. Li. [[Paper](https://ieeexplore.ieee.org/abstract/document/10536167)]. IEEE Transactions on Systems, Man, and Cybernetics: Systems2024
+* **Exploring the Usage of Pre-trained Features for Stereo Matching**, J. Zhang, L. Huang, X. Bai, J. Zheng, L. Gu, and E. Hancock, et al. [[Paper](https://link.springer.com/article/10.1007/s11263-024-02090-y)]. IJCV2024
 
 ## 2023
 * **Efficient Spatial-Temporal Stereo Matching Network**, Youmin Zhang, Matteo Poggi, et al. [[paper](https://ieeexplore.ieee.org/abstract/document/10341598)][[code](https://github.com/youmi-zym/TemporalStereo)]. IROS2023
