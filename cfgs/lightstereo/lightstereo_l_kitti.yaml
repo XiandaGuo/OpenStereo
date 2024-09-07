@@ -41,7 +41,7 @@ MODEL:
     LEFT_ATT: true
     FIND_UNUSED_PARAMETERS: false
     CKPT: -1
-    PRETRAINED_MODEL: ''
+    PRETRAINED_MODEL: '' # The path of checkpoint trained with the Sceneflow dataset.
 
 OPTIMIZATION:
     FREEZE_BN: false
