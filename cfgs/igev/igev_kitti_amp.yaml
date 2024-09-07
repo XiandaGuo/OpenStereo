@@ -44,7 +44,7 @@ MODEL:
     VALID_ITERS: 32
     FIND_UNUSED_PARAMETERS: true
     CKPT: -1
-    PRETRAINED_MODEL: ''
+    PRETRAINED_MODEL: '' # The path of checkpoint trained with the Sceneflow dataset.
 
 OPTIMIZATION:
     BATCH_SIZE_PER_GPU: 2
