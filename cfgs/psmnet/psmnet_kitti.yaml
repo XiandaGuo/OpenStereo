@@ -35,7 +35,7 @@ MODEL:
     MAX_DISP: &max_disp 192
     FIND_UNUSED_PARAMETERS: false
     CKPT: -1
-    PRETRAINED_MODEL: ''
+    PRETRAINED_MODEL: '' # The path of checkpoint trained with the Sceneflow dataset.
 
 OPTIMIZATION:
     BATCH_SIZE_PER_GPU: 4
