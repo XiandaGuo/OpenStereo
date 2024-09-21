@@ -5,7 +5,7 @@ DATA_CONFIG:
                 EVALUATING: ./data/KITTI15//kitti15_val20.txt,
                 TESTING: ./data/KITTI15//kitti15_test.txt
             }
-            DATA_PATH: /yourpath/KITTI/stereo_2015
+            DATA_PATH: /yourpath/KITTI/kitti2015
             RETURN_RIGHT_DISP: false
 
     DATA_TRANSFORM:
