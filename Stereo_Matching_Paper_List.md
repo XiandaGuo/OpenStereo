@@ -1,6 +1,7 @@
 ### Paper list for stereo matching and continue to update this list.
 ## 2024
-* **MC-Stereo: Multi-peak Lookup and Cascade Search Range for Stereo Matching**, M. Feng, J. Cheng, H. Jia, L. Liu, G. Xu and X. Yang, et al. [[Paper](https://arxiv.org/abs/2311.02340)][[code](https://github.com/MiaoJieF/MC-Stereo)]. 3DV2024
+* **MC-Stereo: Multi-peak Lookup and Cascade Search Range for Stereo Matching**, M. Feng, J. Cheng, H. Jia, L. Liu, G. Xu, and X. Yang, et al. [[Paper](https://arxiv.org/abs/2311.02340)][[code](https://github.com/MiaoJieF/MC-Stereo)]. 3DV2024
+* **Learning Representations from Foundation Models for Domain Generalized Stereo Matching**, Zhang Y, Wang L, Li K, et al. [[Paper](https://www.ecva.net/papers/eccv_2024/papers_ECCV/papers/05841.pdf)]. ECCV 2024
 * **Temporally Consistent Stereo Matching**, Jiaxi Zeng, Chengtang Jiaxi Zeng, Chengtang Ya, et al. [[Paper](https://arxiv.org/abs/2407.11950)][[code](https://github.com/jiaxiZeng/Temporally-Consistent-Stereo-Matching)].  ECCV 2024
 * **Neural Markov Random Field for Stereo Matching**, T. Guan, C. Wang, and Y. Liu, et al. [[Paper](https://arxiv.org/abs/2403.11193)][[code](https://github.com/aeolusguan/NMRF)]. CVPR2024
 * **Robust Synthetic-to-Real Transfer for Stereo Matching**, J. Zhang, J. Li, L. Huang, X. Yu, L. Gu, J. Zheng, and X. Bai, et al. [[Paper](https://arxiv.org/abs/2403.07705)][[code](https://github.com/jiaw-z/DKT-Stereo)]. CVPR2024
