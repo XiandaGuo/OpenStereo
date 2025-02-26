@@ -76,4 +76,3 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
   year={2024}
 }
 ```
-**Note**: This code is only used for academic purposes, people cannot use this code for anything that might be considered commercial use.
