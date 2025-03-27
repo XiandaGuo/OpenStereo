@@ -36,7 +36,12 @@ class ToTensor(object):
     def __call__(self, sample):
         for k in sample.keys():
             if isinstance(sample[k], np.ndarray):
-                sample[k] = torch.from_numpy(sample[k].copy()).to(torch.float32)
+                if k == 'super_pixel_label':
+                    sample[k] = torch.from_numpy(sample[k].copy()).to(torch.int32)
+                elif k in ['occ_mask', 'occ_mask_2']:
+                    sample[k] = torch.from_numpy(sample[k].copy()).to(torch.bool)
+                else:
+                    sample[k] = torch.from_numpy(sample[k].copy()).to(torch.float32)
         return sample
 
 
@@ -184,6 +189,7 @@ class RandomErase(object):
         img2 = sample['right']
 
         ht, wd = img1.shape[:2]
+        occ_mask_2 = np.zeros((ht, wd), dtype=bool)
         if np.random.rand() < self.eraser_aug_prob:
             mean_color = np.mean(img2.reshape(-1, 3), axis=0)
             for _ in range(np.random.randint(1, self.max_erase_time + 1)):
@@ -192,21 +198,23 @@ class RandomErase(object):
                 dx = np.random.randint(self.bounds[0], self.bounds[1])
                 dy = np.random.randint(self.bounds[0], self.bounds[1])
                 img2[y0:y0 + dy, x0:x0 + dx, :] = mean_color
+                occ_mask_2[y0:y0 + dy, x0:x0 + dx] = True
 
         sample['left'] = img1
         sample['right'] = img2
+        sample['occ_mask_2'] = occ_mask_2
         return sample
 
 
 class StereoColorJitter(object):
     def __init__(self, config):
-        self.brightness = config.BRIGHTNESS
-        self.contrast = config.CONTRAST
-        self.saturation = config.SATURATION
-        self.hue = config.HUE
+        self.brightness = list(config.BRIGHTNESS)
+        self.contrast = list(config.CONTRAST)
+        self.saturation = list(config.SATURATION)
+        self.hue = list(config.HUE)
         self.asymmetric_color_aug_prob = config.ASYMMETRIC_PROB
         self.color_jitter = ColorJitter(brightness=self.brightness, contrast=self.contrast,
-                                        saturation=self.saturation, hue=self.hue / 3.14)
+                                        saturation=self.saturation, hue=[x / 3.14 for x in self.hue])
 
     def __call__(self, sample):
         img1 = sample['left']
