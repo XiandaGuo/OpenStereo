@@ -2,12 +2,11 @@
 
 ## 2025
 ### Conference
-* **All-in-One: Transferring Vision Foundation Models into Stereo Matching**, Jingyi Zhou, Haoyu Zhang, Jiakang Yuan, Peng Ye, Tao Chen, Hao Jiang, Meiya Chen and Yangyang Zhang. [[Paper](https://arxiv.org/pdf/2412.09912)]. AAAI2025
 * **DEFOM-Stereo: Depth Foundation Model Based Stereo Matching**, Hualie Jiang, Zhiqiang Lou, Laiyan Ding, Rui Xu, Minglang Tan, Wenjie Jiang and Rui Huang. [[Paper](https://arxiv.org/abs/2501.09466)][[Code](https://github.com/Insta360-Research-Team/DEFOM-Stereo)]. CVPR2025
 * **Stereo Anywhere: Robust Zero-Shot Deep Stereo Matching Even Where Either Stereo or Mono Fail**, Luca Bartolomei, Fabio Tosi, Matteo Poggi and Stefano Mattoccia. [[Paper](https://arxiv.org/abs/2412.04472)][[Code](https://github.com/bartn8/stereoanywhere/)]. CVPR2025
 * **FoundationStereo: Zero-Shot Stereo Matching**, Bowen Wen, Matthew Trepte, Joseph Aribido, Jan Kautz, Orazio Gallo and Stan Birchfield. [[Paper](https://arxiv.org/abs/2501.09898)][[Code](https://nvlabs.github.io/FoundationStereo/)]. CVPR2025
 * **MonSter: Marry Monodepth to Stereo Unleashes Power**, Junda Cheng, Longliang Liu, Gangwei Xu, Xianqi Wang, Zhaoxing Zhang, Yong Deng, Jinliang Zang, Yurui Chen, Zhipeng Cai and Xin Yang. [[Paper](https://arxiv.org/abs/2501.08643)][[Code](https://github.com/Junda24/MonSter)]. CVPR2025
-
+* **All-in-One: Transferring Vision Foundation Models into Stereo Matching**, Jingyi Zhou, Haoyu Zhang, Jiakang Yuan, Peng Ye, Tao Chen, Hao Jiang, Meiya Chen and Yangyang Zhang. [[Paper](https://arxiv.org/pdf/2412.09912)]. AAAI2025
 
 ### Journal
 * **ADStereo: Efficient Stereo Matching with Adaptive Downsampling and Disparity Alignment**, Yun Wang, Kunhong Li, Longguang Wang, Junjie Hu, Dapeng Oliver Wu and Yulan Guo. [[Paper](https://ieeexplore.ieee.org/document/10890914)]. TIP2025
