@@ -38,7 +38,7 @@ os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
 
 # Network
 sys.path.append(str(ROOT.parent))  # add ROOT to PATH
-from stereo.modeling import models, build_trainer
+# from stereo.modeling import models, build_trainer
 from stereo.utils.common_utils import config_loader, create_logger, load_params_from_file
 
 from stereo.modeling.models.sttr.sttr import STTR
@@ -54,6 +54,7 @@ from stereo.modeling.models.cfnet.cfnet import CFNet
 from stereo.modeling.models.casnet.cas_gwc import GwcNet as CasGwcNet
 from stereo.modeling.models.casnet.cas_psm import PSMNet as CasPSMNet
 from stereo.modeling.models.lightstereo.lightstereo import LightStereo as LightStereo
+from stereo.modeling.models.stereobase.stereobase_gru import StereoBase as StereoBaseGRU
 
 
 __net__ = {
@@ -69,6 +70,7 @@ __net__ = {
     'CFNet': CFNet,
     'CasGwcNet': CasGwcNet,
     'CasPSMNet': CasPSMNet,
+    'StereoBaseGRU': StereoBaseGRU,
     'LightStereo': LightStereo
 }
 
@@ -295,7 +297,7 @@ def run(
         int8=False,                         # CoreML INT8 quantization
         dynamic=False,                      # ONNX/TensorRT: dynamic axes
         simplify=True,                      # ONNX: simplify model
-        opset=12,                           # ONNX: opset version
+        opset=17,                           # ONNX: opset version
         verbose=False,                      # TensorRT: verbose log
         workspace=4,                        # TensorRT: workspace size (GB)
 ):
@@ -403,7 +405,7 @@ def parse_opt():
     parser.add_argument('--int8', action='store_true', help='CoreML INT8 quantization')
     parser.add_argument('--dynamic', action='store_true', help='ONNX/TensorRT: dynamic axes')
     parser.add_argument('--simplify', action='store_true', help='ONNX: simplify model')
-    parser.add_argument('--opset', type=int, default=12, help='ONNX: opset version')
+    parser.add_argument('--opset', type=int, default=17, help='ONNX: opset version')
     parser.add_argument('--verbose', action='store_true', help='TensorRT: verbose log'),
     parser.add_argument('--workspace', type=int, default=4, help='TensorRT: workspace size (GB)')
     parser.add_argument(

@@ -1,3 +1,11 @@
+*.pyc
+*.pth
+.vscode
+*.ckpt
+*.onnx
+*.pt
+*.log
+output
 .idea
 **__pycache__**
 **.DS_Store**

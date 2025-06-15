@@ -47,7 +47,7 @@ def parse_config():
         dataset_name = each.DATASET
         if dataset_name == 'KittiDataset':
             dataset_name = 'KittiDataset15' if 'kitti15' in each.DATA_SPLIT.EVALUATING else 'KittiDataset12'
-        each.DATA_PATH = DATA_PATH_DICT[dataset_name]
+        each.DATA_PATH = each['DATA_PATH']
 
     args.run_mode = 'train'
     return args, cfgs
@@ -74,7 +74,11 @@ def main():
     # savedir
     args.output_dir = str(os.path.join(args.save_root_dir, args.exp_group_path, args.tag, args.extra_tag))
     if os.path.exists(args.output_dir) and args.extra_tag != 'debug' and cfgs.MODEL.CKPT == -1:
-        raise Exception('There is already an exp with this name')
+        current_time = datetime.now()
+        formatted_time = current_time.strftime("%Y-%m-%d_%H%M%S")
+
+        args.extra_tag = f'{args.extra_tag}_{formatted_time}'
+        # raise Exception('There is already an exp with this name')
     if args.dist_mode:
         dist.barrier()
     args.ckpt_dir = os.path.join(args.output_dir, 'ckpt')

@@ -6,7 +6,7 @@ DATA_CONFIG:
                 EVALUATING: '',
                 TESTING: ''
             }
-            DATA_PATH: /yourpath/KITTI12
+            DATA_PATH: /home/lihang.ying/data/KITTI/KITTI_2012
             RETURN_RIGHT_DISP: true
 
         -   DATASET: KittiDataset
@@ -15,7 +15,7 @@ DATA_CONFIG:
                 EVALUATING: ./data/KITTI15/kitti15_val20.txt,
                 TESTING: ./data/KITTI15/kitti15_test.txt
             }
-            DATA_PATH: /yourpath/KITTI5
+            DATA_PATH: /home/lihang.ying/data/KITTI/KITTI_2015
             RETURN_RIGHT_DISP: true
 
     DATA_TRANSFORM:

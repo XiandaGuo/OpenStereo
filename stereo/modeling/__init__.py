@@ -34,8 +34,8 @@ __all__ = {
     'CasPSMNet': CasStereoTrainer,
     'LightStereo': LightStereoTrainer,
     'StereoBaseGRU': StereoBaseGRUTrainer,
-    # 'IInet': IINetTrainer,
-    'NMRF': NMRFTrainer
+    'IInet': IINetTrainer,
+    'NMRF': NMRFTrainer,
 }
 
 
