@@ -1,0 +1,78 @@
+DATA_CONFIG:
+    DATA_INFOS:
+        -   DATASET: SceneFlowDataset
+            DATA_SPLIT: {
+                TRAINING: ./data/SceneFlow/sceneflow_finalpass_train.txt,
+                EVALUATING: ./data/SceneFlow/sceneflow_finalpass_test.txt,
+                TESTING: ./data/SceneFlow/sceneflow_finalpass_test.txt
+            }
+            DATA_PATH: /yourpath/SceneFlow
+            RETURN_RIGHT_DISP: false
+            RETURN_SUPER_PIXEL: true
+
+    DATA_TRANSFORM:
+        TRAINING:
+            - { NAME: StereoColorJitter, BRIGHTNESS: [ 0.6, 1.4 ], CONTRAST: [ 0.6, 1.4 ], SATURATION: [ 0.6, 1.4 ], HUE: [-0.5, 0.5], ASYMMETRIC_PROB: 0.2 }
+            - { NAME: RandomErase, PROB: 0.5, MAX_TIME: 2, BOUNDS: [ 50, 100 ] }
+            - { NAME: RandomCrop, SIZE: [ 320, 736 ], Y_JITTER: false }
+            - { NAME: TransposeImage }
+            - { NAME: ToTensor }
+            - { NAME: NormalizeImage, MEAN: [ 0.485, 0.456, 0.406 ], STD: [ 0.229, 0.224, 0.225 ] }
+        EVALUATING:
+            - { NAME: RightTopPad, SIZE: [ 544, 960 ] }
+            - { NAME: TransposeImage }
+            - { NAME: ToTensor }
+            - { NAME: NormalizeImage, MEAN: [ 0.485, 0.456, 0.406 ], STD: [ 0.229, 0.224, 0.225 ] }
+
+MODEL:
+    NAME: NMRF
+    MODEL_TYPE: resnet
+    OUT_CHANNELS: 256
+    DIVIS_BY: 32
+    COMPAT: true
+    FIND_UNUSED_PARAMETERS: false
+    CKPT: -1
+    PRETRAINED_MODEL: ''
+
+OPTIMIZATION:
+    FREEZE_BN: false
+    SYNC_BN: true
+    AMP: false
+    BATCH_SIZE_PER_GPU: 2
+    NUM_EPOCHS: 90
+
+    OPTIMIZER:
+        NAME: AdamW
+        LR: &lr 0.0010 #0.0006 # 0.0012 # 0.0024
+        WEIGHT_DECAY: 1.0e-05
+        EPS: 1.0e-08
+
+    SCHEDULER:
+        NAME: OneCycleLR
+        MAX_LR: *lr
+        PCT_START: 0.05 #0.01
+        CYCLE_MOMENTUM: False
+        ANNEAL_STRATEGY: cos
+        ON_EPOCH: False
+
+    CLIP_GRAD:
+        TYPE: norm #value
+        CLIP_VALUE: 1.0 #0.1
+
+EVALUATOR:
+    BATCH_SIZE_PER_GPU: 4
+    MAX_DISP: 192
+    METRIC:
+        - d1_all
+        - epe
+        - thres_1
+        - thres_2
+        - thres_3
+
+TRAINER:
+    EVAL_INTERVAL: 1
+    CKPT_SAVE_INTERVAL: 1
+    MAX_CKPT_SAVE_NUM: 30
+    LOGGER_ITER_INTERVAL: 10
+    TRAIN_VISUALIZATION: True
+    EVAL_VISUALIZATION: True

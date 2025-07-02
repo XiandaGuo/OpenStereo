@@ -121,8 +121,6 @@ class StereoBase(nn.Module):
     def forward(self, data):
         image1 = data['left']
         image2 = data['right']
-        image1 = (2 * (image1 / 255.0) - 1.0).contiguous()
-        image2 = (2 * (image2 / 255.0) - 1.0).contiguous()  # [bz, 3, H, W]
 
         # list: [bz, 48, H/4, W/4] [bz, 64, H/8, W/8] [bz, 192, H/16, W/16] [bz, 160, H/32, W/32]
         features_left = self.feature(image1)

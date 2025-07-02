@@ -37,6 +37,12 @@ def parse_config():
     if args.eval_data_cfg_file:
         eval_data_yaml_config = common_utils.config_loader(args.eval_data_cfg_file)
         eval_data_cfgs = EasyDict(eval_data_yaml_config)
+        if cfgs.MODEL.NAME in ['IGEV', 'StereoBaseGRU', 'LightStereo', 'NMRF']:
+            for each in cfgs.DATA_CONFIG.DATA_TRANSFORM.TRAINING:
+                if each.NAME == 'NormalizeImage':
+                    eval_data_cfgs.DATA_CONFIG.DATA_TRANSFORM.EVALUATING.append(each)
+                    if 'TESTING' in eval_data_cfgs.DATA_CONFIG.DATA_TRANSFORM:
+                        eval_data_cfgs.DATA_CONFIG.DATA_TRANSFORM.TESTING.append(each)
         cfgs.DATA_CONFIG = eval_data_cfgs.DATA_CONFIG
         cfgs.EVALUATOR = eval_data_cfgs.EVALUATOR
 
