@@ -246,18 +246,24 @@ class IGEVPPStereo(nn.Module):
         disp_gt = disp_gt.unsqueeze(1)
         mag = torch.sum(disp_gt ** 2, dim=1).sqrt()
         valid = ((valid >= 0.5) & (mag < self.max_disp)).unsqueeze(1)
+        # valid = ((valid >= 0.5) & (mag < self.max_disp))
         assert valid.shape == disp_gt.shape, [valid.shape, disp_gt.shape]
         assert not torch.isinf(disp_gt[valid.bool()]).any()
         disp_loss = 0.0
         mag = torch.sum(disp_gt**2, dim=1).sqrt()
-        mask0 = ((valid >= 0.5) & (mag < max_disp0)).unsqueeze(1)
-        mask1 = ((valid >= 0.5) & (mag < max_disp1)).unsqueeze(1)
-        mask = ((valid >= 0.5) & (mag < max_disp)).unsqueeze(1)
+        mask0 = (valid >= 0.5) & (mag < max_disp0).unsqueeze(1)
+        mask1 = (valid >= 0.5) & (mag < max_disp1).unsqueeze(1)
+        mask = (valid >= 0.5) & (mag < max_disp).unsqueeze(1)
 
         disp_init_pred = model_pred['init_disp']
-        disp_loss += 1.0 * F.smooth_l1_loss(disp_init_pred[0][mask0.bool()], disp_gt[mask0.bool()], reduction='mean')
-        disp_loss += 0.5 * F.smooth_l1_loss(disp_init_pred[1][mask1.bool()], disp_gt[mask1.bool()], reduction='mean')
-        disp_loss += 0.2 * F.smooth_l1_loss(disp_init_pred[2][mask.bool()], disp_gt[mask.bool()], reduction='mean')
+        disp_init_pred1 = []
+        for disp_init in disp_init_pred:
+            disp_init = disp_init.unsqueeze(1)
+            disp_init_pred1.append(disp_init)
+        disp_loss += 1.0 * F.smooth_l1_loss(disp_init_pred1[0][mask0.bool()], disp_gt[mask0.bool()], reduction='mean')
+        disp_loss += 0.5 * F.smooth_l1_loss(disp_init_pred1[1][mask1.bool()], disp_gt[mask1.bool()], reduction='mean')
+        disp_loss += 0.2 * F.smooth_l1_loss(disp_init_pred1[2][mask.bool()], disp_gt[mask.bool()], reduction='mean')
+
 
         # gru loss
         loss_gamma = 0.9
