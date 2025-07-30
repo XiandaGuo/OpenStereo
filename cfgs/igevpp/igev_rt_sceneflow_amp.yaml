@@ -1,0 +1,80 @@
+DATA_CONFIG:
+    DATA_INFOS:
+        -   DATASET: SceneFlowDataset
+            DATA_SPLIT: {
+                TRAINING: ./data/SceneFlow/sceneflow_finalpass_train.txt,
+                EVALUATING: ./data/SceneFlow/sceneflow_finalpass_test.txt,
+                TESTING: ./data/SceneFlow/sceneflow_finalpass_test.txt
+            }
+            DATA_PATH: /mnt/d/prr/depth/double/dataset/sceneflow
+            RETURN_RIGHT_DISP: false
+
+    DATA_TRANSFORM:
+        TRAINING:
+            - { NAME: StereoColorJitter, BRIGHTNESS: [ 0.6, 1.4 ], CONTRAST: [ 0.6, 1.4 ], SATURATION: [ 0.6, 1.4 ], HUE: 0.5, ASYMMETRIC_PROB: 0.2 }
+            - { NAME: RandomErase, PROB: 0.5, MAX_TIME: 2, BOUNDS: [ 50, 100 ] }
+            - { NAME: RandomCrop, SIZE: [ 320, 736 ], Y_JITTER: false }
+            - { NAME: TransposeImage }
+            - { NAME: ToTensor }
+            - { NAME: NormalizeImage, MEAN: [ 0.485, 0.456, 0.406 ], STD: [ 0.229, 0.224, 0.225 ] }
+        EVALUATING:
+            - { NAME: RightTopPad, SIZE: [ 544, 960 ] }
+            - { NAME: TransposeImage }
+            - { NAME: ToTensor }
+
+MODEL:
+    NAME: IGEVPP_rt
+    MAX_DISP: &max_disp 192
+    HIDDEN_DIMS: [ 128, 128, 128 ]
+    HIDDEN_DIM: 96
+    N_GRU_LAYERS: 3
+    N_DOWNSAMPLE: 2
+    SLOW_FAST_GRU: True
+    CORR_LEVELS: 2
+    CORR_RADIUS: 4
+    TRAIN_ITERS: 22
+    VALID_ITERS: 8
+    FIND_UNUSED_PARAMETERS: false
+    CKPT: -1
+    PRETRAINED_MODEL: ''
+
+OPTIMIZATION:
+    FREEZE_BN: true
+    SYNC_BN: true
+    AMP: true
+    BATCH_SIZE_PER_GPU: 8
+    NUM_EPOCHS: 30
+
+    OPTIMIZER:
+        NAME: AdamW
+        LR: &lr 0.0002
+        WEIGHT_DECAY: 1.0e-05
+        EPS: 1.0e-08
+
+    SCHEDULER:
+        NAME: OneCycleLR
+        MAX_LR: *lr
+        PCT_START: 0.01
+        ON_EPOCH: False
+
+    CLIP_GRAD:
+        TYPE: value
+        CLIP_VALUE: 0.1
+
+EVALUATOR:
+    BATCH_SIZE_PER_GPU: 4
+    MAX_DISP: *max_disp
+    METRIC:
+        - d1_all
+        - epe
+        - thres_1
+        - thres_2
+        - thres_3
+
+TRAINER:
+    EVAL_INTERVAL: 1
+    CKPT_SAVE_INTERVAL: 1
+    MAX_CKPT_SAVE_NUM: 30
+    LOGGER_ITER_INTERVAL: 10
+    TRAIN_VISUALIZATION: True
+    EVAL_VISUALIZATION: True
