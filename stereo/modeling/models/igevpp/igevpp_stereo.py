@@ -81,6 +81,7 @@ class IGEVPPStereo(nn.Module):
     def __init__(self, args):
         super().__init__()
         self.args = args
+        self.max_disp = args.MAX_DISP
 
         context_dims = args.HIDDEN_DIMS
 
