@@ -5,3 +5,4 @@ data/*/*.txt
 cfgs/*/*stereocarla.yaml
 
 cfgs/foundationstereo/fstereo_*.yaml
+cfgs/foundationstereo/fstereo_combine.yaml
