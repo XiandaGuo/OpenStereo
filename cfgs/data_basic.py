@@ -20,4 +20,6 @@ DATA_PATH_DICT = {
     'CarlaDataset': '/file_system/vepfs/public_data/stereo/StereoFromCarlaV2',
     'FoundationStereoDataset': '/file_system/vepfs/public_data/stereo/foundationstereo',
     'DynamicReplicaDataset': '/file_system/vepfs/public_data/stereo/dynamic_stereo',
+    'MonoDataset': '/file_system/vepfs/public_data/depthAnythingData',
+    'RealfillDataset': '/file_system/vepfs/public_data/depthAnythingData',
 }
