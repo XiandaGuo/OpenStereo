@@ -240,6 +240,7 @@ class IGEVStereo(nn.Module):
             adjusted_loss_gamma = loss_gamma ** (15 / (n_predictions - 1))
             i_weight = adjusted_loss_gamma ** (n_predictions - i - 1)
             i_loss = (disp_preds[i] - disp_gt).abs()
+            # i_loss = (disp_preds[i][valid.bool()] - disp_gt[valid.bool()]).abs()
             assert i_loss.shape == valid.shape, [i_loss.shape, valid.shape, disp_gt.shape, disp_preds[i].shape]
             disp_loss += i_weight * i_loss[valid.bool()].mean()
 

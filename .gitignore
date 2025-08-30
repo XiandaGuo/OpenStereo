@@ -1,4 +1,7 @@
 .idea
 **__pycache__**
 **.DS_Store**
-data
+data/*/*.txt
+cfgs/*/*stereocarla.yaml
+
+cfgs/foundationstereo/fstereo_*.yaml

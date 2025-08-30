@@ -14,7 +14,7 @@ DATA_CONFIG:
             - { NAME: NormalizeImage, MEAN: [ 0.485, 0.456, 0.406 ], STD: [ 0.229, 0.224, 0.225 ] }
 
 EVALUATOR:
-    BATCH_SIZE_PER_GPU: 8
+    BATCH_SIZE_PER_GPU: 2
     MAX_DISP: 192
     METRIC:
         - d1_all

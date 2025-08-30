@@ -23,6 +23,6 @@ python tools/eval.py --cfg_file cfgs/foundationstereo/foundationstereo_sceneflow
 
 |                         Model                          |         Original Paper |    Ours|     Configuration | 
 |:------------------------------------:|:---------------------:|------------------------:|:------------:|
-| [FoundationStereo](https://arxiv.org/abs/2501.09898) |     0.33| **0.34**|        [foundationstereo_sceneflow.yaml](../cfgs/foundationstereo/foundationstereo_sceneflow.yaml)    | 
+| [FoundationStereo](https://arxiv.org/abs/2501.09898) |     0.33| **0.34**|        [foundationstereo_sceneflow.yaml](../cfgs/foundationstereo/fstereo_sceneflow.yaml)    | 
 
 Access our checkpoint: [BaiduDrive](https://pan.baidu.com/s/1vA6xp9UMGJ3_tUahBrzIcw?pwd=mx7v) or [Google Drive](https://drive.google.com/drive/folders/1f1NrVMHUQqgqBA7Q5Q-pyZB65GNGBkHG?usp=drive_link)

@@ -5,10 +5,11 @@ import os
 import argparse
 import datetime
 import tqdm
-from easydict import EasyDict
-
+import shutil
 import torch
 import torch.distributed as dist
+
+from easydict import EasyDict
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path.insert(0, './')
@@ -16,6 +17,10 @@ from stereo.utils import common_utils
 from stereo.modeling import build_trainer
 from cfgs.data_basic import DATA_PATH_DICT
 
+import warnings
+# 同时忽略 FutureWarning 和 UserWarning （包括PyTorch产生的）
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 def parse_config():
     parser = argparse.ArgumentParser(description='arg parser')
@@ -23,9 +28,12 @@ def parse_config():
     parser.add_argument('--dist_mode', action='store_true', default=False, help='torchrun ddp multi gpu')
     parser.add_argument('--cfg_file', type=str, default=None, required=True, help='specify the config for training')
     parser.add_argument('--fix_random_seed', action='store_true', default=False, help='')
+
     # save path
     parser.add_argument('--save_root_dir', type=str, default='./output', help='save root dir for this experiment')
     parser.add_argument('--extra_tag', type=str, default='default', help='extra tag for this experiment')
+    parser.add_argument('--cover_old_exp', action='store_true', default=False)
+
     # dataloader
     parser.add_argument('--workers', type=int, default=8, help='number of workers for dataloader')
     parser.add_argument('--pin_memory', action='store_true', default=False, help='data loader pin memory')
@@ -74,10 +82,13 @@ def main():
 
     # savedir
     args.output_dir = str(os.path.join(args.save_root_dir, args.exp_group_path, args.tag, args.extra_tag))
-    if os.path.exists(args.output_dir) and args.extra_tag != 'debug' and cfgs.MODEL.CKPT == -1:
-        raise Exception('There is already an exp with this name')
+    if os.path.exists(args.output_dir) and args.cover_old_exp and global_rank == 0:
+        shutil.rmtree(args.output_dir)
     if args.dist_mode:
         dist.barrier()
+    if os.path.exists(args.output_dir) and args.extra_tag != 'debug' and cfgs.MODEL.CKPT == -1:
+        raise Exception('There is already an exp with this name')
+
     args.ckpt_dir = os.path.join(args.output_dir, 'ckpt')
     if not os.path.exists(args.ckpt_dir) and local_rank == 0:
         os.makedirs(args.ckpt_dir, exist_ok=True)

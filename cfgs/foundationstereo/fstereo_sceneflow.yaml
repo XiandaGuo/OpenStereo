@@ -45,11 +45,11 @@ OPTIMIZATION:
     SYNC_BN: true
     AMP: true
     BATCH_SIZE_PER_GPU: 2
-    NUM_EPOCHS: 60
+    NUM_EPOCHS: 50
 
     OPTIMIZER:
         NAME: AdamW
-        LR: &lr 0.0002
+        LR: &lr 0.001
         WEIGHT_DECAY: 1.0e-05
         EPS: 1.0e-08
 

@@ -14,6 +14,10 @@ from stereo.utils import common_utils
 from stereo.modeling import build_trainer
 from cfgs.data_basic import DATA_PATH_DICT
 
+import warnings
+# 同时忽略 FutureWarning 和 UserWarning （包括PyTorch产生的）
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 def parse_config():
     parser = argparse.ArgumentParser(description='arg parser')

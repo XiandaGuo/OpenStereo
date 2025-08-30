@@ -1,10 +1,29 @@
 DATA_CONFIG:
     DATA_INFOS:
-        -   DATASET: ArgoverseDataset
+        -   DATASET: SceneFlowDataset
             DATA_SPLIT: {
-              TRAINING: ./data/Argoverse/trainval.txt,
+                TRAINING: ./data/SceneFlow/sceneflow_finalpass_train.txt,
+            }
+            RETURN_RIGHT_DISP: false
+            RETURN_SUPER_PIXEL: true
+
+        -   DATASET: FoundationStereoDataset
+            DATA_SPLIT: {
+                TRAINING: None,  # 直接读取文件夹
+            }
+            RETURN_SUPER_PIXEL: true
+
+        -   DATASET: CarlaDataset
+            DATA_SPLIT: {
+              TRAINING: ./data/StereoCarla/StereoCarla_all.txt,
           }
             RETURN_RIGHT_DISP: false
+            RETURN_SUPER_PIXEL: true
+
+        -   DATASET: TartanAirDataset
+            DATA_SPLIT: {
+                TRAINING: ./data/TartanAir/all_306637.txt,
+            }
             RETURN_SUPER_PIXEL: true
 
         -   DATASET: CREStereoDataset
@@ -12,6 +31,19 @@ DATA_CONFIG:
                 TRAINING: ./data/CREStereo/crestereo_all.txt,
             }
             RETURN_RIGHT_DISP: false
+            RETURN_SUPER_PIXEL: true
+
+        -   DATASET: SpringDataset
+            DATA_SPLIT: {
+                TRAINING: ./data/Spring/spring_train.txt,
+            }
+            RETURN_RIGHT_DISP: false
+            RETURN_SUPER_PIXEL: true
+
+        -   DATASET: SintelDataset
+            DATA_SPLIT: {
+              TRAINING: ./data/Sintel/Sintel_final_train.txt,
+          }
             RETURN_SUPER_PIXEL: true
 
         -   DATASET: DynamicReplicaDataset
@@ -28,12 +60,6 @@ DATA_CONFIG:
             RETURN_RIGHT_DISP: false
             RETURN_SUPER_PIXEL: true
 
-        -   DATASET: FoundationStereoDataset
-            DATA_SPLIT: {
-                TRAINING: None,  # 直接读取文件夹
-            }
-            RETURN_SUPER_PIXEL: true
-
         -   DATASET: InStereo2KDataset
             DATA_SPLIT: {
                 TRAINING: ./data/InStereo2K/instereo2k_train_2010.txt,
@@ -41,30 +67,11 @@ DATA_CONFIG:
             RETURN_RIGHT_DISP: false
             RETURN_SUPER_PIXEL: true
 
-        -   DATASET: SintelDataset
+        -   DATASET: VirtualKitti2Dataset
             DATA_SPLIT: {
-                TRAINING: ./data/Sintel/Sintel_final_train.txt,
-            }
-            RETURN_SUPER_PIXEL: true
-
-        -   DATASET: SpringDataset
-            DATA_SPLIT: {
-                TRAINING: ./data/Spring/spring_train.txt,
+                TRAINING: ./data/VirtualKitti2/virtualkitti2_trainval21260.txt,
             }
             RETURN_RIGHT_DISP: false
-            RETURN_SUPER_PIXEL: true
-
-        -   DATASET: CarlaDataset
-            DATA_SPLIT: {
-                TRAINING: ./data/StereoCarla/StereoCarla_all.txt,
-            }
-            RETURN_RIGHT_DISP: false
-            RETURN_SUPER_PIXEL: true
-
-        -   DATASET: TartanAirDataset
-            DATA_SPLIT: {
-                TRAINING: ./data/TartanAir/all_306637.txt,
-            }
             RETURN_SUPER_PIXEL: true
 
 #        -   DATASET: UnrealStereo4KDataset
@@ -73,14 +80,13 @@ DATA_CONFIG:
 #          }
 #            RETURN_RIGHT_DISP: false
 #            RETURN_SUPER_PIXEL: true
-#
-#        -   DATASET: VirtualKitti2Dataset
+
+#        -   DATASET: ArgoverseDataset
 #            DATA_SPLIT: {
-#                TRAINING: ./data/VirtualKitti2/virtualkitti2_trainval21260.txt,
-#            }
+#              TRAINING: ./data/Argoverse/trainval.txt,
+#          }
 #            RETURN_RIGHT_DISP: false
 #            RETURN_SUPER_PIXEL: true
-
 
     DATA_TRANSFORM:
         TRAINING:
@@ -106,18 +112,18 @@ MODEL:
     valid_iters: 32
     FIND_UNUSED_PARAMETERS: true
     CKPT: -1
-    PRETRAINED_MODEL: '/file_system/vepfs/algorithm/ruilin.wang/code/LightStereoX/output/v2/Foundation.pt'
+    PRETRAINED_MODEL: '/file_system/nas/algorithm/xianda.guo/checkpoint/OpenStereo/Output/SceneFlowDataset/FoundationStereo/foundationstereo_sceneflow/e50-lr0p001/ckpt/checkpoint_epoch_59.pth'
 
 OPTIMIZATION:
     FREEZE_BN: false
     SYNC_BN: true
-    AMP: true
+    AMP: false
     BATCH_SIZE_PER_GPU: 2
     NUM_EPOCHS: 10
 
     OPTIMIZER:
         NAME: AdamW
-        LR: &lr 0.0002
+        LR: &lr 0.0001
         WEIGHT_DECAY: 1.0e-05
         EPS: 1.0e-08
 
@@ -129,7 +135,7 @@ OPTIMIZATION:
 
     CLIP_GRAD:
         TYPE: value
-        CLIP_VALUE: 0.1
+        CLIP_VALUE: 0.01
 
 EVALUATOR:
     BATCH_SIZE_PER_GPU: 4

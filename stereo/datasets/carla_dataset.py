@@ -49,6 +49,7 @@ class CarlaDataset(DatasetTemplate):
             'occ_mask': occ_mask
         }
 
+        # For NMRF model
         if self.retrun_super_pixel:
             super_pixel_label = Path(self.root).parent.joinpath('SuperPixelLabel/CarlaV2', item[0])
             super_pixel_label = str(super_pixel_label)[:-len('.png')] + "_lsc_lbl.png"
