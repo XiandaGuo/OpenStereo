@@ -9,6 +9,7 @@
 OpenStereo is a flexible and extensible project for stereo matching.
 
 ## What's New
+- **[Sep 18, 2025]**: Our paper makes public: [StereoCarla: A High-Fidelity Driving Dataset for Generalizable Stereo](https://arxiv.org/abs/2509.12683).
 - **[June 12, 2025]**: We have integrated the [FoundationStereo](https://arxiv.org/abs/2501.09898) model (training and inference). For details, please refer to [prepare_foundationstereo](docs/prepare_foundationstereo.md).
 - **[Jan 28th, 2025]**: The paper of LightStereo has been accepted by ICRA 2025.
 - **[June 26th, 2024]**: TensorRT has been integrated, please see the [Deployment documentation](deploy/README.md).
@@ -18,8 +19,9 @@ OpenStereo is a flexible and extensible project for stereo matching.
 - **[March 2023]**:OpenStereo is available!!!
 
 ## Our Publications
+- **[Arxiv'25]** StereoCarla: A High-Fidelity Driving Dataset for Generalizable Stereo, [*Paper*](https://arxiv.org/abs/2509.12683) and [*ProjectPage*](https://xiandaguo.net/StereoCarla).
 - **[ICRA25]** LightStereo: Channel Boost Is All Your Need for Efficient 2D Cost Aggregation, [*Paper*](https://arxiv.org/abs/2406.19833) and [*Code*](stereo/modeling/models/lightstereo).
-- **[Arxiv'24]** Stereo Anything: Unifying Stereo Matching with Large-Scale Mixed Data, [*Paper*](https://arxiv.org/abs/2411.14053), [*ProjectPage*](https://xiandaguo.net/StereoAnything/) and [*Code*](docs/StereoAnything.md).
+- **[Arxiv'24]** Stereo Anything: Unifying Stereo Matching with Large-Scale Mixed Data, [*Paper*](https://arxiv.org/abs/2411.14053), [*ProjectPage*](https://xiandaguo.net/StereoAnything) and [*Code*](docs/StereoAnything.md).
 - **[Arxiv'23]** OpenStereo: A Comprehensive Benchmark for Stereo Matching and Strong Baseline,  [*Paper*](https://arxiv.org/abs/2312.00343) and [*Code*](cfgs/).
 
 ## Overall
@@ -27,7 +29,7 @@ OpenStereo is a flexible and extensible project for stereo matching.
   
 ## Highlighted features
 - **Multiple Dataset supported**: OpenStereo supports 15 popular stereo datasets: [SceneFlow](data/SceneFlow/README.md), [KITTI12](data/KITTI12/README.md) & [KITTI15](data/KITTI15/README.md), 
- [ETH3D](data/ETH3D/README.md), [Middlebury](data/Middlebury/README.md), [DrivingStereo](data/DrivingStereo/README.md), [Sintel](data/Sintel/README.md), [FallingThings](data/FallingThings/README.md), [InStereo2K](data/InStereo2K/README.md),[UnrealStereo4k](data/UnrealStereo4k/README.md), [VirtualKitti2](data/VirtualKitti2/README.md), [CREStereo](data/CREStereo/README.md), [Argoverse](data/Argoverse/README.md), [Spring](data/Spring/README.md), [TartanAir](data/TartanAir/README.md) and [FoundationStereo](data/FoundationStereo/README.md).
+ [ETH3D](data/ETH3D/README.md), [Middlebury](data/Middlebury/README.md), [DrivingStereo](data/DrivingStereo/README.md), [Sintel](data/Sintel/README.md), [FallingThings](data/FallingThings/README.md), [InStereo2K](data/InStereo2K/README.md),[UnrealStereo4k](data/UnrealStereo4k/README.md), [VirtualKitti2](data/VirtualKitti2/README.md), [CREStereo](data/CREStereo/README.md), [Argoverse](data/Argoverse/README.md), [Spring](data/Spring/README.md), [TartanAir](data/TartanAir/README.md), [FoundationStereo](data/FoundationStereo/README.md) and [StereoCarla](data/StereoCarla/README.md).
 - **Multiple Models Support**: We reproduced several SOTA methods and achieved the same or even better performance. 
 - **DDP Support**: The officially recommended [`Distributed Data Parallel (DDP)`](https://pytorch.org/tutorials/intermediate/ddp_tutorial.html) mode is used during both the training and testing phases.
 - **AMP Support**: The [`Auto Mixed Precision (AMP)`](https://pytorch.org/tutorials/recipes/recipes/amp_recipe.html?highlight=amp) option is available.
@@ -69,6 +71,12 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
         author={Guo, Xianda and Zhang, Chenming and Zhang, Youmin and Zheng, Wenzhao and Nie, Dujun and Poggi, Matteo and Chen, Long},
         booktitle={ICRA},
         year={2025}
+}
+@article{guo2025stereocarla,
+      title={StereoCarla: A High-Fidelity Driving Dataset for Generalizable Stereo}, 
+      author={Xianda Guo and Chenming Zhang and Ruilin Wang and Youmin Zhang and Wenzhao Zheng and Matteo Poggi and Hao Zhao and Qin Zou and Long Chen},
+      year={2025},
+      journal={arXiv preprint arXiv:2509.12683}
 }
 ```
 **Note**: This code is only used for academic purposes, people cannot use this code for anything that might be considered commercial use.
