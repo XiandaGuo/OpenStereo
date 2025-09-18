@@ -19,7 +19,7 @@ OpenStereo is a flexible and extensible project for stereo matching.
 - **[March 2023]**:OpenStereo is available!!!
 
 ## Our Publications
-- **[Arxiv'25]** StereoCarla: A High-Fidelity Driving Dataset for Generalizable Stereo, [*Paper*](https://arxiv.org/abs/2509.12683) and [*ProjectPage*](https://xiandaguo.net/StereoCarla).
+- **[Arxiv'25]** StereoCarla: A High-Fidelity Driving Dataset for Generalizable Stereo, [*Paper*](https://arxiv.org/abs/2509.12683),  [*Data*](docs/download_StereoCarla.md) and [*ProjectPage*](https://xiandaguo.net/StereoCarla).
 - **[ICRA25]** LightStereo: Channel Boost Is All Your Need for Efficient 2D Cost Aggregation, [*Paper*](https://arxiv.org/abs/2406.19833) and [*Code*](stereo/modeling/models/lightstereo).
 - **[Arxiv'24]** Stereo Anything: Unifying Stereo Matching with Large-Scale Mixed Data, [*Paper*](https://arxiv.org/abs/2411.14053), [*ProjectPage*](https://xiandaguo.net/StereoAnything) and [*Code*](docs/StereoAnything.md).
 - **[Arxiv'23]** OpenStereo: A Comprehensive Benchmark for Stereo Matching and Strong Baseline,  [*Paper*](https://arxiv.org/abs/2312.00343) and [*Code*](cfgs/).
