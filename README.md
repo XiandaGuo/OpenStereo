@@ -61,14 +61,14 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
         year={2023}
 }
 @article{guo2024stereo,
-        title={Stereo Anything: Unifying Stereo Matching with Large-Scale Mixed Data},
-        author={Guo, Xianda and Zhang, Chenming and Zhang, Youmin and Nie, Dujun and Wang, Ruilin and Zheng, Wenzhao and and Chen, Long},
+        title={Stereo Anything: Unifying Zero-shot Stereo Matching with Large-Scale Mixed Data},
+        author={Guo, Xianda and Zhang, Chenming and Zhang, Youmin and Wang, Ruilin and Nie, Dujun and Zheng, Wenzhao and Poggi, Matteo and Zhao, Hao and Ye, Mang and Zou, Qin and Chen, Long},
         journal={arXiv preprint arXiv:2411.14053},
         year={2024}
 }
 @inproceedings{guo2025lightstereo,
         title={Lightstereo: Channel boost is all you need for efficient 2d cost aggregation},
-        author={Guo, Xianda and Zhang, Chenming and Zhang, Youmin and Zheng, Wenzhao and Nie, Dujun and Poggi, Matteo and Chen, Long},
+        author={Guo, Xianda and Zhang, Chenming and Zhang, Youmin and Zheng, Wenzhao and Nie, Dujun  and Chen, Long},
         booktitle={ICRA},
         year={2025}
 }
@@ -79,4 +79,4 @@ Results and models are available in the [model zoo](docs/1.model_zoo.md).
       journal={arXiv preprint arXiv:2509.12683}
 }
 ```
-**Note**: This code is only used for academic purposes, people cannot use this code for anything that might be considered commercial use.
+**Note**: This code is only used for academic purposes; people cannot use this code for anything that might be considered commercial use.
