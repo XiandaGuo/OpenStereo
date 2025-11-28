@@ -41,8 +41,8 @@ def measure(model, shape):
     inputs = {'left': torch.randn(shape).cuda(),
               'right': torch.randn(shape).cuda()}
 
-    flops, params = thop.profile(model, inputs=(inputs,))
-    print("Number of calculates:%.2fGFlops" % (flops / 1e9))
+    macs, params = thop.profile(model, inputs=(inputs,))
+    print("Number of calculates:%.2fGmacs" % (macs / 1e9)) # Note: 1 MAC (Multiply-Accumulate) ≈ 2 FLOPs
     print("Number of parameters:%.2fM" % (params / 1e6))
 
 
