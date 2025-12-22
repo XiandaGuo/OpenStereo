@@ -1,0 +1,93 @@
+DATA_CONFIG:
+  DATA_INFOS:
+      -   DATASET: KittiDataset
+          DATA_SPLIT: {
+              TRAINING: ./data/KITTI12/kitti12_train194.txt,
+              EVALUATING: '',
+              TESTING: ''
+          }
+          RETURN_RIGHT_DISP: true
+
+      -   DATASET: KittiDataset
+          DATA_SPLIT: {
+              TRAINING: ./data/KITTI5/kitti15_train200.txt,
+              EVALUATING: ./data/KITTI15/kitti15_val20.txt,
+              TESTING: ./data/KITTI15/kitti15_test.txt
+          }
+          RETURN_RIGHT_DISP: true
+
+  DATA_TRANSFORM:
+    TRAINING:
+      - { NAME: StereoColorJitter, BRIGHTNESS: [ 0.7, 1.3 ], CONTRAST: [ 0.7, 1.3 ], SATURATION: [ 0.7, 1.3 ], HUE: 0.3, ASYMMETRIC_PROB: 0.2 }
+      - { NAME: RandomErase, PROB: 0.5, MAX_TIME: 2, BOUNDS: [50, 100] }
+      - { NAME: RandomScale, SIZE: [320, 736], MIN_SCALE: -0.2, MAX_SCALE: 0.5, SCALE_PROB: 0.8, STRETCH_PROB: 0.8 }
+      - { NAME: RandomCrop, SIZE: [320, 736], Y_JITTER: false }
+      - { NAME: TransposeImage }
+      - { NAME: ToTensor }
+
+    EVALUATING:
+      - { NAME: DivisiblePad, BY: 32 }
+      - { NAME: TransposeImage }
+      - { NAME: ToTensor }
+
+MODEL:
+  NAME: MonSter
+  corr_levels: 2
+  corr_radius: 4
+  hidden_dims: [128, 128, 128]
+  max_disp: &max_disp 192
+  mixed_precision: true
+  n_downsample: 2
+  n_gru_layers: 3
+  encoder: vitl
+  train_iters: 22
+  valid_iters: 32
+  loss_gamma: 0.9
+  depth_anything_path: /path/to/depth_anything_v2_vitl.pth
+  FIND_UNUSED_PARAMETERS: true
+  CKPT: -1
+  PRETRAINED_MODEL: ""
+  # PRETRAINED_MODEL: kitti.pth 
+
+OPTIMIZATION:
+  FREEZE_BN: true
+  SYNC_BN: false
+  AMP: true
+  AMP_DTYPE: bf16 
+  BATCH_SIZE_PER_GPU: 3
+  MAX_ITER: 50000  
+  LR: &lr 1.0e-4
+  HALF_LR: &half_lr 5e-5    
+
+  OPTIMIZER:
+    NAME: AdamW
+    LR: *lr
+    WEIGHT_DECAY: 1.0e-05
+    EPS: 1.0e-08
+
+  SCHEDULER:
+    NAME: OneCycleLR
+    ON_EPOCH: False
+    MAX_LR: [*half_lr, *lr]
+    PCT_START: 0.01
+    CYCLE_MOMENTUM: False
+    ANNEAL_STRATEGY: linear
+
+  CLIP_GRAD:
+    TYPE: norm
+    MAX_NORM: 1.0
+    NORM_TYPE: 2
+
+
+EVALUATOR:
+  BATCH_SIZE_PER_GPU: 8
+  MAX_DISP: *max_disp
+  METRIC: [d1_all, epe, thres_1, thres_2, thres_3]
+
+TRAINER:
+  EVAL_INTERVAL: 1
+  CKPT_SAVE_INTERVAL: 1
+  MAX_CKPT_SAVE_NUM: 30
+  LOGGER_ITER_INTERVAL: 10
+  TRAIN_VISUALIZATION: true
+  EVAL_VISUALIZATION: true
