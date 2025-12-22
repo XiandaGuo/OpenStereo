@@ -1,0 +1,157 @@
+MonSter Model License v1.0, Release Date: October 20, 2025
+
+"Agreement" means the terms and conditions for use, reproduction,
+distribution, and modification of the MonSter Materials set forth
+herein.
+
+"MonSter Materials" means, collectively, the stereo vision and depth
+estimation models, trained model weights, algorithms, and documentation
+distributed under this Agreement. The MonSter models were trained using
+publicly available datasets (including but not limited to KITTI,
+Middlebury, ETH3D, TartanAir, etc.) that are subject to their respective
+research-only or non-commercial licenses.
+
+"Licensors" means Autel Robotics Co., Ltd. and Huazhong University
+of Science and Technology, who jointly release the MonSter Materials
+under this Agreement but do not claim ownership of the underlying
+datasets used for model training.
+
+"Licensee" or "you" means any individual or entity accessing,
+using, reproducing, or distributing the MonSter Materials under this
+Agreement.
+
+By accessing or using any portion of the MonSter Materials, you agree to
+be bound by this Agreement.
+
+1. License Rights and Redistribution.
+
+a. Grant of Rights.
+
+You are granted a non-exclusive, worldwide, non-transferable, and
+royalty-free limited license under the Licensors' intellectual property
+or other rights to the extent such rights exist embodied in the MonSter
+Materials to use, reproduce, and modify the MonSter Materials solely for
+non-commercial research and educational purposes. Redistribution is
+permitted only within academic or research contexts under the same
+terms. The trained model weights incorporate information derived from
+third-party research-only datasets and must not be used or redistributed
+for any commercial or safety-critical application.
+
+Any commercial use, redistribution, or offering of services based on the
+MonSter Materials or derivatives thereof is prohibited unless expressly
+authorized in writing by the Licensors.
+
+b. Redistribution and Use.
+
+i. If you distribute or make the MonSter Materials, or any derivative
+works thereof, available to a third party, you shall provide a copy of
+this Agreement to such third party.
+
+ii. You must retain in all copies the following attribution notice:
+"MonSter model is licensed under the MonSter Model License, Copyright ©
+Autel Robotics Co., Ltd. and Huazhong University of Science and
+Technology. All Rights Reserved."
+
+iii. The MonSter Materials and any derivative works thereof shall not
+be used for any commercial purpose, including but not limited to
+applications in autonomous vehicles, drones, robotics, surveillance, or
+other safety-critical systems, nor for any military or law-enforcement
+purpose.
+
+iv. Your use of the MonSter Materials must comply with all applicable
+laws and export control regulations.
+
+v. The MonSter Materials shall not be used for any activity that may
+endanger national security, harm public interests, or infringe upon the
+lawful rights of others, as defined by applicable laws and regulations.
+
+2. Research-Only Restriction.
+
+The MonSter Materials are provided for non-commercial research and
+educational use only. Any commercial, military or defense-related, or
+safety-critical application is prohibited.
+
+3. Disclaimer of Warranty.
+
+UNLESS REQUIRED BY APPLICABLE LAW, THE MONSTER MATERIALS AND ANY OUTPUT
+AND RESULTS THEREFROM ARE PROVIDED ON AN "AS IS" BASIS, WITHOUT
+WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING, WITHOUT
+LIMITATION, ANY WARRANTIES OF TITLE, NON-INFRINGEMENT, MERCHANTABILITY,
+OR FITNESS FOR A PARTICULAR PURPOSE. YOU ARE SOLELY RESPONSIBLE FOR
+DETERMINING THE APPROPRIATENESS OF USING OR REDISTRIBUTING THE MONSTER
+MATERIALS AND ASSUME ANY RISKS ASSOCIATED WITH YOUR USE OF THE MONSTER
+MATERIALS AND ANY OUTPUT AND RESULTS.
+
+4. Limitation of Liability.
+
+IN NO EVENT WILL LICENSORS OR ITS AFFILIATES BE LIABLE UNDER ANY THEORY
+OF LIABILITY, WHETHER IN CONTRACT, TORT, NEGLIGENCE, PRODUCTS LIABILITY,
+OR OTHERWISE, ARISING OUT OF THIS AGREEMENT, FOR ANY LOST PROFITS OR ANY
+INDIRECT, SPECIAL, CONSEQUENTIAL, INCIDENTAL, EXEMPLARY OR PUNITIVE
+DAMAGES, EVEN IF LICENSORS OR ITS AFFILIATES HAVE BEEN ADVISED OF THE
+POSSIBILITY OF ANY OF THE FOREGOING.
+
+5. Intellectual Property.
+
+a. No trademark licenses are granted under this Agreement.
+
+Licensees may not use the names, logos, or marks of the Licensors in a
+manner that suggests endorsement or affiliation, except for reasonable
+academic citation or attribution purposes.
+
+b. No patent rights are granted under this Agreement.
+
+Licensees shall not file or assert any patent application covering
+inventions derived from or implemented using the MonSter Materials. All
+patent rights in the MonSter Materials remain with the Licensors.
+
+c. Litigation and Indemnification.
+
+If you institute litigation or other proceedings against the Licensors
+(including a cross-claim or counterclaim in a lawsuit) alleging that the
+MonSter Materials or MonSter outputs or results, or any portion thereof,
+infringe any intellectual property or other rights owned or licensable
+by you, then any licenses granted to you under this Agreement shall
+automatically terminate as of the date such litigation or claim is filed
+or instituted. You will indemnify and hold harmless the Licensors from
+and against any claim, loss, or liability by any third party arising out
+of or related to your use or distribution of the MonSter Materials. The
+Licensors make no representation or warranty regarding the rights of
+third parties in any datasets used for model training.
+
+d. Data Sources and Third-Party Rights.
+
+The MonSter model was trained using publicly available datasets
+(including but not limited to KITTI, ETH3D, Middlebury, TartanAir, etc.)
+that are restricted to non-commercial research use. Licensees must
+comply with the applicable non-commercial terms and any other
+restrictions of those datasets. The Licensors acknowledge that certain
+datasets used in training the MonSter model may themselves contain
+third-party data governed by additional terms. Licensees are responsible
+for ensuring compliance with any such upstream requirements.
+
+6. Term and Termination.
+
+This Agreement becomes effective upon your access to or use of the
+MonSter Materials. It will remain in effect until terminated as provided
+herein. This Agreement will automatically terminate if the Licensee uses
+the MonSter Materials for any commercial, military or defense-related,
+or safety-critical purpose, or breaches any restriction stated in this
+Agreement. Upon termination, the Licensee must immediately cease all use
+of the MonSter Materials and delete any copies in their possession.
+Sections 3 (Disclaimer of Warranty), 4 (Limitation of Liability), and 7
+(Governing Law and Jurisdiction) shall survive termination.
+
+7. Governing Law and Jurisdiction.
+
+This Agreement shall be governed by and construed in accordance with the
+laws of the People's Republic of China. Any disputes shall be submitted
+to the People's Court of Nanshan District, Shenzhen, Guangdong Province.
+
+8. Updates and Contact.
+
+This License may be updated by the Licensors to reflect future model
+versions, dataset changes, or expanded usage terms. For inquiries
+related to licensing, redistribution, or collaborations, please contact:
+compliance@autelrobotics.com.
+
