@@ -141,8 +141,6 @@ class IGEVStereo(nn.Module):
         image2 = data['right']
         """ Estimate disparity between pair of frames """
         test_mode = not self.training
-        image1 = (2 * (image1 / 255.0) - 1.0).contiguous()
-        image2 = (2 * (image2 / 255.0) - 1.0).contiguous()
         features_left = self.feature(image1)
         features_right = self.feature(image2)
         stem_2x = self.stem_2(image1)

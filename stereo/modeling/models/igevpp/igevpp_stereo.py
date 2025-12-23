@@ -147,10 +147,7 @@ class IGEVPPStereo(nn.Module):
     def forward(self, data):
         image1 = data['left']
         image2 = data['right']
-        """ Estimate disparity between pair of frames """
         test_mode = not self.training
-        image1 = (2 * (image1 / 255.0) - 1.0).contiguous()
-        image2 = (2 * (image2 / 255.0) - 1.0).contiguous()
 
         features_left = self.feature(image1)
         features_right = self.feature(image2)
@@ -221,7 +218,7 @@ class IGEVPPStereo(nn.Module):
             iter_preds.append(disp_up)
 
         if test_mode:
-            return disp_up
+            return {'disp_pred': disp_up}
 
         xspx = self.spx_4(features_left[0])
         xspx = self.spx_2(xspx, stem_2x)
@@ -264,7 +261,6 @@ class IGEVPPStereo(nn.Module):
         disp_loss += 1.0 * F.smooth_l1_loss(disp_init_pred1[0][mask0.bool()], disp_gt[mask0.bool()], reduction='mean')
         disp_loss += 0.5 * F.smooth_l1_loss(disp_init_pred1[1][mask1.bool()], disp_gt[mask1.bool()], reduction='mean')
         disp_loss += 0.2 * F.smooth_l1_loss(disp_init_pred1[2][mask.bool()], disp_gt[mask.bool()], reduction='mean')
-
 
         # gru loss
         loss_gamma = 0.9
