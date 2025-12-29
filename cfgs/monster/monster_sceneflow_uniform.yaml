@@ -1,0 +1,82 @@
+DATA_CONFIG:
+    DATA_INFOS:
+      - DATASET: SceneFlowDataset
+        DATA_SPLIT: {
+          TRAINING: ./data/SceneFlow/sceneflow_finalpass_train.txt,
+          EVALUATING: ./data/SceneFlow/sceneflow_finalpass_test.txt,
+          TESTING: ./data/SceneFlow/sceneflow_finalpass_test.txt
+        }
+        RETURN_RIGHT_DISP: false
+
+    DATA_TRANSFORM:
+      TRAINING:
+        - { NAME: RandomCrop, SIZE: [ 320, 736 ], Y_JITTER: false }
+        - { NAME: TransposeImage }
+        - { NAME: ToTensor }
+        - { NAME: NormalizeImage, MEAN: [ 0.485, 0.456, 0.406 ], STD: [ 0.229, 0.224, 0.225 ] }
+      EVALUATING:
+        #- { NAME: RightTopPad, SIZE: [ 540, 960 ] }
+        - { NAME: RightTopPad, SIZE: [ 544, 960 ] }
+        - { NAME: TransposeImage }
+        - { NAME: ToTensor }
+        - { NAME: NormalizeImage, MEAN: [ 0.485, 0.456, 0.406 ], STD: [ 0.229, 0.224, 0.225 ] }
+
+MODEL:
+  NAME: MonSter
+  corr_levels: 2
+  corr_radius: 4
+  hidden_dims: [128, 128, 128]
+  max_disp: &max_disp 192
+  n_downsample: 2
+  n_gru_layers: 3
+  encoder: vitl
+  train_iters: 22
+  valid_iters: 32
+  loss_gamma: 0.9
+  depth_anything_path: output/depth_anything_v2_vitl.pth
+  FIND_UNUSED_PARAMETERS: true
+  CKPT: -1
+  PRETRAINED_MODEL: ""
+  # PRETRAINED_MODEL: sceneflow.pth 
+
+OPTIMIZATION:
+  FREEZE_BN: true
+  SYNC_BN: true
+  AMP: false
+  BATCH_SIZE_PER_GPU: 4
+  MAX_ITER: 200000 
+  LR: &lr 2.0e-4
+  HALF_LR: &half_lr 1.0e-4    
+
+  OPTIMIZER:
+    NAME: AdamW
+    LR: *lr
+    WEIGHT_DECAY: 1.0e-05
+    EPS: 1.0e-08
+
+  SCHEDULER:
+    NAME: OneCycleLR
+    ON_EPOCH: False
+    MAX_LR: [*half_lr, *lr]
+    PCT_START: 0.01
+    CYCLE_MOMENTUM: False
+    ANNEAL_STRATEGY: linear
+
+  CLIP_GRAD:
+    TYPE: norm
+    MAX_NORM: 1.0
+    NORM_TYPE: 2
+
+
+EVALUATOR:
+  BATCH_SIZE_PER_GPU: 8
+  MAX_DISP: *max_disp
+  METRIC: [d1_all, epe, thres_1, thres_2, thres_3]
+
+TRAINER:
+  EVAL_INTERVAL: 1
+  CKPT_SAVE_INTERVAL: 1
+  MAX_CKPT_SAVE_NUM: 30
+  LOGGER_ITER_INTERVAL: 10
+  TRAIN_VISUALIZATION: true
+  EVAL_VISUALIZATION: true

@@ -57,7 +57,7 @@ class Trainer(TrainerTemplate):
 
         amp_enabled = bool(self.cfgs.OPTIMIZATION.AMP)
         amp_dtype_cfg = str(self.cfgs.OPTIMIZATION.get("AMP_DTYPE", "fp16")).lower()
-        if amp_dtype_cfg in ["bf16", "bfloat16"]:
+        if amp_dtype_cfg in ["bf16", "bfloat16"] and amp_enabled:
             amp_dtype = torch.bfloat16
             use_scaler = False
         else:
