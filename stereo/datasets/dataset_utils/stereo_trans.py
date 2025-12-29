@@ -374,3 +374,15 @@ class CropOrPad(object):
             sample = self.crop_fn(sample)
 
         return sample
+
+
+class NormalizeToMinusOneOne(object):
+    def __init__(self, config):
+        self.config = config
+    
+    def __call__(self, sample):
+        img1 = sample['left']
+        img2 = sample['right']
+        sample['left'] = (2.0 * (img1 / 255.0) - 1.0).contiguous()
+        sample['right'] = (2.0 * (img2 / 255.0) - 1.0).contiguous()
+        return sample

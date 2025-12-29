@@ -24,11 +24,13 @@ DATA_CONFIG:
       - { NAME: RandomCrop, SIZE: [320, 736], Y_JITTER: false }
       - { NAME: TransposeImage }
       - { NAME: ToTensor }
+      - { NAME: NormalizeToMinusOneOne }
 
     EVALUATING:
       - { NAME: DivisiblePad, BY: 32 }
       - { NAME: TransposeImage }
       - { NAME: ToTensor }
+      - { NAME: NormalizeToMinusOneOne }
 
 MODEL:
   NAME: MonSter

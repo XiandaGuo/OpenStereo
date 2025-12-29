@@ -350,8 +350,8 @@ class MonSter(nn.Module):
     def _forward_pair(self, image1, image2, iters=12, flow_init=None, test_mode=False):
         """ Estimate disparity between pair of frames """
 
-        image1 = (2 * (image1 / 255.0) - 1.0).contiguous()
-        image2 = (2 * (image2 / 255.0) - 1.0).contiguous()
+        # image1 = (2 * (image1 / 255.0) - 1.0).contiguous()
+        # image2 = (2 * (image2 / 255.0) - 1.0).contiguous()
         with torch.autocast(device_type='cuda', dtype=torch.float32): 
             depth_mono, features_mono_left,  features_mono_right = self.infer_mono(image1, image2)
 
@@ -472,8 +472,11 @@ class MonSter(nn.Module):
         disp_init_pred = model_pred["init_disp"]
         disp_gt = input_data["disp"]
         loss_gamma = self.args.loss_gamma
-        mask = (disp_gt < self.max_disp) & (disp_gt > 0)
-        valid = mask.float()
+        if 'valid' in input_data.keys():
+            valid = input_data['valid']
+        else:
+            mask = (disp_gt < self.max_disp) & (disp_gt > 0)
+            valid = mask.float()
 
         disp_gt = disp_gt.unsqueeze(1)
         mag = torch.sum(disp_gt ** 2, dim=1).sqrt()
