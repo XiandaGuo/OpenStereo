@@ -19,7 +19,7 @@ from .models.monster.trainer import Trainer as MonsterTrainer
 
 try:
 # 'If you want to train/eval NMRF-Stereo, please refer to docs/prepare_foundationstereo.md
-    from .models.foundationstereo.trainer_bf16 import TrainerBF16 as FoundationStereoTrainer
+    from .models.foundationstereo.trainer import Trainer as FoundationStereoTrainer
 except:
     raise ValueError('If you want to train/eval NMRF-Stereo, please refer to docs/prepare_foundationstereo.md. Otherwise you can comment out this line of code')
 
