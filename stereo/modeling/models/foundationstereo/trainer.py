@@ -4,6 +4,9 @@ import time
 
 import torch
 import torch.distributed as dist
+from stereo.utils.lamb import Lamb
+from stereo.utils import common_utils
+from stereo.utils.warmup import LinearWarmup
 from stereo.modeling.trainer_template import TrainerTemplate
 from stereo.utils.common_utils import color_map_tensorboard, write_tensorboard
 from .core.foundation_stereo import FoundationStereo
@@ -18,6 +21,52 @@ class Trainer(TrainerTemplate):
         model = __all__[cfgs.MODEL.NAME](cfgs.MODEL)
         super().__init__(args, cfgs, local_rank, global_rank, logger, tb_writer, model)
 
+        # ---- precision config ----
+        # AMP: True/False
+        self.amp_enabled = bool(self.cfgs.OPTIMIZATION.AMP)
+        # AMP_DTYPE: "bf16" / "fp16" (default fp16)
+        self.amp_dtype_cfg = str(self.cfgs.OPTIMIZATION.get("AMP_DTYPE", "fp16")).lower()
+        self.use_bf16 = self.amp_enabled and (self.amp_dtype_cfg in ["bf16", "bfloat16"])
+        self.use_fp16 = self.amp_enabled and (not self.use_bf16)
+        
+        # bf16 通常不需要 GradScaler；fp16 才需要
+        self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_fp16)
+     
+    def build_optimizer_and_scheduler(self):
+        if self.cfgs.OPTIMIZATION.OPTIMIZER.NAME == 'Lamb':
+            optimizer_cls = Lamb
+        else:
+            optimizer_cls = getattr(torch.optim, self.cfgs.OPTIMIZATION.OPTIMIZER.NAME)
+        valid_arg = common_utils.get_valid_args(optimizer_cls, self.cfgs.OPTIMIZATION.OPTIMIZER, ['name'])
+        optimizer = optimizer_cls(params=[p for p in self.model.parameters() if p.requires_grad], **valid_arg)
+
+        self.cfgs.OPTIMIZATION.SCHEDULER.TOTAL_STEPS = self.max_iter
+        scheduler_cls = getattr(torch.optim.lr_scheduler, self.cfgs.OPTIMIZATION.SCHEDULER.NAME)
+        valid_arg = common_utils.get_valid_args(scheduler_cls, self.cfgs.OPTIMIZATION.SCHEDULER, ['name', 'on_epoch'])
+        if self.cfgs.OPTIMIZATION.SCHEDULER.NAME == "CosineAnnealingLR":
+            valid_arg["T_max"] = self.max_iter  # 注意必须是 'T_max' 大写 T
+        scheduler = scheduler_cls(optimizer, **valid_arg)
+
+        return optimizer, scheduler
+        
+    def build_warmup(self):
+        last_step = (self.last_epoch + 1) * len(self.train_loader) - 1
+        if 'WARMUP' in self.cfgs.OPTIMIZATION.SCHEDULER:
+            warmup_steps = self.cfgs.OPTIMIZATION.SCHEDULER.WARMUP.get('WARM_STEPS', 1)
+            lr_ratio = self.cfgs.OPTIMIZATION.SCHEDULER.WARMUP.get('WARMUP_LR_RATIO', 0.0)
+            warmup_scheduler = LinearWarmup(
+                self.optimizer,
+                warmup_period=warmup_steps,
+                last_step=last_step,
+                warmup_lr_ratio=lr_ratio)
+        else:
+            warmup_scheduler = LinearWarmup(
+                self.optimizer,
+                warmup_period=1,
+                last_step=last_step)
+
+        return warmup_scheduler
+
     def train_one_epoch(self, current_epoch, tbar):
         start_epoch = self.last_epoch + 1
         logger_iter_interval = self.cfgs.TRAINER.LOGGER_ITER_INTERVAL
@@ -30,7 +79,7 @@ class Trainer(TrainerTemplate):
             if total_iter >= self.max_iter:
                 break
 
-            self.optimizer.zero_grad()
+            self.optimizer.zero_grad(set_to_none=True)
             lr = self.optimizer.param_groups[0]['lr']
 
             start_timer = time.time()
@@ -39,43 +88,48 @@ class Trainer(TrainerTemplate):
                 data[k] = v.to(self.local_rank) if torch.is_tensor(v) else v
             data_timer = time.time()
 
-            with torch.cuda.amp.autocast(enabled=self.cfgs.OPTIMIZATION.AMP):
+            with torch.cuda.amp.autocast(enabled=self.amp_enabled, dtype=torch.bfloat16 if self.use_bf16 else torch.float16):
                 model_pred = self.model(data)
                 infer_timer = time.time()
                 loss, tb_info = loss_func(model_pred, data)
 
-            # ===== Begin: check if loss is NaN =====
-            # 1. 本地检查loss是否为NaN/inf
+            # ===== Begin: check if loss is NaN/Inf (safe for non-dist too) =====
             is_invalid = torch.isnan(loss) | torch.isinf(loss)
-            # 转为0/1张量（0=有效，1=无效），用于进程间通信
-            invalid_flag = torch.tensor([1], dtype=torch.int, device=loss.device) if is_invalid else torch.tensor(
-                [0], dtype=torch.int, device=loss.device)
-            # 2. 全局同步：所有进程交换无效标记, 确保所有进程都知道是否有任何进程的loss无效
-            dist.all_reduce(invalid_flag, op=dist.ReduceOp.SUM)
-            global_invalid = invalid_flag.item() > 0  # 只要有一个进程无效，全局标记为True
-            # 3. 所有进程同步决策
-            if global_invalid:
-                print('loss have nan/inf, continue~')
-                del model_pred, loss  # 手动删除中间变量
-                torch.cuda.empty_cache()  # 释放GPU内存
-                continue
-                # torch.save(data)
-                #     # self.save_ckpt(current_epoch=12345)
-                #     # break
-            # ===== End: check if loss is NaN =====
+            invalid_flag = torch.tensor([1 if is_invalid else 0], dtype=torch.int, device=loss.device)
 
-            # 不要在autocast下调用, calls backward() on scaled loss to create scaled gradients.
-            self.scaler.scale(loss).backward()
-            # 做梯度剪裁的时候需要先unscale, unscales the gradients of optimizer's assigned params in-place
-            self.scaler.unscale_(self.optimizer)
-            # 梯度剪裁
-            if self.clip_gard is not None:
-                self.clip_gard(self.model)
-            # optimizer's gradients are already unscaled, so scaler.step does not unscale them
-            self.scaler.step(self.optimizer)
-            # Updates the scale for next iteration.
-            self.scaler.update()
-            # torch.cuda.empty_cache()
+            # 只有分布式初始化后才能 all_reduce
+            if self.args.dist_mode and dist.is_available() and dist.is_initialized():
+                dist.all_reduce(invalid_flag, op=dist.ReduceOp.SUM)
+
+            global_invalid = invalid_flag.item() > 0
+            if global_invalid:
+                if self.local_rank == 0:
+                    print('loss have nan/inf, continue~')
+                del model_pred, loss
+                torch.cuda.empty_cache()
+                continue
+            # ===== End: check if loss is NaN/Inf =====
+
+            # ===== Begin: backward/step (bf16 无 scaler；fp16 用 scaler) =====
+            if self.use_fp16:
+                # fp16：用 GradScaler
+                self.scaler.scale(loss).backward()
+                self.scaler.unscale_(self.optimizer)
+
+                if self.clip_gard is not None:
+                    self.clip_gard(self.model)
+
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
+            else:
+                # bf16（或 AMP 关闭/fp32）：不用 scaler
+                loss.backward()
+
+                if self.clip_gard is not None:
+                    self.clip_gard(self.model)
+
+                self.optimizer.step()
+            # ===== End: backward/step =====
 
             total_loss += loss.item()
 

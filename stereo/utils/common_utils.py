@@ -140,9 +140,21 @@ def freeze_bn(module):
 
 
 def load_params_from_file(model, filename, device, dist_mode, logger, strict=True):
-    checkpoint = torch.load(filename, map_location=device)
-    pretrained_state_dict = checkpoint['model_state']
-    tmp_model = model.module if dist_mode else model
+    checkpoint = torch.load(filename, map_location=device, weights_only=False)
+    if 'model_state' in checkpoint.keys():
+        model_keyword = 'model_state'
+    elif 'model' in checkpoint.keys():
+        model_keyword = 'model'
+    else: 
+        model_keyword = None
+    pretrained_state_dict = checkpoint[model_keyword] if model_keyword is not None else checkpoint
+    # for pretrained in ddp
+    if any(k.startswith("module.") for k in pretrained_state_dict.keys()):
+        pretrained_state_dict = {
+            k.replace("module.", "", 1): v
+            for k, v in pretrained_state_dict.items()
+        }
+    tmp_model = model.module if dist_mode and hasattr(model, "module") else model
     state_dict = tmp_model.state_dict()
 
     unused_state_dict = {}

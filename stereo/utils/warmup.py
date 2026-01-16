@@ -87,15 +87,20 @@ class LinearWarmup(BaseWarmup):
         optimizer (Optimizer): an instance of a subclass of Optimizer
         warmup_period (int or list): Warmup period
         last_step (int): The index of last step. (Default: -1)
+        warmup_lr_ratio (float): start lr ratio, e.g. 1/3. Default: 0.0 (from 0)
     """
 
-    def __init__(self, optimizer, warmup_period, last_step=-1):
+    def __init__(self, optimizer, warmup_period, last_step=-1, warmup_lr_ratio=0.0):
+        self.warmup_lr_ratio = float(warmup_lr_ratio)
         group_count = len(optimizer.param_groups)
         warmup_params = get_warmup_params(warmup_period, group_count)
         super(LinearWarmup, self).__init__(optimizer, warmup_params, last_step)
 
     def warmup_factor(self, step, warmup_period):
-        return min(1.0, (step+1) / warmup_period)
+        # progress: 0~1
+        progress = min(1.0, (step + 1) / warmup_period)
+        # linear from warmup_lr_ratio -> 1.0
+        return self.warmup_lr_ratio + (1.0 - self.warmup_lr_ratio) * progress
 
 
 class ExponentialWarmup(BaseWarmup):
