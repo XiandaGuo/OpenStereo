@@ -79,7 +79,7 @@ class Trainer(TrainerTemplate):
             if total_iter >= self.max_iter:
                 break
 
-            self.optimizer.zero_grad(set_to_none=True)
+            self.optimizer.zero_grad()
             lr = self.optimizer.param_groups[0]['lr']
 
             start_timer = time.time()
