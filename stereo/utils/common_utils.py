@@ -143,13 +143,13 @@ def load_params_from_file(model, filename, device, dist_mode, logger, strict=Tru
     checkpoint = torch.load(filename, map_location=device, weights_only=False)
     if 'model_state' in checkpoint.keys():
         model_keyword = 'model_state'
-    elif 'model' in checkpoint.keys():
+    elif 'model' in checkpoint.keys(): # to support foundationstereo style checkpoints, by Qian Zhou
         model_keyword = 'model'
     else: 
-        model_keyword = None
+        model_keyword = None # to support monster style checkpoints, by Qian Zhou
     pretrained_state_dict = checkpoint[model_keyword] if model_keyword is not None else checkpoint
     # for pretrained in ddp
-    if any(k.startswith("module.") for k in pretrained_state_dict.keys()):
+    if any(k.startswith("module.") for k in pretrained_state_dict.keys()): # to support monster style checkpoints, by Qian Zhou
         pretrained_state_dict = {
             k.replace("module.", "", 1): v
             for k, v in pretrained_state_dict.items()

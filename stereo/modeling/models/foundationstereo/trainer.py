@@ -1,5 +1,5 @@
-# @Time    : 2024/2/9 11:39
-# @Author  : zhangchenming
+# @Time    : 2024/2/9 11:39, 2026/1/19 16:58
+# @Author  : zhangchenming, Qian Zhou
 import time
 
 import torch
@@ -29,7 +29,7 @@ class Trainer(TrainerTemplate):
         self.use_bf16 = self.amp_enabled and (self.amp_dtype_cfg in ["bf16", "bfloat16"])
         self.use_fp16 = self.amp_enabled and (not self.use_bf16)
         
-        # bf16 通常不需要 GradScaler；fp16 才需要
+        # no scaler for bf16, only for fp16
         self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_fp16)
      
     def build_optimizer_and_scheduler(self):
@@ -44,7 +44,7 @@ class Trainer(TrainerTemplate):
         scheduler_cls = getattr(torch.optim.lr_scheduler, self.cfgs.OPTIMIZATION.SCHEDULER.NAME)
         valid_arg = common_utils.get_valid_args(scheduler_cls, self.cfgs.OPTIMIZATION.SCHEDULER, ['name', 'on_epoch'])
         if self.cfgs.OPTIMIZATION.SCHEDULER.NAME == "CosineAnnealingLR":
-            valid_arg["T_max"] = self.max_iter  # 注意必须是 'T_max' 大写 T
+            valid_arg["T_max"] = self.max_iter  # must be 'T_max' for CosineAnnealingLR, by Qian Zhou
         scheduler = scheduler_cls(optimizer, **valid_arg)
 
         return optimizer, scheduler
@@ -97,7 +97,7 @@ class Trainer(TrainerTemplate):
             is_invalid = torch.isnan(loss) | torch.isinf(loss)
             invalid_flag = torch.tensor([1 if is_invalid else 0], dtype=torch.int, device=loss.device)
 
-            # 只有分布式初始化后才能 all_reduce
+            # only after distributed initialization can all_reduce be called
             if self.args.dist_mode and dist.is_available() and dist.is_initialized():
                 dist.all_reduce(invalid_flag, op=dist.ReduceOp.SUM)
 
@@ -110,9 +110,9 @@ class Trainer(TrainerTemplate):
                 continue
             # ===== End: check if loss is NaN/Inf =====
 
-            # ===== Begin: backward/step (bf16 无 scaler；fp16 用 scaler) =====
+            # ===== Begin: backward/step =====
             if self.use_fp16:
-                # fp16：用 GradScaler
+                # gradient scaling for fp16
                 self.scaler.scale(loss).backward()
                 self.scaler.unscale_(self.optimizer)
 
@@ -122,7 +122,7 @@ class Trainer(TrainerTemplate):
                 self.scaler.step(self.optimizer)
                 self.scaler.update()
             else:
-                # bf16（或 AMP 关闭/fp32）：不用 scaler
+                # no scaler for bf16 and fp32
                 loss.backward()
 
                 if self.clip_gard is not None:
@@ -133,7 +133,7 @@ class Trainer(TrainerTemplate):
 
             total_loss += loss.item()
 
-            # warmup_scheduler period>1 和 batch_scheduler 不要同时使用
+            # warmup_scheduler period>1 and batch_scheduler can not co-exist
             with self.warmup_scheduler.dampening():
                 if not self.cfgs.OPTIMIZATION.SCHEDULER.ON_EPOCH:
                     self.scheduler.step()

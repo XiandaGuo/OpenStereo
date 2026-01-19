@@ -82,7 +82,7 @@ def get_warmup_params(warmup_period, group_count):
 
 class LinearWarmup(BaseWarmup):
     """Linear warmup schedule.
-
+    Author: Qian Zhou
     Arguments:
         optimizer (Optimizer): an instance of a subclass of Optimizer
         warmup_period (int or list): Warmup period
@@ -91,7 +91,7 @@ class LinearWarmup(BaseWarmup):
     """
 
     def __init__(self, optimizer, warmup_period, last_step=-1, warmup_lr_ratio=0.0):
-        self.warmup_lr_ratio = float(warmup_lr_ratio)
+        self.warmup_lr_ratio = float(warmup_lr_ratio) # to support start from non-zero lr, by Qian Zhou
         group_count = len(optimizer.param_groups)
         warmup_params = get_warmup_params(warmup_period, group_count)
         super(LinearWarmup, self).__init__(optimizer, warmup_params, last_step)
