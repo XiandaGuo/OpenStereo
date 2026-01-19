@@ -1,0 +1,172 @@
+DATA_CONFIG:
+    DATA_INFOS:
+        -   DATASET: SceneFlowDataset
+            DATA_SPLIT: {
+                TRAINING: ./data/SceneFlow/sceneflow_finalpass_train.txt,
+            }
+            RETURN_RIGHT_DISP: false
+            RETURN_SUPER_PIXEL: true
+
+        -   DATASET: FoundationStereoDataset
+            DATA_SPLIT: {
+                TRAINING: None,  # 直接读取文件夹
+            }
+            RETURN_SUPER_PIXEL: true
+
+#        -   DATASET: CarlaDataset
+#            DATA_SPLIT: {
+#              TRAINING: ./data/StereoCarla/StereoCarla_all.txt,
+#          }
+#            RETURN_RIGHT_DISP: false
+#            RETURN_SUPER_PIXEL: true
+
+#        -   DATASET: TartanAirDataset
+#            DATA_SPLIT: {
+#                TRAINING: ./data/TartanAir/all_306637.txt,
+#            }
+#            RETURN_SUPER_PIXEL: true
+
+        -   DATASET: CREStereoDataset
+            DATA_SPLIT: {
+                TRAINING: ./data/CREStereo/crestereo_all.txt,
+            }
+            RETURN_RIGHT_DISP: false
+            RETURN_SUPER_PIXEL: true
+
+#        -   DATASET: SpringDataset
+#            DATA_SPLIT: {
+#                TRAINING: ./data/Spring/spring_train.txt,
+#            }
+#            RETURN_RIGHT_DISP: false
+#            RETURN_SUPER_PIXEL: true
+
+        -   DATASET: SintelDataset
+            DATA_SPLIT: {
+              TRAINING: ./data/Sintel/Sintel_final_train.txt,
+            }
+            RETURN_SUPER_PIXEL: true
+
+#        -   DATASET: DynamicReplicaDataset
+#            DATA_SPLIT: {
+#                TRAINING: ./data/DynamicReplica/train.txt,
+#            }
+#            RETURN_RIGHT_DISP: false
+#            RETURN_SUPER_PIXEL: true
+
+        -   DATASET: FallingThingsDataset
+            DATA_SPLIT: {
+                TRAINING: ./data/FallingThings/fat_all.txt,
+            }
+            RETURN_RIGHT_DISP: false
+            RETURN_SUPER_PIXEL: true
+
+        -   DATASET: InStereo2KDataset
+            DATA_SPLIT: {
+                TRAINING: ./data/InStereo2K/instereo2K_train.txt,
+            }
+            RETURN_RIGHT_DISP: false
+            RETURN_SUPER_PIXEL: true
+
+        -   DATASET: VirtualKitti2Dataset
+            DATA_SPLIT: {
+                TRAINING: ./data/VirtualKitti2/virtualkitti2_trainval21260.txt,
+            }
+            RETURN_RIGHT_DISP: false
+            RETURN_SUPER_PIXEL: true
+
+#        -   DATASET: UnrealStereo4KDataset
+#            DATA_SPLIT: {
+#              TRAINING: ./data/UnrealStereo4K/unrealstereo4k_all.txt,
+#          }
+#            RETURN_RIGHT_DISP: false
+#            RETURN_SUPER_PIXEL: true
+
+#        -   DATASET: ArgoverseDataset
+#            DATA_SPLIT: {
+#              TRAINING: ./data/Argoverse/trainval.txt,
+#          }
+#            RETURN_RIGHT_DISP: false
+#            RETURN_SUPER_PIXEL: true
+
+    DATA_TRANSFORM:
+        TRAINING:
+            - { NAME: StereoColorJitter, BRIGHTNESS: [ 0.6, 1.4 ], CONTRAST: [ 0.6, 1.4 ], SATURATION: [ 0.6, 1.4 ], HUE: [-0.5, 0.5], ASYMMETRIC_PROB: 0.2 }
+            - { NAME: RandomErase, PROB: 0.5, MAX_TIME: 2, BOUNDS: [ 50, 100 ] }
+            - { NAME: RandomCrop, SIZE: [ 320, 736 ], Y_JITTER: false }
+            - { NAME: TransposeImage }
+            - { NAME: ToTensor }
+            - { NAME: NormalizeImage, MEAN: [ 0.485, 0.456, 0.406 ], STD: [ 0.229, 0.224, 0.225 ] }
+
+MODEL:
+    NAME: FoundationStereo
+    corr_levels: 2
+    corr_radius: 4
+    hidden_dims: [ 128, 128, 128 ]
+    low_memory: 0
+    max_disp: 192
+    mixed_precision: true
+    precision_dtype: bf16
+    n_downsample: 2
+    n_gru_layers: 3
+    vit_size: 'vitl'
+    train_iters: 22
+    valid_iters: 32
+    FIND_UNUSED_PARAMETERS: true
+    CKPT: -1
+    PRETRAINED_MODEL:
+#    PRETRAINED_MODEL: "/data/nas/users/ruilin.wang/code/Openstereo/output/MultiDataset/FoundationStereo/fstereo_mixdata_FSorigin/H20_16_1e-5/ckpt/checkpoint_epoch_0.pth"
+
+OPTIMIZATION:
+    FREEZE_BN: false
+    SYNC_BN: true
+    AMP: true
+    AMP_DTYPE: bf16
+    BATCH_SIZE_PER_GPU: 4
+    NUM_EPOCHS: 10
+
+    OPTIMIZER:
+        NAME: AdamW
+        LR: &lr 0.0001
+        WEIGHT_DECAY: 1.0e-05
+        EPS: 1.0e-08
+
+    
+    SCHEDULER:
+        NAME: CosineAnnealingLR
+        ON_EPOCH: false
+        eta_min: 1.0e-7
+
+        WARMUP:
+            WARM_STEPS: 2000
+            WARMUP_LR_RATIO: 0.3333333   # 1/3
+
+
+#     SCHEDULER:
+#         NAME: MultiStepLR
+#         GAMMA: 0.1
+#         MILESTONES: [ 8 ]
+#         ON_EPOCH: true
+# #        WARMUP:
+# #            WARM_STEPS: 500
+
+    CLIP_GRAD:
+        TYPE: value
+        CLIP_VALUE: 0.01
+
+EVALUATOR:
+    BATCH_SIZE_PER_GPU: 4
+    MAX_DISP: 192
+    METRIC:
+        - d1_all
+        - epe
+        - thres_1
+        - thres_2
+        - thres_3
+
+TRAINER:
+    EVAL_INTERVAL: 10
+    CKPT_SAVE_INTERVAL: 1
+    MAX_CKPT_SAVE_NUM: 30
+    LOGGER_ITER_INTERVAL: 100
+    TRAIN_VISUALIZATION: True
+    EVAL_VISUALIZATION: True

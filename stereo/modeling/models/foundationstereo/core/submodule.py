@@ -194,6 +194,37 @@ class ResnetBasicBlock3D(nn.Module):
 
     return out
 
+def attn_qkv(Q, K, V, window_size=(-1,-1)):
+    """
+    author: Qian Zhou
+    This function is to support both SDPA and FlashAttention based on input dtype.
+    if input dtype is fp32, it will use SDPA; otherwise, it will use FlashAttention.
+    Q, K, V: (B, L, H, D)
+    window_size: (win_h, win_w)
+    """
+    # ---- branch: fp32 -> SDPA, else -> flash_attn_func ----
+    if Q.dtype == torch.float32 and K.dtype == torch.float32 and V.dtype == torch.float32:
+        if window_size != (-1, -1):
+            raise NotImplementedError(f"SDPA only supports window_size=(-1,-1), but got window_size = {window_size}")
+        
+        # SDPA expects (B, H, L, D)
+        q = Q.permute(0, 2, 1, 3)  # (B,H,L,D)
+        k = K.permute(0, 2, 1, 3)
+        v = V.permute(0, 2, 1, 3)
+
+        attn = F.scaled_dot_product_attention(
+            q, k, v,
+            attn_mask=None,
+            dropout_p=0.0,
+            is_causal=False
+        )  # (B,H,L,D)
+
+        # back to (B, L, H, D)
+        attn_output = attn.permute(0, 2, 1, 3).contiguous()
+    else:
+        # FlashAttention path (expects (B, L, H, D))
+        attn_output = flash_attn_func(Q, K, V, window_size=window_size) # Replace with actual FlashAttention function
+    return attn_output
 
 class FlashMultiheadAttention(nn.Module):
     def __init__(self, embed_dim, num_heads):
@@ -213,15 +244,20 @@ class FlashMultiheadAttention(nn.Module):
         @query: (B,L,C)
         """
         B,L,C = query.shape
+        # B, L, C
         Q = self.q_proj(query)
         K = self.k_proj(key)
         V = self.v_proj(value)
 
+        # B, L, H, D
         Q = Q.view(Q.size(0), Q.size(1), self.num_heads, self.head_dim)
         K = K.view(K.size(0), K.size(1), self.num_heads, self.head_dim)
         V = V.view(V.size(0), V.size(1), self.num_heads, self.head_dim)
-
-        attn_output = flash_attn_func(Q, K, V, window_size=window_size)  # Replace with actual FlashAttention function
+        
+        # the original code in foundationstereo and fp32 not works
+        # attn_output = flash_attn_func(Q, K, V, window_size=window_size) # Replace with actual FlashAttention function
+        
+        attn_output = attn_qkv(Q, K, V, window_size=window_size) # fp32, fp16, and bf16 supported, by Qian Zhou
 
         attn_output = attn_output.reshape(B,L,-1)
         output = self.out_proj(attn_output)
