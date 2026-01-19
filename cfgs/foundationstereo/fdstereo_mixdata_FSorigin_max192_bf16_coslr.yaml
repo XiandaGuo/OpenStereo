@@ -13,18 +13,6 @@ DATA_CONFIG:
             }
             RETURN_SUPER_PIXEL: true
 
-#        -   DATASET: CarlaDataset
-#            DATA_SPLIT: {
-#              TRAINING: ./data/StereoCarla/StereoCarla_all.txt,
-#          }
-#            RETURN_RIGHT_DISP: false
-#            RETURN_SUPER_PIXEL: true
-
-#        -   DATASET: TartanAirDataset
-#            DATA_SPLIT: {
-#                TRAINING: ./data/TartanAir/all_306637.txt,
-#            }
-#            RETURN_SUPER_PIXEL: true
 
         -   DATASET: CREStereoDataset
             DATA_SPLIT: {
@@ -33,25 +21,12 @@ DATA_CONFIG:
             RETURN_RIGHT_DISP: false
             RETURN_SUPER_PIXEL: true
 
-#        -   DATASET: SpringDataset
-#            DATA_SPLIT: {
-#                TRAINING: ./data/Spring/spring_train.txt,
-#            }
-#            RETURN_RIGHT_DISP: false
-#            RETURN_SUPER_PIXEL: true
-
         -   DATASET: SintelDataset
             DATA_SPLIT: {
               TRAINING: ./data/Sintel/Sintel_final_train.txt,
             }
             RETURN_SUPER_PIXEL: true
 
-#        -   DATASET: DynamicReplicaDataset
-#            DATA_SPLIT: {
-#                TRAINING: ./data/DynamicReplica/train.txt,
-#            }
-#            RETURN_RIGHT_DISP: false
-#            RETURN_SUPER_PIXEL: true
 
         -   DATASET: FallingThingsDataset
             DATA_SPLIT: {
@@ -74,19 +49,6 @@ DATA_CONFIG:
             RETURN_RIGHT_DISP: false
             RETURN_SUPER_PIXEL: true
 
-#        -   DATASET: UnrealStereo4KDataset
-#            DATA_SPLIT: {
-#              TRAINING: ./data/UnrealStereo4K/unrealstereo4k_all.txt,
-#          }
-#            RETURN_RIGHT_DISP: false
-#            RETURN_SUPER_PIXEL: true
-
-#        -   DATASET: ArgoverseDataset
-#            DATA_SPLIT: {
-#              TRAINING: ./data/Argoverse/trainval.txt,
-#          }
-#            RETURN_RIGHT_DISP: false
-#            RETURN_SUPER_PIXEL: true
 
     DATA_TRANSFORM:
         TRAINING:
@@ -113,8 +75,7 @@ MODEL:
     valid_iters: 32
     FIND_UNUSED_PARAMETERS: true
     CKPT: -1
-    PRETRAINED_MODEL:
-#    PRETRAINED_MODEL: "/data/nas/users/ruilin.wang/code/Openstereo/output/MultiDataset/FoundationStereo/fstereo_mixdata_FSorigin/H20_16_1e-5/ckpt/checkpoint_epoch_0.pth"
+    PRETRAINED_MODEL: ''
 
 OPTIMIZATION:
     FREEZE_BN: false
@@ -139,15 +100,6 @@ OPTIMIZATION:
         WARMUP:
             WARM_STEPS: 2000
             WARMUP_LR_RATIO: 0.3333333   # 1/3
-
-
-#     SCHEDULER:
-#         NAME: MultiStepLR
-#         GAMMA: 0.1
-#         MILESTONES: [ 8 ]
-#         ON_EPOCH: true
-# #        WARMUP:
-# #            WARM_STEPS: 500
 
     CLIP_GRAD:
         TYPE: value
