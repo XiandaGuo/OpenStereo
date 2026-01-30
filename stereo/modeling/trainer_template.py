@@ -36,6 +36,7 @@ class TrainerTemplate:
             self.train_set, self.train_loader, self.train_sampler = self.build_train_loader()
 
             if 'MAX_ITER' in cfgs.OPTIMIZATION and cfgs.OPTIMIZATION.MAX_ITER > 0:
+                self.logger.warning("Detected MAX_ITER > 0, NUM_EPOCHS will be ignored.")
                 self.max_iter = cfgs.OPTIMIZATION.MAX_ITER
                 self.total_epochs = math.ceil(cfgs.OPTIMIZATION.MAX_ITER / len(self.train_loader))
             else:
