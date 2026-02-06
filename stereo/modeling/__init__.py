@@ -15,6 +15,8 @@ from .models.lightstereo.trainer import Trainer as LightStereoTrainer
 from .models.stereobase.trainer import Trainer as StereoBaseGRUTrainer
 # from .models.iinet.trainer import Trainer as IINetTrainer
 from .models.monster.trainer import Trainer as MonsterTrainer
+from .models.igevpp.trainer import Trainer as IGEVPPTrainer
+from .models.igev_rt.trainer import Trainer as IGEVRTTrainer
 
 
 try:
@@ -48,7 +50,9 @@ __all__ = {
     'FoundationStereo': FoundationStereoTrainer,
     # 'IInet': IINetTrainer,
     # 'NMRF': NMRFTrainer
-    "MonSter": MonsterTrainer
+    "MonSter": MonsterTrainer,
+    "IGEVPP": IGEVPPTrainer,
+    "IGEVRT": IGEVRTTrainer
 }
 
 
