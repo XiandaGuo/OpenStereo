@@ -57,7 +57,7 @@ OPTIMIZATION:
     NUM_EPOCHS: 45
 
     OPTIMIZER:
-        NAME: AdamW 
+        NAME: AdamW
         LR: &lr 0.0002
         WEIGHT_DECAY: 0.00001
         EPS: 0.00000001

@@ -250,85 +250,47 @@ class IGEVPPStereo(nn.Module):
     
     
     def get_loss(self, model_pred, input_data):
-            disp_gt = input_data["disp"]
+        disp_gt = input_data["disp"]
+        iter_preds = model_pred['disp_preds'] 
+        agg_preds = model_pred['init_disp']
+        loss_gamma = 0.9
+        if 'valid' in input_data.keys():
+            valid = input_data['valid']
+        else:
             mask = (disp_gt < self.max_disp) & (disp_gt > 0)
             valid = mask.float()
+        
+        n_predictions = len(iter_preds)
+        assert n_predictions >= 1
+        img_path = input_data['name'][0]
+        if ('kitti' in img_path) or ('eth3d' in img_path):
+            max_disp0 = 192
+            max_disp1 = 192
+            max_disp = 192
+        else:
             max_disp0 = 192
             max_disp1 = 384
             max_disp = 700
 
-            disp_gt = disp_gt.unsqueeze(1)
-            mag = torch.sum(disp_gt ** 2, dim=1).sqrt()
-            valid = ((valid >= 0.5) & (mag < self.max_disp)).unsqueeze(1)
-            # valid = ((valid >= 0.5) & (mag < self.max_disp))
-            assert valid.shape == disp_gt.shape, [valid.shape, disp_gt.shape]
-            assert not torch.isinf(disp_gt[valid.bool()]).any()
-            disp_loss = 0.0
-            mag = torch.sum(disp_gt**2, dim=1).sqrt()
-            mask0 = (valid >= 0.5) & (mag < max_disp0).unsqueeze(1)
-            mask1 = (valid >= 0.5) & (mag < max_disp1).unsqueeze(1)
-            mask = (valid >= 0.5) & (mag < max_disp).unsqueeze(1)
-
-            disp_init_pred = model_pred['init_disp']
-            disp_init_pred1 = []
-            for disp_init in disp_init_pred:
-                disp_init = disp_init.unsqueeze(1)
-                disp_init_pred1.append(disp_init)
-            disp_loss += 1.0 * F.smooth_l1_loss(disp_init_pred1[0][mask0.bool()], disp_gt[mask0.bool()], reduction='mean')
-            disp_loss += 0.5 * F.smooth_l1_loss(disp_init_pred1[1][mask1.bool()], disp_gt[mask1.bool()], reduction='mean')
-            disp_loss += 0.2 * F.smooth_l1_loss(disp_init_pred1[2][mask.bool()], disp_gt[mask.bool()], reduction='mean')
-
-
-            # gru loss
-            loss_gamma = 0.9
-            disp_preds = model_pred['disp_preds']
-            n_predictions = len(disp_preds)
-            assert n_predictions >= 1
-            for i in range(n_predictions):
-                adjusted_loss_gamma = loss_gamma ** (15 / (n_predictions - 1))
-                i_weight = adjusted_loss_gamma ** (n_predictions - i - 1)
-                i_loss = (disp_preds[i] - disp_gt).abs()
-                assert i_loss.shape == mask.shape, [i_loss.shape, mask.shape, disp_gt.shape, disp_preds[i].shape]
-                disp_loss += i_weight * i_loss[mask.bool()].mean()
-
-            # epe = torch.sum((disp_preds[-1] - disp_gt) ** 2, dim=1).sqrt()
-            # epe = epe.view(-1)[mask.view(-1)]
-            #
-            # metrics = {
-            #     'epe': epe.mean().item(),
-            #     '1px': (epe < 1).float().mean().item(),
-            #     '3px': (epe < 3).float().mean().item(),
-            #     '5px': (epe < 5).float().mean().item(),
-            # }
-
-            loss_info = {'scalar/train/loss_disp': disp_loss.item()}
-            return disp_loss, loss_info
-        
-    def get_loss(self, model_pred, input_data):
-        disp_gt = input_data["disp"]
-        mask = (disp_gt < self.max_disp) & (disp_gt > 0)
-        valid = mask.float()
-
+        disp_loss = 0.0
         disp_gt = disp_gt.unsqueeze(1)
         mag = torch.sum(disp_gt ** 2, dim=1).sqrt()
-        valid = ((valid >= 0.5) & (mag < self.max_disp)).unsqueeze(1)
-        assert valid.shape == disp_gt.shape, [valid.shape, disp_gt.shape]
-        assert not torch.isinf(disp_gt[valid.bool()]).any()
+        mask0 = ((valid >= 0.5) & (mag < max_disp0)).unsqueeze(1)
+        mask1 = ((valid >= 0.5) & (mag < max_disp1)).unsqueeze(1)
+        mask = ((valid >= 0.5) & (mag < max_disp)).unsqueeze(1)
+        assert mask.shape == disp_gt.shape, [mask.shape, disp_gt.shape]
+        assert not torch.isinf(disp_gt[mask.bool()]).any()
 
-        disp_init_pred = model_pred['init_disp']
-        disp_loss = 1.0 * F.smooth_l1_loss(disp_init_pred[valid.bool()], disp_gt[valid.bool()], reduction='mean')
+        disp_loss += 1.0 * F.smooth_l1_loss(agg_preds[0][mask0.bool()], disp_gt[mask0.bool()], reduction='mean')
+        disp_loss += 0.5 * F.smooth_l1_loss(agg_preds[1][mask1.bool()], disp_gt[mask1.bool()], reduction='mean')
+        disp_loss += 0.2 * F.smooth_l1_loss(agg_preds[2][mask.bool()], disp_gt[mask.bool()], reduction='mean')
 
-        # gru loss
-        loss_gamma = 0.9
-        disp_preds = model_pred['disp_preds']
-        n_predictions = len(disp_preds)
-        assert n_predictions >= 1
         for i in range(n_predictions):
-            adjusted_loss_gamma = loss_gamma ** (15 / (n_predictions - 1))
-            i_weight = adjusted_loss_gamma ** (n_predictions - i - 1)
-            i_loss = (disp_preds[i] - disp_gt).abs()
-            assert i_loss.shape == valid.shape, [i_loss.shape, valid.shape, disp_gt.shape, disp_preds[i].shape]
-            disp_loss += i_weight * i_loss[valid.bool()].mean()
+            adjusted_loss_gamma = loss_gamma**(15/(n_predictions - 1))
+            i_weight = adjusted_loss_gamma**(n_predictions - i - 1)
+            i_loss = (iter_preds[i] - disp_gt).abs()
+            assert i_loss.shape == mask.shape, [i_loss.shape, mask.shape, disp_gt.shape, iter_preds[i].shape]
+            disp_loss += i_weight * i_loss[mask.bool()].mean()
 
         loss_info = {'scalar/train/loss_disp': disp_loss.item()}
         return disp_loss, loss_info

@@ -212,28 +212,31 @@ class IGEVRTtereo(nn.Module):
         
     def get_loss(self, model_pred, input_data):
         disp_gt = input_data["disp"]
-        mask = (disp_gt < self.max_disp) & (disp_gt > 0)
-        valid = mask.float()
+        iter_preds = model_pred['disp_preds'] 
+        agg_pred = model_pred['init_disp']
+        loss_gamma = 0.9
+        if 'valid' in input_data.keys():
+            valid = input_data['valid']
+        else:
+            mask = (disp_gt < self.max_disp) & (disp_gt > 0)
+            valid = mask.float()
 
+        n_predictions = len(iter_preds)
+        assert n_predictions >= 1
+        disp_loss = 0.0
         disp_gt = disp_gt.unsqueeze(1)
-        mag = torch.sum(disp_gt ** 2, dim=1).sqrt()
-        valid = ((valid >= 0.5) & (mag < self.max_disp)).unsqueeze(1)
+        mag = torch.sum(disp_gt**2, dim=1).sqrt()
+        valid = ((valid >= 0.5) & (mag < 192)).unsqueeze(1)
         assert valid.shape == disp_gt.shape, [valid.shape, disp_gt.shape]
         assert not torch.isinf(disp_gt[valid.bool()]).any()
 
-        disp_init_pred = model_pred['init_disp']
-        disp_loss = 1.0 * F.smooth_l1_loss(disp_init_pred[valid.bool()], disp_gt[valid.bool()], reduction='mean')
 
-        # gru loss
-        loss_gamma = 0.9
-        disp_preds = model_pred['disp_preds']
-        n_predictions = len(disp_preds)
-        assert n_predictions >= 1
+        disp_loss += 1.0 * F.smooth_l1_loss(agg_pred[valid.bool()], disp_gt[valid.bool()], reduction='mean')
         for i in range(n_predictions):
-            adjusted_loss_gamma = loss_gamma ** (15 / (n_predictions - 1))
-            i_weight = adjusted_loss_gamma ** (n_predictions - i - 1)
-            i_loss = (disp_preds[i] - disp_gt).abs()
-            assert i_loss.shape == valid.shape, [i_loss.shape, valid.shape, disp_gt.shape, disp_preds[i].shape]
+            adjusted_loss_gamma = loss_gamma**(15/(n_predictions - 1))
+            i_weight = adjusted_loss_gamma**(n_predictions - i - 1)
+            i_loss = (iter_preds[i] - disp_gt).abs()
+            assert i_loss.shape == valid.shape, [i_loss.shape, valid.shape, disp_gt.shape, iter_preds[i].shape]
             disp_loss += i_weight * i_loss[valid.bool()].mean()
 
         loss_info = {'scalar/train/loss_disp': disp_loss.item()}
