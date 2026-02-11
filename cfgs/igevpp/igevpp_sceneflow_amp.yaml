@@ -1,0 +1,94 @@
+DATA_CONFIG:
+    DATA_INFOS:
+        -   DATASET: SceneFlowDataset
+            DATA_SPLIT: {
+                TRAINING: ./data/SceneFlow/sceneflow_finalpass_train.txt,
+                EVALUATING: ./data/SceneFlow/sceneflow_finalpass_test.txt,
+                TESTING: ./data/SceneFlow/sceneflow_finalpass_test.txt
+            }
+            RETURN_RIGHT_DISP: false
+
+    DATA_TRANSFORM:
+        TRAINING:
+            - { NAME: StereoColorJitter, BRIGHTNESS: [ 0.6, 1.4 ], CONTRAST: [ 0.6, 1.4 ], SATURATION: [ 0, 1.4 ], HUE: 0.5, ASYMMETRIC_PROB: 0.2 }
+            - { NAME: RandomErase, PROB: 0.5, MAX_TIME: 2, BOUNDS: [50, 100] }
+            - { NAME: RandomCrop, SIZE: [ 256, 768 ], Y_JITTER: true }
+            - { NAME: TransposeImage }
+            - { NAME: ToTensor }
+            - { NAME: NormalizeToMinusOneOne}
+        EVALUATING:
+            - { NAME: DivisiblePad, BY: 32, MODE: round }
+            - { NAME: TransposeImage }
+            - { NAME: ToTensor }
+            - { NAME: NormalizeToMinusOneOne}
+
+MODEL:
+    NAME: IGEVPP
+    MAX_DISP: &max_disp 768
+    HIDDEN_DIMS: [ 128, 128, 128 ]
+
+    MIXED_PRECISION: true
+    PRECISION_DTYPE: float16
+    
+
+    S_DISP_RANGE: 48
+    S_DISP_INTERVAL: 1
+    M_DISP_RANGE: 96
+    M_DISP_INTERVAL: 2
+    L_DISP_RANGE: 192
+    L_DISP_INTERVAL: 4
+
+    N_GRU_LAYERS: 3
+    N_DOWNSAMPLE: 2
+    SLOW_FAST_GRU: True
+    CORR_LEVELS: 2
+    CORR_RADIUS: 4
+    TRAIN_ITERS: 22
+    VALID_ITERS: 32
+    FIND_UNUSED_PARAMETERS: false
+    CKPT: -1
+    PRETRAINED_MODEL: ''
+
+OPTIMIZATION:
+    BATCH_SIZE_PER_GPU: 8
+    FREEZE_BN: true
+    SYNC_BN: false
+    AMP: true
+    NUM_EPOCHS: 45
+
+    OPTIMIZER:
+        NAME: AdamW
+        LR: &lr 0.0002
+        WEIGHT_DECAY: 0.00001
+        EPS: 0.00000001
+
+    SCHEDULER:
+        NAME: OneCycleLR
+        ON_EPOCH: False
+        MAX_LR: *lr
+        PCT_START: 0.01
+        CYCLE_MOMENTUM: False
+        ANNEAL_STRATEGY: linear
+
+    CLIP_GRAD:
+        TYPE: norm
+        MAX_NORM: 1.0
+        NORM_TYPE: 2
+
+EVALUATOR:
+    BATCH_SIZE_PER_GPU: 8
+    MAX_DISP: *max_disp
+    METRIC:
+        - d1_all
+        - epe
+        - thres_1
+        - thres_2
+        - thres_3
+
+TRAINER:
+    EVAL_INTERVAL: 1
+    CKPT_SAVE_INTERVAL: 1
+    MAX_CKPT_SAVE_NUM: 30
+    LOGGER_ITER_INTERVAL: 10
+    TRAIN_VISUALIZATION: True
+    EVAL_VISUALIZATION: True
