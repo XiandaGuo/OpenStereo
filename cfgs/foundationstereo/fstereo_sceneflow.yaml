@@ -31,7 +31,6 @@ MODEL:
     low_memory: 0
     max_disp: 192
     mixed_precision: true
-    mixed_dtype: &mixed_dtype bf16  # bf16 if mixed_dtype=bf16;  float16 if no mixed_dtype.
     n_downsample: 2
     n_gru_layers: 3
     vit_size: 'vitl'
@@ -44,14 +43,13 @@ MODEL:
 OPTIMIZATION:
     FREEZE_BN: false
     SYNC_BN: true
-    AMP: true                # float32 if false
-    AMP_DTYPE: *mixed_dtype  # bf16 if AMP=true and bf16;  float16 if AMP=true and no AMP_DTYP.
+    AMP: true
     BATCH_SIZE_PER_GPU: 2
     NUM_EPOCHS: 90
 
     OPTIMIZER:
         NAME: AdamW
-        LR: &lr 0.001
+        LR: &lr 0.0002
         WEIGHT_DECAY: 1.0e-05
         EPS: 1.0e-08
 

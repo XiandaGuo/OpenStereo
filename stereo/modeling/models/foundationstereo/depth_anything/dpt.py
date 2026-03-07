@@ -176,6 +176,10 @@ class DPT_DINOv2(nn.Module):
 class DepthAnything(DPT_DINOv2):
     def __init__(self, config):
         super().__init__(**config)
+        
+        encoder = config['encoder']
+        # load depthanythingv2 pretrained weights, which can be downloaded from https://github.com/DepthAnything/Depth-Anything-V2
+        self.load_state_dict(torch.load(f'/your_path/depth_anything_v2_{encoder}.pth', map_location='cpu'))
 
     def forward(self, x):
         h, w = x.shape[-2:]

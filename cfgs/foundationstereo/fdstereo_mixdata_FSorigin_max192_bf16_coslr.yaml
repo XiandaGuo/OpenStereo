@@ -66,9 +66,8 @@ MODEL:
     hidden_dims: [ 128, 128, 128 ]
     low_memory: 0
     max_disp: 192
-    mixed_precision: true
-    precision_dtype: bf16
-    n_downsample: 2
+    mixed_precision: &mixed true # if true, use mixed precision training; if false, use pure float32 training.
+    precision_dtype: &dtype bf16 # if bf16, use bfloat16 for mixed precision training; if fp16, use float16 for mixed precision training
     n_gru_layers: 3
     vit_size: 'vitl'
     train_iters: 22
@@ -80,8 +79,8 @@ MODEL:
 OPTIMIZATION:
     FREEZE_BN: false
     SYNC_BN: true
-    AMP: true
-    AMP_DTYPE: bf16
+    AMP: *mixed
+    AMP_DTYPE: *dtype
     BATCH_SIZE_PER_GPU: 4
     NUM_EPOCHS: 10
 
