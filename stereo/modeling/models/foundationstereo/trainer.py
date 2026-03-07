@@ -116,8 +116,8 @@ class Trainer(TrainerTemplate):
                 self.scaler.scale(loss).backward()
                 self.scaler.unscale_(self.optimizer)
 
-                if self.clip_gard is not None:
-                    self.clip_gard(self.model)
+                if self.clip_grad is not None:
+                    self.clip_grad(self.model)
 
                 self.scaler.step(self.optimizer)
                 self.scaler.update()
@@ -125,8 +125,8 @@ class Trainer(TrainerTemplate):
                 # no scaler for bf16 and fp32
                 loss.backward()
 
-                if self.clip_gard is not None:
-                    self.clip_gard(self.model)
+                if self.clip_grad is not None:
+                    self.clip_grad(self.model)
 
                 self.optimizer.step()
             # ===== End: backward/step =====

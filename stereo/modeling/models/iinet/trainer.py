@@ -63,8 +63,8 @@ class Trainer(TrainerTemplate):
             # 做梯度剪裁的时候需要先unscale, unscales the gradients of optimizer's assigned params in-place
             self.scaler.unscale_(self.optimizer)
             # 梯度剪裁
-            if self.clip_gard is not None:
-                self.clip_gard(self.model)
+            if self.clip_grad is not None:
+                self.clip_grad(self.model)
             # optimizer's gradients are already unscaled, so scaler.step does not unscale them
             self.scaler.step(self.optimizer)
             # Updates the scale for next iteration.

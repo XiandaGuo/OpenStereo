@@ -52,7 +52,7 @@ class TrainerTemplate:
                 self.resume_ckpt()
 
             self.warmup_scheduler = self.build_warmup()
-            self.clip_gard = self.build_clip_grad()
+            self.clip_grad = self.build_clip_grad()
 
     def build_train_loader(self):
         train_set, train_loader, train_sampler = build_dataloader(
@@ -146,14 +146,14 @@ class TrainerTemplate:
         return warmup_scheduler
 
     def build_clip_grad(self):
-        clip_gard = None
+        clip_grad = None
         if 'CLIP_GRAD' in self.cfgs.OPTIMIZATION:
             clip_type = self.cfgs.OPTIMIZATION.CLIP_GRAD.get('TYPE', None)
             clip_value = self.cfgs.OPTIMIZATION.CLIP_GRAD.get('CLIP_VALUE', 0.1)
             max_norm = self.cfgs.OPTIMIZATION.CLIP_GRAD.get('MAX_NORM', 35)
             norm_type = self.cfgs.OPTIMIZATION.CLIP_GRAD.get('NORM_TYPE', 2)
-            clip_gard = ClipGrad(clip_type, clip_value, max_norm, norm_type)
-        return clip_gard
+            clip_grad = ClipGrad(clip_type, clip_value, max_norm, norm_type)
+        return clip_grad
 
     def train(self, current_epoch, tbar):
         self.model.train()
@@ -218,8 +218,8 @@ class TrainerTemplate:
             # 做梯度剪裁的时候需要先unscale, unscales the gradients of optimizer's assigned params in-place
             self.scaler.unscale_(self.optimizer)
             # 梯度剪裁
-            if self.clip_gard is not None:
-                self.clip_gard(self.model)
+            if self.clip_grad is not None:
+                self.clip_grad(self.model)
             # optimizer's gradients are already unscaled, so scaler.step does not unscale them
             self.scaler.step(self.optimizer)
             # Updates the scale for next iteration.

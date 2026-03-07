@@ -33,7 +33,7 @@ DATA_CONFIG:
 
 MODEL:
     NAME: LightStereo
-    BACKCONE: EfficientNetv2
+    BACKBONE: EfficientNetv2
     MAX_DISP: 192
     EXPANSE_RATIO: 8
     AGGREGATION_BLOCKS: [ 8, 16, 32 ]

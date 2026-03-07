@@ -54,7 +54,7 @@ class StereoBase(nn.Module):
         self.spx_2_gru = Conv2xUp(32, 32, norm_layer=nn.BatchNorm2d)
         self.spx_gru = nn.Sequential(nn.ConvTranspose2d(2 * 32, 9, kernel_size=4, stride=2, padding=1), )
 
-        # backbobe
+        # backbone
         self.feature = Feature()
         backbone_channels = [48, 64, 192, 160]
         backbone_channels[0] = backbone_channels[0] + 48
