@@ -204,6 +204,6 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    model = DepthAnything.from_pretrained("LiheYoung/depth_anything_{:}14".format(args.encoder))
+    model = DepthAnything.from_pretrained("Yourpath/depth_anything_{:}14".format(args.encoder))
 
     print(model)
