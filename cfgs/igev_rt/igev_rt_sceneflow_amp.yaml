@@ -44,8 +44,8 @@ OPTIMIZATION:
     FREEZE_BN: true
     SYNC_BN: false
     AMP: true
-    BATCH_SIZE_PER_GPU: 8
-    NUM_EPOCHS: 45
+    BATCH_SIZE_PER_GPU: 1
+    MAX_ITER: 200000 
 
     OPTIMIZER:
         NAME: AdamW

@@ -89,14 +89,14 @@ class Trainer(TrainerTemplate):
             if scaler is not None:
                 scaler.scale(loss).backward()
                 scaler.unscale_(self.optimizer)
-                if self.clip_gard is not None:
-                    self.clip_gard(self.model)
+                if self.clip_grad is not None:
+                    self.clip_grad(self.model)
                 scaler.step(self.optimizer)
                 scaler.update()
             else:
                 loss.backward()
-                if self.clip_gard is not None:
-                    self.clip_gard(self.model)
+                if self.clip_grad is not None:
+                    self.clip_grad(self.model)
                 self.optimizer.step()
 
             with self.warmup_scheduler.dampening():
