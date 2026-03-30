@@ -1,5 +1,22 @@
 ### Paper list for stereo matching and continue to update this list.
 
+## 2026
+### Conference
+* **PromptStereo: Zero-Shot Stereo Matching via Structure and Motion Prompts**, Xianqi Wang, Hao Yang, Hangtian Wang, Junda Cheng, Gangwei Xu, Min Lin, Xin Yang. [[Paper](https://arxiv.org/abs/2603.01650)][[Code](https://github.com/Windsrain/PromptStereo)]. CVPR2026
+* **Pip-Stereo: Progressive Iterations Pruner for Iterative Optimization based Stereo Matching**, Jintu Zheng, Qizhe Liu, HuangXin Xu, Zhuojie Chen. [[Paper](https://arxiv.org/abs/2602.20496)][[Code](https://github.com/XPENG-Aridge-AI)]. CVPR2026
+* **Fast-FoundationStereo: Real-Time Zero-Shot Stereo Matching**, Bowen Wen, Shaurya Dewan, Stan Birchfield. [[Paper](https://arxiv.org/abs/2512.11130)][[Code](https://nvlabs.github.io/Fast-FoundationStereo/)]. CVPR2026
+* **Geometry-Aware Stereo Matching via Monocular Disparity Distribution Prior and Gradient Enhancement**, Junze Zhang, Luoxi Jing, Yuanyuan Wang, Xueqi Li, Guoli Yang, Songchang Jin, Chunping Qiu. [[Paper](https://ojs.aaai.org/index.php/AAAI/article/view/38253)]. AAAI2026
+* **Generalized Geometry Encoding Volume for Real-time Stereo Matching**, Jiaxin Liu, Gangwei Xu, Xianqi Wang, Chengliang Zhang, Xin Yang. [[Paper](https://arxiv.org/abs/2512.06793)]. AAAI2026
+* **EC-MVSNet: Enhanced Cascaded Multi-View Stereo with Cross-Scale Relevance Integration**, Shaoqian Wang, Jiadai Sun, Bin Fan, Qiang Wang, Bin Lu, Yuchao Dai. [[Paper](https://ojs.aaai.org/index.php/AAAI/article/view/37972)][[Code](https://github.com/bdwsq1996/EC-MVSNet)]. AAAI2026
+* **DispViT: Direct Stereo Disparity Regression with A Single-Stream Vision Transformer**, Tongfan Guan, Jiaxin Guo, Tianyu Huang, Jinhu Dong, Chen Wang, Yun-Hui Liu. [[Paper](https://openreview.net/forum?id=c21yqwf02V)][[Code](https://github.com/aeolusguan/DispViT)]. ICLR2026
+* **SpikeStereoNet: A Brain-Inspired Framework for Stereo Depth Estimation from Spike Streams**, Tongfan Guan, Jiaxin Guo, Tianyu Huang, Jinhu Dong, Chen Wang, Yun-Hui Liu. [[Paper](https://arxiv.org/abs/2505.19487)][[Code](https://github.com/gaozh0814/SpikeStereoNet)]. ICLR2026
+* **RobustSpring: Benchmarking Robustness to Image Corruptions for Optical Flow, Scene Flow and Stereo**, Victor Oei, Jenny Schmalfuss, Lukas Mehl, Madlen Bartsch, Shashank Agnihotri, Margret Keuper, Andreas Bulling, Andres Bruhn. [[Paper](https://arxiv.org/abs/2505.09368)][[Code](https://spring-benchmark.org/)]. ICLR2026
+
+
+
+### Journal
+* **Learning-based multi-view stereo: A survey**, Fangjinhua Wang, Qingtian Zhu, Di Chang, Quankai Gao, Junlin Han, Tong Zhang, Richard Hartley, Marc Pollefeys. [[Paper](https://ieeexplore.ieee.org/document/11355839/)]. TPAMI2026
+
 ## 2025
 ### Conference
 * **Diving into the Fusion of Monocular Priors for Generalized Stereo Matching**, Chengtang Yao, Lidong Yu, Zhidan Liu, Jiaxi Zeng, Yuwei Wu, Yunde Jia. [[Paper](https://arxiv.org/abs/2505.14414)][[Code](https://github.com/YaoChengTang/Diving-into-the-Fusion-of-Monocular-Priors-for-Generalized-Stereo-Matching)]. ICCV2025
