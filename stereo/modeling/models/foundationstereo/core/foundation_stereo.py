@@ -10,9 +10,6 @@
 import torch,pdb,logging,timm
 import torch.nn as nn
 import torch.nn.functional as F
-import sys,os
-code_dir = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(f'{code_dir}/../')
 from stereo.modeling.models.foundationstereo.core.update import *
 from stereo.modeling.models.foundationstereo.core.extractor import *
 from stereo.modeling.models.foundationstereo.core.geometry import Combined_Geo_Encoding_Volume
