@@ -9,10 +9,8 @@
 
 import torch,pdb,os,sys
 import torch.nn.functional as F
-from core.utils.utils import bilinear_sampler
-code_dir = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(f'{code_dir}/../')
-from Utils import *
+from stereo.modeling.models.foundationstereo.core.utils.utils import bilinear_sampler
+from stereo.modeling.models.foundationstereo.Utils import *
 
 class Combined_Geo_Encoding_Volume:
     def __init__(self, init_fmap1, init_fmap2, geo_volume, num_levels=2, dx=None):

@@ -13,9 +13,7 @@ import torch.nn.functional as F
 import numpy as np
 from einops import rearrange
 from torch import einsum
-code_dir = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(f'{code_dir}/../')
-from Utils import *
+from stereo.modeling.models.foundationstereo.Utils import *
 from flash_attn import flash_attn_qkvpacked_func, flash_attn_func
 
 

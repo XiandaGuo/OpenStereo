@@ -9,7 +9,7 @@ from stereo.utils import common_utils
 from stereo.utils.warmup import LinearWarmup
 from stereo.modeling.trainer_template import TrainerTemplate
 from stereo.utils.common_utils import color_map_tensorboard, write_tensorboard
-from .core.foundation_stereo import FoundationStereo
+from stereo.modeling.models.foundationstereo.core.foundation_stereo import FoundationStereo
 
 __all__ = {
     'FoundationStereo': FoundationStereo,
