@@ -131,6 +131,7 @@ class FastFoundationStereo(nn.Module):
     super().__init__()
     self.args = args
     self.dtype = torch.float32
+    self.max_disp = args.max_disp
 
     context_dims = args.hidden_dims
     self.cv_group = args.get('cv_group', 8)
