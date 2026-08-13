@@ -28,6 +28,11 @@ Please see [0.get_started.md](docs/0.get_started.md). We also provide the follow
 ## Model Zoo
 Results and models are available in the [model zoo](docs/1.model_zoo.md).
 
+## Contributors:
+
+- [Xianda Guo](https://xiandaguo.net), xianda_guo@163.com
+- Juntao Lu, ralph0813.ljt@gmail.com 
+- [Yiqun Duan](https://scholar.google.com/citations?user=GoQKrD0AAAAJ&hl=zh-CN), duanyiquncc@gmail.com 
 
 ## Acknowledgement
 [AANet](https://github.com/haofeixu/aanet) &nbsp; [ACVNet](https://github.com/gangweiX/ACVNet) &nbsp; [CascadeStereo](https://github.com/alibaba/cascade-stereo) &nbsp; [CFNet](https://github.com/gallenszl/CFNet) &nbsp; [COEX](https://github.com/antabangun/coex) &nbsp; [DenseMatching](https://github.com/DeepMotionAIResearch/DenseMatchingBenchmark) &nbsp; [FADNet++](https://github.com/HKBU-HPML/FADNet/tree/fadnet-pp) &nbsp; [GwcNet](https://github.com/xy-guo/GwcNet) &nbsp; [MSNet](https://github.com/cogsys-tuebingen/mobilestereonet) &nbsp; [PSMNet](https://github.com/JiaRenChang/PSMNet) &nbsp; [RAFT](https://github.com/princeton-vl/RAFT-Stereo) &nbsp; [STTR](https://github.com/mli0603/stereo-transformer) &nbsp; [OpenGait](https://github.com/ShiqiYu/OpenGait) &nbsp; [IGEV](https://github.com/gangweiX/IGEV/tree/main/IGEV-Stereo)
