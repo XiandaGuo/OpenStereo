@@ -1,21 +1,51 @@
 ### Paper list for stereo matching and continue to update this list.
 
 ## 2026
+
 ### Conference
-* **PromptStereo: Zero-Shot Stereo Matching via Structure and Motion Prompts**, Xianqi Wang, Hao Yang, Hangtian Wang, Junda Cheng, Gangwei Xu, Min Lin, Xin Yang. [[Paper](https://arxiv.org/abs/2603.01650)][[Code](https://github.com/Windsrain/PromptStereo)]. CVPR2026
-* **Pip-Stereo: Progressive Iterations Pruner for Iterative Optimization based Stereo Matching**, Jintu Zheng, Qizhe Liu, HuangXin Xu, Zhuojie Chen. [[Paper](https://arxiv.org/abs/2602.20496)][[Code](https://github.com/XPENG-Aridge-AI)]. CVPR2026
-* **Fast-FoundationStereo: Real-Time Zero-Shot Stereo Matching**, Bowen Wen, Shaurya Dewan, Stan Birchfield. [[Paper](https://arxiv.org/abs/2512.11130)][[Code](https://nvlabs.github.io/Fast-FoundationStereo/)]. CVPR2026
+
+* **PromptStereo: Zero-Shot Stereo Matching via Structure and Motion Prompts**, Xianqi Wang, Hao Yang, Hangtian Wang, Junda Cheng, Gangwei Xu, Min Lin, Xin Yang. [[Paper](https://openaccess.thecvf.com/content/CVPR2026/papers/Wang_PromptStereo_Zero-Shot_Stereo_Matching_via_Structure_and_Motion_Prompts_CVPR_2026_paper.pdf)][[Code](https://github.com/Windsrain/PromptStereo)]. CVPR2026
+* **Pip-Stereo: Progressive Iterations Pruner for Iterative Optimization based Stereo Matching**, Jintu Zheng, Qizhe Liu, HuangXin Xu, Zhuojie Chen. [[Paper](https://openaccess.thecvf.com/content/CVPR2026/html/Zheng_Pip-Stereo_Progressive_Iterations_Pruner_for_Iterative_Optimization_based_Stereo_Matching_CVPR_2026_paper.html)]. CVPR2026
+* **Fast-FoundationStereo: Real-Time Zero-Shot Stereo Matching**, Bowen Wen, Shaurya Dewan, Stan Birchfield. [[Paper](https://openaccess.thecvf.com/content/CVPR2026/html/Wen_Fast-FoundationStereo_Real-Time_Zero-Shot_Stereo_Matching_CVPR_2026_paper.html)][[Code](https://github.com/NVlabs/Fast-FoundationStereo)]. CVPR2026
+* **Lite Any Stereo: Efficient Zero-Shot Stereo Matching**, Junpeng Jing, Weixun Luo, Ye Mao, Krystian Mikolajczyk. [[Paper](https://arxiv.org/abs/2511.16555)][[Code](https://github.com/TomTomTommi/LiteAnyStereo)]. CVPR2026
+* **DepthFocus: Controllable Depth Estimation for See-Through Scenes**, Junhong Min, Jimin Kim, Minwook Kim, Cheol-Hui Min, Youngpil Jeon, Minyong Choi. [[Paper](https://openaccess.thecvf.com/content/CVPR2026/papers/Min_DepthFocus_Controllable_Depth_Estimation_for_See-Through_Scenes_CVPR_2026_paper.pdf)][[Project](https://junhong-3dv.github.io/depthfocus-project/)]. CVPR2026
+* **What Makes Good Synthetic Training Data for Zero-Shot Stereo Matching?**, David Yan, Alexander Raistrick, Jia Deng. [[Paper](https://arxiv.org/abs/2504.16930)][[Code](https://github.com/princeton-vl/InfinigenStereo)]. CVPR2026
+* **GS-ASM: 2DGS-Supervised Active Stereo Matching**, Zhengling Wu, Rongfeng Lu, Quan Chen, Longjian Zeng, Ming Lu, Yaoqi Sun, Yahong Chen, Baofeng Ji, Chenggang Yan. [[Paper](https://openaccess.thecvf.com/content/CVPR2026/papers/Wu_GS-ASM_2DGS-Supervised_Active_Stereo_Matching_CVPR_2026_paper.pdf)]. CVPR2026 (Active stereo)
+* **Bidirectional Cross-Modal Prompting for Event-Frame Asymmetric Stereo**, Ninghui Xu, Fabio Tosi, Lihui Wang, Jiawei Han, Luca Bartolomei, Zhiting Yao, Matteo Poggi, Stefano Mattoccia. [[Paper](https://openaccess.thecvf.com/content/CVPR2026/papers/Xu_Bidirectional_Cross-Modal_Prompting_for_Event-Frame_Asymmetric_Stereo_CVPR_2026_paper.pdf)]. CVPR2026 (Event-frame stereo)
+* **EventHub: Data Factory for Generalizable Event-Based Stereo Networks without Active Sensors**, Luca Bartolomei, Fabio Tosi, Matteo Poggi, Stefano Mattoccia, Guillermo Gallego. [[Paper](https://openaccess.thecvf.com/content/CVPR2026/html/Bartolomei_EventHub_Data_Factory_for_Generalizable_Event-Based_Stereo_Networks_without_Active_CVPR_2026_paper.html)]. CVPR2026 (Event-based stereo; training data)
+* **TESO: Online Tracking of Essential Matrix by Stochastic Optimization**, Jaroslav Moravec, Radim Šára, Akihiro Sugimoto. [[Paper](https://openaccess.thecvf.com/content/CVPR2026/html/Moravec_TESO_Online_Tracking_of_Essential_Matrix_by_Stochastic_Optimization_CVPR_2026_paper.html)]. CVPR2026 (Stereo calibration)
+* **CARD: A Multi-Modal Automotive Dataset for Dense 3D Reconstruction in Challenging Road Topography**, Gasser Elazab, Frank Neuhaus, Tilman Koß, Malte Splietker, Aditya Date, Michael Unterreiner, Maximilian Jansen, Olaf Hellwich. [[Paper](https://openaccess.thecvf.com/content/CVPR2026/html/Elazab_CARD_A_Multi-Modal_Automotive_Dataset_for_Dense_3D_Reconstruction_in_CVPR_2026_paper.html)]. CVPR2026 (Stereo dataset; depth completion)
+
+* **WAFT-Stereo: Warping-Alone Field Transforms for Stereo Matching**, Yihan Wang, Jia Deng. [[Paper](https://link.springer.com/chapter/10.1007/978-3-032-37419-6_12)][[Code](https://github.com/princeton-vl/WAFT-Stereo)]. ECCV2026
+* **LinStereo: Linear-Complexity Global Attention for Multi-scale Iterative Stereo Matching**, Yiran Wang, Oliver Turner, Viorela Ila. [[Paper](https://link.springer.com/chapter/10.1007/978-3-032-37013-6_1)][[Project](https://u7079256.github.io/LinStereo/)]. ECCV2026
+* **LiteMatch: Lightweight Zero-Shot Stereo Matching via Cost Volume Stabilization**, Md Raqib Khan, Santosh Kumar Vipparthi, Subrahmanyam Murala. [[Paper](https://link.springer.com/chapter/10.1007/978-3-032-37447-9_18)][[Project](https://mdraqibkhan.github.io/Litematch/)]. ECCV2026
+* **AquaStereo: Enabling Underwater Stereo Matching via Depth-Conditioned Diffusion and Geometry Self-Distillation**, Qizhe Wei, Yingping Liang, Shaodi You, Ying Fu. [[Paper](https://link.springer.com/chapter/10.1007/978-3-032-37232-1_4)][[Code](https://github.com/qz-wei/AquaStereo)]. ECCV2026
+* **Pseudo-stereo Inputs: A Solution to the Occlusion Challenge in Self-supervised Stereo Matching**, Ruizhi Yang, Xingqiang Li, Jiajun Bai, Jinsong Du. [[Paper](https://link.springer.com/chapter/10.1007/978-3-032-37044-0_26)][[Code](https://github.com/qrzyang/Pseudo-Stereo)]. ECCV2026
+* **PDF-Omni: Poincaré Dual Disk Distortion Field-Based Recurrent Update for Omnidirectional Stereo Matching**, Yunseok Yang, Eunjin Son, Sang Jun Lee. [[Paper](https://link.springer.com/chapter/10.1007/978-3-032-37356-4_5)][[Project](https://ynskyang.github.io/pdf-omni-page/)]. ECCV2026 (Omnidirectional stereo)
+
+* **DispViT: Direct Stereo Disparity Regression with a Single-Stream Vision Transformer**, Tongfan Guan, Jiaxin Guo, Tianyu Huang, Jinhu Dong, Chen Wang, Yun-Hui Liu. [[Paper](https://openreview.net/pdf?id=c21yqwf02V)][[Code](https://github.com/aeolusguan/DispViT)]. ICLR2026
+* **SpikeStereoNet: A Brain-Inspired Framework for Stereo Depth Estimation from Spike Streams**, Zhuoheng Gao, Yihao Li, Jiyao Zhang, Rui Zhao, Tong Wu, Hao Tang, Zhaofei Yu, Hao Dong, Guozhang Chen, Tiejun Huang. [[Paper](https://proceedings.iclr.cc/paper_files/paper/2026/hash/136a45cd9b841bf785625709a19c6508-Abstract-Conference.html)][[Code](https://github.com/Criticality-Cognitive-Computation-Lab/SpikeStereoNet)]. ICLR2026 (Spike-camera stereo)
+* **RobustSpring: Benchmarking Robustness to Image Corruptions for Optical Flow, Scene Flow and Stereo**, Victor Oei, Jenny Schmalfuss, Lukas Mehl, Madlen Bartsch, Shashank Agnihotri, Margret Keuper, Andreas Bulling, Andres Bruhn. [[Paper](https://proceedings.iclr.cc/paper_files/paper/2026/hash/5892bfd54d762b9da1d2c513aef3df42-Abstract-Conference.html)][[Project](https://spring-benchmark.org/)]. ICLR2026 (Robustness benchmark)
+
+* **Geometric Reciprocity: Unlocking Self-Supervision for Stereoscopic Video Generation**, Jingyi Lu, Kai Han. [[Paper](https://proceedings.mlr.press/v306/lu26k.html)][[Project](https://visual-ai.github.io/grt/)]. ICML2026 (Stereo video generation)
+* **ImmersePro: End-to-End Stereo Video Synthesis Via Implicit Disparity Learning**, Jian Shi, Zhenyu Li, Peter Wonka. [[Paper](https://proceedings.mlr.press/v306/shi26h.html)][[Code](https://github.com/shijianjian/ImmersePro)]. ICML2026 (Stereo video generation)
+* **SDiD: Shared Diffusion Prior for Efficient Distribute Stereo Image Compression**, Yichong Xia, Yimin Zhou, Zongyu Li, Shiyu Qin, Mingyao Hong, Bin Chen, Haoqian Wang. [[Paper](https://proceedings.mlr.press/v306/xia26l.html)]. ICML2026 (Stereo image compression)
+
 * **Geometry-Aware Stereo Matching via Monocular Disparity Distribution Prior and Gradient Enhancement**, Junze Zhang, Luoxi Jing, Yuanyuan Wang, Xueqi Li, Guoli Yang, Songchang Jin, Chunping Qiu. [[Paper](https://ojs.aaai.org/index.php/AAAI/article/view/38253)]. AAAI2026
 * **Generalized Geometry Encoding Volume for Real-time Stereo Matching**, Jiaxin Liu, Gangwei Xu, Xianqi Wang, Chengliang Zhang, Xin Yang. [[Paper](https://arxiv.org/abs/2512.06793)]. AAAI2026
 * **EC-MVSNet: Enhanced Cascaded Multi-View Stereo with Cross-Scale Relevance Integration**, Shaoqian Wang, Jiadai Sun, Bin Fan, Qiang Wang, Bin Lu, Yuchao Dai. [[Paper](https://ojs.aaai.org/index.php/AAAI/article/view/37972)][[Code](https://github.com/bdwsq1996/EC-MVSNet)]. AAAI2026
-* **DispViT: Direct Stereo Disparity Regression with A Single-Stream Vision Transformer**, Tongfan Guan, Jiaxin Guo, Tianyu Huang, Jinhu Dong, Chen Wang, Yun-Hui Liu. [[Paper](https://openreview.net/forum?id=c21yqwf02V)][[Code](https://github.com/aeolusguan/DispViT)]. ICLR2026
-* **SpikeStereoNet: A Brain-Inspired Framework for Stereo Depth Estimation from Spike Streams**, Tongfan Guan, Jiaxin Guo, Tianyu Huang, Jinhu Dong, Chen Wang, Yun-Hui Liu. [[Paper](https://arxiv.org/abs/2505.19487)][[Code](https://github.com/gaozh0814/SpikeStereoNet)]. ICLR2026
-* **RobustSpring: Benchmarking Robustness to Image Corruptions for Optical Flow, Scene Flow and Stereo**, Victor Oei, Jenny Schmalfuss, Lukas Mehl, Madlen Bartsch, Shashank Agnihotri, Margret Keuper, Andreas Bulling, Andres Bruhn. [[Paper](https://arxiv.org/abs/2505.09368)][[Code](https://spring-benchmark.org/)]. ICLR2026
-
-
 
 ### Journal
+
+* **MonSter++: Unified Stereo Matching, Multi-View Stereo, and Real-Time Stereo With Monodepth Priors**, Junda Cheng, Wenjing Liao, Zhipeng Cai, Longliang Liu, Gangwei Xu, Xianqi Wang, Yuzhou Wang, Zikang Yuan, Yong Deng, Jinliang Zang, Yangyang Shi, Jinhui Tang, Xin Yang. [[Paper](https://doi.org/10.1109/TPAMI.2026.3708185)][[Code](https://github.com/Junda24/MonSter-plusplus)]. TPAMI2026
+* **Match Stereo Videos via Bidirectional Alignment**, Junpeng Jing, Ye Mao, Anlan Qiu, Krystian Mikolajczyk. [[Paper](https://doi.org/10.1109/TPAMI.2026.3679033)][[Code](https://github.com/TomTomTommi/bidavideo)]. TPAMI2026
+* **Toward Ultrafast Depth Sensing via Active Event-Based Stereo Vision**, Jianing Li, Yunjian Zhang, Haiqian Han, Kangyao Huang, Xiangyang Ji. [[Paper](https://doi.org/10.1109/TPAMI.2026.3674575)][[Code](https://github.com/jianing-li/active_event_based_stereo)]. TPAMI2026 (Active event-based stereo)
+* **Temporal Stereo Matching From Event Cameras via Joint Learning With Stereoscopic Flow**, Jae-Young Kang, Hoonhee Cho, Kuk-Jin Yoon. [[Paper](https://doi.org/10.1109/TPAMI.2025.3645734)]. TPAMI2026 (Event-based stereo; first online in 2025, assigned to the 2026 volume)
 * **Learning-based multi-view stereo: A survey**, Fangjinhua Wang, Qingtian Zhu, Di Chang, Quankai Gao, Junlin Han, Tong Zhang, Richard Hartley, Marc Pollefeys. [[Paper](https://ieeexplore.ieee.org/document/11355839/)]. TPAMI2026
+
+* **US³Net: Ultralightweight Self-Supervised Stereo Matching Network using Depth-Aware Geometric Soft Occlusion**, Po-Chung Jen, Tzu-Chi Liu, I-Sheng Fang, Hsiao-Chieh Wen, Chia-Lun Hsu, Ping-Yang Chen, Chang-Hsing Lee, Yong-Sheng Chen. [[Paper](https://link.springer.com/article/10.1007/s11263-026-02868-2)][[Code](https://github.com/g830319ag/US3Net)]. IJCV2026
+
+* **SMFormer: Empowering Self-Supervised Stereo Matching via Foundation Models and Data Augmentation**, Yun Wang, Zhengjie Yang, Jiahao Zheng, Zhanjie Zhang, Dapeng Oliver Wu, Yulan Guo. [[Paper](https://doi.org/10.1109/TIP.2026.3684415)]. TIP2026
 
 ## 2025
 ### Conference
